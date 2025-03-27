@@ -1,0 +1,6 @@
+background-opacity = 0.65
+background-blur-radius = 40
+theme=catppuccin-mocha
+macos-titlebar-style = hidden
+window-padding-y = 6,0
+keybind = global:option+enter=new_window
