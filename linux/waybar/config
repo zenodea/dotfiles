@@ -1,0 +1,151 @@
+{
+  "layer": "top",
+  "height": 28,
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
+  "modules-center": [
+    "clock"  // Add clock module to the center
+  ],
+"clock": {
+  "interval": 30,
+  "format": "{:%I:%M %p}",
+  "tooltip-format": "{:%a, %d %b %G}"
+},
+
+  "modules-right": [
+    "power-profiles-daemon",
+    "pulseaudio",
+    "backlight",
+    "bluetooth",
+    "network",
+    "battery",
+    "custom/power"
+  ],
+  "hyprland/window": {
+    "max-length": 30
+  },
+  "hyprland/language": {
+    "format-en": "En",
+    "format-ru": "Ru"
+  },
+  "tray": {
+    "icon-size": 20,
+    "spacing": 8
+  },
+    "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-bluetooth": "{icon}  {volume}%",
+    "format-muted": "",
+    "format-icons": {
+      "alsa_output.pci-0000_00_1f.3.analog-stereo": "",
+      "alsa_output.pci-0000_00_1f.3.analog-stereo-muted": "",
+      "headphones": "",
+      "handsfree": "",
+      "headset": "",
+      "phone": "",
+      "phone-muted": "",
+      "portable": "",
+      "car": "",
+      "default": [
+        "",
+        ""
+      ]
+    },
+    "scroll-step": 1,
+    "on-click": "pavucontrol"
+  },
+    "bluetooth": {
+    "format": " {status}",
+    "format-connected": " {device_alias}",
+    "format-connected-battery": " {device_alias} {device_battery_percentage}%",
+    "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
+    "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%",
+  },
+    "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}",
+    "tooltip": true,
+    "format-icons": {
+      "default": "",
+      "performance": "",
+      "balanced": "",
+      "power-saver": ""
+    }
+  },
+  "network": {
+    // "interface": "wlp2*", // (Optional) To force the use of this interface
+    "interval": 1,
+    "format-wifi": " {bandwidthTotalBytes:>2}", //({essid} {signalStrength}%)
+    "format-ethernet": " {bandwidthTotalBytes:>2}",
+    "tooltip-format-ethernet": "󰈀 {ipaddr}",
+    "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
+    "tooltip-format": "󰤯  {ifname} via {gwaddr}",
+    "format-linked": "󰀦 {ifname} (No IP)",
+    "format-disconnected": "󰀦 Disconnected", //Disconnected ⚠
+    "format-alt": "{ifname}: {gwaddr}/{cidr}",
+  },
+  "backlight": {
+    // "device": "acpi_video1",
+    "format": "{icon} {percent:>2}%",
+    "format-icons": ["", "", "", "", "", "", "", "", ""],
+  },
+  "battery": {
+    "interval": 60,
+    "format-time": "{H}:{m}",
+    "format-icons": [
+      "󰁺",
+      "󰁻",
+      "󰁼",
+      "󰁽",
+      "󰁾",
+      "󰁿",
+      "󰂀",
+      "󰂁",
+      "󰂂",
+      "󰁹"
+    ],
+    "format-discharging": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format": ""
+  },
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "on-click": "activate",
+    "format-icons": {
+      "1": "⼀",
+      "2": "二",
+      "3": "三",
+      "4": "四",
+      "5": "五",
+      "6": "六",
+      "7": "七",
+      "8": "八",
+      "9": "九",
+      "10": "十"
+    },
+    "persistent-workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": [],
+      "6": [],
+      "7": [],
+      "8": [],
+      "9": [],
+      "10": []
+    },
+    "sort-by-number": true
+  },
+  "custom/power": {
+    "format": "{icon}",
+    "format-icons": "  ", //  
+    "exec-on-event": "true",
+    "on-click": "$HOME/scripts/rofi-power",
+    "tooltip-format": "Power Menu",
+  },
+}
+
