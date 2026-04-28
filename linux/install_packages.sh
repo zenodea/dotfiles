@@ -87,6 +87,8 @@ PACMAN_PACKAGES=(
     pyenv
     steam
     discord
+    obsidian
+    mullad-vpn
 )
 
 
