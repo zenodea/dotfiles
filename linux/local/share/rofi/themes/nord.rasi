@@ -1,0 +1,76 @@
+* {
+    nord0:  #2E3440;
+    nord1:  #3B4252;
+    nord2:  #434C5E;
+    nord3:  #4C566A;
+    nord4:  #D8DEE9;
+    nord8:  #88C0D0;
+    nord11: #BF616A;
+    nord14: #A3BE8C;
+
+    background-color: transparent;
+    text-color:       @nord4;
+}
+
+window {
+    background-color: @nord0;
+    border:           2px solid;
+    border-color:     @nord3;
+    border-radius:    10px;
+    padding:          10px;
+    width:            320px;
+}
+
+mainbox {
+    background-color: transparent;
+    children:         [ inputbar, listview ];
+    spacing:          8px;
+}
+
+inputbar {
+    background-color: @nord1;
+    border-radius:    6px;
+    padding:          8px 12px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @nord8;
+    padding-right:    8px;
+}
+
+entry {
+    background-color:   transparent;
+    text-color:         @nord4;
+    placeholder-color:  @nord3;
+    placeholder:        "Search...";
+}
+
+listview {
+    background-color: transparent;
+    scrollbar:        false;
+    spacing:          2px;
+}
+
+element {
+    background-color: transparent;
+    border-radius:    6px;
+    padding:          8px 12px;
+    spacing:          10px;
+    children:         [ element-icon, element-text ];
+}
+
+element.selected.normal {
+    background-color: @nord2;
+}
+
+element-icon {
+    background-color: transparent;
+    size:             1.2em;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+}

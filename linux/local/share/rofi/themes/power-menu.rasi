@@ -1,0 +1,49 @@
+* {
+    background-color: transparent;
+    text-color:       rgba(216, 222, 233, 0.55);
+    font:             "JetBrainsMono Nerd Font 15";
+}
+
+window {
+    background-color: #2E3440;
+    border:           1px;
+    border-color:     rgba(136, 192, 208, 0.30);
+    border-radius:    16px;
+    padding:          12px;
+    width:            240px;
+}
+
+mainbox {
+    background-color: transparent;
+    children:         [ listview ];
+}
+
+listview {
+    background-color: transparent;
+    lines:            5;
+    scrollbar:        false;
+    spacing:          3px;
+}
+
+element {
+    background-color: transparent;
+    text-color:       rgba(216, 222, 233, 0.55);
+    border-radius:    10px;
+    padding:          13px 20px;
+    children:         [ element-text ];
+}
+
+element selected.normal {
+    background-color: rgba(136, 192, 208, 0.12);
+    border:           1px;
+    border-color:     rgba(136, 192, 208, 0.55);
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+}
+
+element-text selected.normal {
+    text-color: #88C0D0;
+}

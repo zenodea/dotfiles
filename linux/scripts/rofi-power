@@ -1,0 +1,26 @@
+#!/bin/bash
+
+LOCK="󰌾  Lock"
+SUSPEND="󰤄  Suspend"
+LOGOUT="󰍃  Logout"
+REBOOT="󰑓  Reboot"
+SHUTDOWN="󰐥  Shutdown"
+
+chosen=$(printf "%s\n" "$LOCK" "$SUSPEND" "$LOGOUT" "$REBOOT" "$SHUTDOWN" | rofi -dmenu \
+    -p "" \
+    -hover-select \
+    -me-select-entry MousePrimary \
+    -me-accept-entry MouseDPrimary \
+    -kb-row-down "Down,Control+n,j" \
+    -kb-row-up "Up,Control+p,k" \
+    -kb-accept-entry "Control+j,Control+m,Return,KP_Enter,l" \
+    -kb-cancel "Escape,Control+g,Control+bracketleft,h" \
+    -theme "$HOME/.local/share/rofi/themes/power-menu.rasi")
+
+case "$chosen" in
+    "$LOCK")     hyprlock ;;
+    "$SUSPEND")  systemctl suspend ;;
+    "$LOGOUT")   hyprctl dispatch exit ;;
+    "$REBOOT")   systemctl reboot ;;
+    "$SHUTDOWN")  systemctl poweroff ;;
+esac

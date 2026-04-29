@@ -61,6 +61,19 @@ link_folder() {
             link "$src" "$CONFIG_DIR/$(basename "$src")"
         done
     fi
+
+    # scripts/ → $HOME/scripts
+    if [ -d "$folder/scripts" ]; then
+        link "$folder/scripts" "$HOME/scripts"
+    fi
+
+    # local/share/<name> → $HOME/.local/share/<name>
+    if [ -d "$folder/local/share" ]; then
+        for src in "$folder/local/share"/[^.]*; do
+            [ -e "$src" ] || continue
+            link "$src" "$HOME/.local/share/$(basename "$src")"
+        done
+    fi
 }
 
 link_folder "$DOTFILES_DIR/general"
