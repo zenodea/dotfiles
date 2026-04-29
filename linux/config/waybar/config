@@ -19,6 +19,7 @@
     "backlight",
     "bluetooth",
     "network",
+    "custom/mullvad",
     "battery",
     "custom/power"
   ],
@@ -139,6 +140,13 @@
       "10": []
     },
     "sort-by-number": true
+  },
+  "custom/mullvad": {
+    "exec": "$HOME/.config/waybar/scripts/mullvad.sh",
+    "return-type": "json",
+    "interval": 2,
+    "on-click": "$HOME/.config/waybar/scripts/mullvad.sh toggle",
+    "tooltip": true
   },
   "custom/power": {
     "format": "{icon}",

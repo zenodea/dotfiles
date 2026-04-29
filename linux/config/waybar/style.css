@@ -31,6 +31,7 @@
 #temperature,
 #tray,
 #custom-power,
+#custom-mullvad,
 #language,
 #bluetooth,
 #backlight,
@@ -64,6 +65,18 @@
 
 #window {
   font-weight: bold;
+}
+
+#custom-mullvad.connected {
+  color: #A3BE8C; /* Nord green */
+}
+
+#custom-mullvad.connecting {
+  color: #EBCB8B; /* Nord yellow */
+}
+
+#custom-mullvad.disconnected {
+  color: #BF616A; /* Nord red */
 }
 
 /* https://github.com/Alexays/Waybar/wiki/FAQ#the-workspace-buttons-have-a-strange-hover-effect */
