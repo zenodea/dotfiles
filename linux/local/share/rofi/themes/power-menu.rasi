@@ -1,14 +1,13 @@
 * {
     background-color: transparent;
-    text-color:       rgba(216, 222, 233, 0.55);
+    text-color:       rgba(192, 202, 245, 0.55);
     font:             "JetBrainsMono Nerd Font 15";
 }
 
 window {
-    background-color: #2E3440;
-    border:           1px;
-    border-color:     rgba(136, 192, 208, 0.30);
-    border-radius:    16px;
+    background-color: rgba(26, 27, 38, 0.7);
+    border:           2px solid;
+    border-color:     #414868;
     padding:          12px;
     width:            240px;
 }
@@ -20,23 +19,22 @@ mainbox {
 
 listview {
     background-color: transparent;
-    lines:            5;
+    lines:            6;
     scrollbar:        false;
     spacing:          3px;
 }
 
 element {
     background-color: transparent;
-    text-color:       rgba(216, 222, 233, 0.55);
-    border-radius:    10px;
+    text-color:       rgba(192, 202, 245, 0.55);
     padding:          13px 20px;
     children:         [ element-text ];
 }
 
 element selected.normal {
-    background-color: rgba(136, 192, 208, 0.12);
+    background-color: rgba(125, 207, 255, 0.12);
     border:           1px;
-    border-color:     rgba(136, 192, 208, 0.55);
+    border-color:     rgba(125, 207, 255, 0.55);
 }
 
 element-text {
@@ -45,5 +43,5 @@ element-text {
 }
 
 element-text selected.normal {
-    text-color: #88C0D0;
+    text-color: #7dcfff;
 }

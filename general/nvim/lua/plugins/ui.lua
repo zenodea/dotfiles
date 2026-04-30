@@ -79,25 +79,6 @@ return {
     },
   },
 
-  -- Colorscheme
-  {
-    'rmehri01/onenord.nvim',
-    lazy = false,
-    priority = 1000,
-    config = function()
-      require('onenord').setup {
-        theme = 'dark',
-        disable = {
-          background = true, -- Disable setting the background color
-          float_background = true, -- Disable setting the background color for floating windows
-          cursorline = false, -- Disable the cursorlinec
-          eob_lines = true, -- Hide the end-of-buffer lines
-        },
-      }
-      vim.cmd.colorscheme 'onenord'
-    end,
-  },
-
   -- Lualine statusline
   {
     'nvim-lualine/lualine.nvim',
@@ -105,7 +86,7 @@ return {
     opts = {
       options = {
         icons_enabled = true,
-        theme = 'nord',
+        theme = 'auto',
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
         globalstatus = false,

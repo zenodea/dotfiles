@@ -35,15 +35,15 @@
     "spacing": 8
   },
     "pulseaudio": {
-    "format": "{icon}  {volume}%",
-    "format-bluetooth": "{icon}  {volume}%",
+    "format": "{icon} {volume}%",
+    "format-bluetooth": "{icon} {volume}%",
     "format-muted": "",
     "format-icons": {
       "alsa_output.pci-0000_00_1f.3.analog-stereo": "",
       "alsa_output.pci-0000_00_1f.3.analog-stereo-muted": "",
       "headphones": "",
-      "handsfree": "",
-      "headset": "",
+      "handsfree": "",
+      "headset": "",
       "phone": "",
       "phone-muted": "",
       "portable": "",
@@ -57,13 +57,14 @@
     "on-click": "pavucontrol"
   },
     "bluetooth": {
-    "format": " {status}",
-    "format-connected": " {device_alias}",
-    "format-connected-battery": " {device_alias} {device_battery_percentage}%",
+    "format": "",
+    "format-connected": " {status}",
+    "format-connected-battery": " {status}",
     "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
     "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
     "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%",
+    "on-click": "blueman-manager",
   },
     "power-profiles-daemon": {
     "format": "{icon}",
@@ -144,16 +145,15 @@
   "custom/mullvad": {
     "exec": "$HOME/.config/waybar/scripts/mullvad.sh",
     "return-type": "json",
-    "interval": 2,
+    "interval": 1,
     "on-click": "$HOME/.config/waybar/scripts/mullvad.sh toggle",
     "tooltip": true
   },
   "custom/power": {
     "format": "{icon}",
-    "format-icons": "  ", //  
+    "format-icons": "  ", //  
     "exec-on-event": "true",
     "on-click": "$HOME/scripts/rofi-power",
     "tooltip-format": "Power Menu",
   },
 }
-

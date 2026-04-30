@@ -1,0 +1,108 @@
+* {
+    bg:      #${BG};
+    surface: #${SURFACE};
+    brd:     #${BORDER};
+    fg:      #${FG};
+    fg2:     #${FG_BRIGHT};
+    accent:  #${ACCENT};
+    blue:    #${BLUE};
+    red:     #${RED};
+
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+window {
+    background-color: rgba(${BG_RGB}, 0.7);
+    border:           2px solid;
+    border-color:     @brd;
+    border-radius:    0px;
+    padding:          0px;
+    width:            540px;
+}
+
+mainbox {
+    background-color: transparent;
+    children:         [ inputbar, listview ];
+    spacing:          0px;
+}
+
+inputbar {
+    background-color: rgba(${SURFACE_RGB}, 0.65);
+    border-radius:    0px;
+    padding:          12px 16px;
+    border:           0px 0px 2px 0px;
+    border-color:     @brd;
+    children:         [ prompt, separator, entry ];
+}
+
+separator {
+    background-color: transparent;
+    text-color:       @brd;
+    expand:           false;
+    str:              "│";
+    padding:          0px 6px;
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @blue;
+    padding-right:    10px;
+    font:             "JetBrainsMono Nerd Font Bold 13";
+}
+
+entry {
+    background-color:  transparent;
+    text-color:        @fg2;
+    placeholder-color: @brd;
+    placeholder:       "Search apps...";
+    font:              "JetBrainsMono Nerd Font 13";
+}
+
+listview {
+    background-color: transparent;
+    scrollbar:        false;
+    spacing:          0px;
+    lines:            9;
+    padding:          6px 0px;
+}
+
+element {
+    background-color: transparent;
+    border-radius:    0px;
+    padding:          9px 16px;
+    spacing:          12px;
+    children:         [ element-icon, element-text ];
+    orientation:      horizontal;
+}
+
+element.selected.normal {
+    background-color: rgba(${BG_ALT_RGB}, 0.35);
+}
+
+element.selected.normal element-text {
+    text-color: @accent;
+}
+
+element.alternate.normal {
+    background-color: transparent;
+}
+
+element.normal.urgent,
+element.alternate.urgent,
+element.selected.urgent {
+    background-color: @red;
+}
+
+element-icon {
+    background-color: transparent;
+    size:             1.4em;
+    vertical-align:   0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+    font:             "JetBrainsMono Nerd Font 13";
+}

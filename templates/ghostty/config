@@ -1,0 +1,8 @@
+theme = ${GHOSTTY_THEME}
+background-opacity = 0.7
+background=#${BG}
+background-blur-radius = 0
+window-padding-y = 6,0
+keybind = global:option+enter=new_window
+confirm-close-surface = false
+keybind = shift+enter=text:\x1b\r

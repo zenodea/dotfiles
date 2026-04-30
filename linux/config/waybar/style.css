@@ -13,8 +13,8 @@
 
 /* The whole bar */
 #waybar {
-  background: rgba(46, 52, 64, 0.8); /* Nord 0 (Polar Night) with transparency */
-  color: #D8DEE9; /* Nord 1 (Snow Storm) */
+  background: rgba(26, 27, 38, 0.8);
+  color: #c0caf5;
   font-family: JetBrainsMono Nerd Font;
   font-size: 15px;
 }
@@ -43,7 +43,7 @@
   margin-left: 0px;
   margin-right: 0px;
   border-radius: 0px; /* Less rounded corners */
-  background-color: rgba(68, 76, 88, 0.8); /* Lighter Nord 2 (Frost) with transparency */
+  background-color: rgba(36, 40, 59, 0.8);
 }
 
 /* Module-specific styles */
@@ -67,18 +67,6 @@
   font-weight: bold;
 }
 
-#custom-mullvad.connected {
-  color: #A3BE8C; /* Nord green */
-}
-
-#custom-mullvad.connecting {
-  color: #EBCB8B; /* Nord yellow */
-}
-
-#custom-mullvad.disconnected {
-  color: #BF616A; /* Nord red */
-}
-
 /* https://github.com/Alexays/Waybar/wiki/FAQ#the-workspace-buttons-have-a-strange-hover-effect */
 button:hover {
   background: inherit;
@@ -86,7 +74,7 @@ button:hover {
 }
 
 #workspaces button {
-  color: #D8DEE9; /* Nord 1 (Snow Storm) */
+  color: #c0caf5;
   padding-left: 10px;
   padding-right: 10px;
 }
@@ -96,8 +84,6 @@ button:hover {
 }
 
 #workspaces button.active {
-  border-color: #A3BE8C; /* Nord 6 (Frost - light green) */
-  background-color: #4C566A; /* Nord 2 (Frost) */
+  border-color: #9ece6a;
+  background-color: #414868;
 }
-
-
