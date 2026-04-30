@@ -13,8 +13,8 @@
 
 /* The whole bar */
 #waybar {
-  background: rgba(26, 27, 38, 0.8);
-  color: #c0caf5;
+  background: rgba(${BG_RGB}, 0.8);
+  color: #${FG};
   font-family: JetBrainsMono Nerd Font;
   font-size: 15px;
 }
@@ -43,7 +43,7 @@
   margin-left: 0px;
   margin-right: 0px;
   border-radius: 0px; /* Less rounded corners */
-  background-color: rgba(36, 40, 59, 0.8);
+  background-color: rgba(${BG_ALT_RGB}, 0.8);
 }
 
 /* Module-specific styles */
@@ -74,7 +74,7 @@ button:hover {
 }
 
 #workspaces button {
-  color: #c0caf5;
+  color: #${FG};
   padding-left: 10px;
   padding-right: 10px;
 }
@@ -84,6 +84,6 @@ button:hover {
 }
 
 #workspaces button.active {
-  border-color: #9ece6a;
-  background-color: #414868;
+  border-color: #${GREEN};
+  background-color: #${BORDER};
 }

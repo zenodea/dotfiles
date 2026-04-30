@@ -1,15 +1,19 @@
 * {
     background-color: transparent;
-    text-color:       rgba(192, 202, 245, 0.55);
+    text-color:       rgba(${FG_RGB}, 0.55);
     font:             "JetBrainsMono Nerd Font 15";
 }
 
 window {
-    background-color: rgba(26, 27, 38, 0.7);
+    background-color: rgba(${BG_RGB}, 0.7);
     border:           2px solid;
-    border-color:     #414868;
+    border-color:     #${ACCENT};
     padding:          12px;
     width:            240px;
+    location:         center;
+    anchor:           west;
+    x-offset:         130px;
+    y-offset:         0px;
 }
 
 mainbox {
@@ -26,15 +30,15 @@ listview {
 
 element {
     background-color: transparent;
-    text-color:       rgba(192, 202, 245, 0.55);
+    text-color:       rgba(${FG_RGB}, 0.55);
     padding:          13px 20px;
     children:         [ element-text ];
 }
 
 element selected.normal {
-    background-color: rgba(125, 207, 255, 0.12);
+    background-color: rgba(${ACCENT_RGB}, 0.12);
     border:           1px;
-    border-color:     rgba(125, 207, 255, 0.55);
+    border-color:     rgba(${ACCENT_RGB}, 0.55);
 }
 
 element-text {
@@ -43,5 +47,5 @@ element-text {
 }
 
 element-text selected.normal {
-    text-color: #7dcfff;
+    text-color: #${ACCENT};
 }

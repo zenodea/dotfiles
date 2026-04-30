@@ -1,26 +1,76 @@
 #!/bin/bash
 
+DOTFILES_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../.." && pwd)"
+SWITCH_THEME="$DOTFILES_DIR/switch-theme.sh"
+THEMES_DIR="$DOTFILES_DIR/themes"
+
+THEMES="󰔯  Themes"
 LOCK="󰌾  Lock"
 SUSPEND="󰤄  Suspend"
 LOGOUT="󰍃  Logout"
 REBOOT="󰑓  Reboot"
 SHUTDOWN="󰐥  Shutdown"
 
-chosen=$(printf "%s\n" "$LOCK" "$SUSPEND" "$LOGOUT" "$REBOOT" "$SHUTDOWN" | rofi -dmenu \
-    -p "" \
-    -hover-select \
-    -me-select-entry MousePrimary \
-    -me-accept-entry MouseDPrimary \
-    -kb-row-down "Down,Control+n,j" \
-    -kb-row-up "Up,Control+p,k" \
-    -kb-accept-entry "Control+j,Control+m,Return,KP_Enter,l" \
-    -kb-cancel "Escape,Control+g,Control+bracketleft,h" \
-    -theme "$HOME/.local/share/rofi/themes/power-menu.rasi")
+POWER_MENU_ARGS=(
+    -p ""
+    -hover-select
+    -me-select-entry MousePrimary
+    -me-accept-entry MouseDPrimary
+    -kb-row-down "Down,Control+n,j"
+    -kb-row-up "Up,Control+p,k"
+    -kb-accept-entry "Control+j,Control+m,Return,KP_Enter,l"
+    -kb-cancel "Escape,Control+g,Control+bracketleft,h"
+    -theme "$HOME/.local/share/rofi/themes/power-menu.rasi"
+)
+
+# Build list of theme names in sorted order
+mapfile -t theme_names < <(
+    for f in "$THEMES_DIR"/*.sh; do basename "$f" .sh; done | sort
+)
+
+build_display_list() {
+    local current="$1"
+    for name in "${theme_names[@]}"; do
+        if [[ "$name" == "$current" ]]; then
+            echo "●  $name"
+        else
+            echo "   $name"
+        fi
+    done
+}
+
+show_theme_picker() {
+    local current
+    current="$(cat "$DOTFILES_DIR/.current-theme" 2>/dev/null)"
+
+    local idx
+    idx=$(build_display_list "$current" | rofi -dmenu \
+        -format i \
+        -p "" \
+        -hover-select \
+        -me-select-entry MousePrimary \
+        -me-accept-entry MouseDPrimary \
+        -kb-row-down "Down,Control+n,j" \
+        -kb-row-up "Up,Control+p,k" \
+        -kb-accept-entry "Control+j,Control+m,Return,KP_Enter,l" \
+        -kb-cancel "Escape,Control+g,Control+bracketleft,h" \
+        -theme "$HOME/.local/share/rofi/themes/theme-picker.rasi")
+
+    [[ -z "$idx" ]] && return
+
+    local theme="${theme_names[$idx]}"
+    [[ -n "$theme" ]] && "$SWITCH_THEME" "$theme"
+}
+
+# Main power menu
+chosen=$(printf "%s\n" "$THEMES" "$LOCK" "$SUSPEND" "$LOGOUT" "$REBOOT" "$SHUTDOWN" | \
+    rofi -dmenu "${POWER_MENU_ARGS[@]}")
 
 case "$chosen" in
+    "$THEMES")   show_theme_picker ;;
     "$LOCK")     hyprlock ;;
     "$SUSPEND")  systemctl suspend ;;
     "$LOGOUT")   hyprctl dispatch exit ;;
     "$REBOOT")   systemctl reboot ;;
-    "$SHUTDOWN")  systemctl poweroff ;;
+    "$SHUTDOWN") systemctl poweroff ;;
 esac

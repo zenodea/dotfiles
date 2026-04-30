@@ -7,9 +7,13 @@
 window {
     background-color: rgba(26, 27, 38, 0.7);
     border:           2px solid;
-    border-color:     #414868;
+    border-color:     #7dcfff;
     padding:          12px;
     width:            240px;
+    location:         center;
+    anchor:           west;
+    x-offset:         130px;
+    y-offset:         0px;
 }
 
 mainbox {
