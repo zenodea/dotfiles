@@ -27,6 +27,7 @@ GREEN_RGB="166, 227, 161"
 NVIM_PLUGIN="catppuccin/nvim"
 NVIM_COLORSCHEME="catppuccin-mocha"
 
-ZED_THEME="Catppuccin Mocha"
+ZED_THEME="Catppuccin Macchiato (Blur)"
 GHOSTTY_THEME="Catppuccin Mocha"
 VIFM_COLORSCHEME="Default"
+WALLPAPER=""
