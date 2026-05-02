@@ -27,6 +27,7 @@ GREEN_RGB="163, 190, 140"
 NVIM_PLUGIN="rmehri01/onenord.nvim"
 NVIM_COLORSCHEME="onenord"
 
-ZED_THEME="Nord"
+ZED_THEME="Nordfox - blurred"
 GHOSTTY_THEME="Nord"
 VIFM_COLORSCHEME="Default"
+WALLPAPER=""

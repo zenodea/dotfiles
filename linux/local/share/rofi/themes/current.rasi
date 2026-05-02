@@ -1,19 +1,19 @@
 * {
-    bg:      #1a1b26;
-    surface: #1f2335;
-    brd:     #414868;
-    fg:      #c0caf5;
-    fg2:     #cfc9c2;
-    accent:  #7dcfff;
-    blue:    #7aa2f7;
-    red:     #f7768e;
+    bg:      #1e1e2e;
+    surface: #313244;
+    brd:     #585b70;
+    fg:      #cdd6f4;
+    fg2:     #bac2de;
+    accent:  #89dceb;
+    blue:    #89b4fa;
+    red:     #f38ba8;
 
     background-color: transparent;
     text-color:       @fg;
 }
 
 window {
-    background-color: rgba(26, 27, 38, 0.7);
+    background-color: rgba(30, 30, 46, 0.7);
     border:           2px solid;
     border-color:     @brd;
     border-radius:    0px;
@@ -28,7 +28,7 @@ mainbox {
 }
 
 inputbar {
-    background-color: rgba(31, 35, 53, 0.65);
+    background-color: rgba(49, 50, 68, 0.65);
     border-radius:    0px;
     padding:          12px 16px;
     border:           0px 0px 2px 0px;
@@ -77,7 +77,7 @@ element {
 }
 
 element.selected.normal {
-    background-color: rgba(36, 40, 59, 0.35);
+    background-color: rgba(69, 71, 90, 0.35);
 }
 
 element.selected.normal element-text {

@@ -265,7 +265,7 @@
   "buffer_font_family": "Waseem",
   "ui_font_family": "BlexMono Nerd Font Mono",
   "autosave": "on_focus_change",
-  "theme": "Tokyo Night",
+  "theme": "Catppuccin Macchiato (Blur)",
   "search": {
     "whole_word": false,
     "case_sensitive": true,

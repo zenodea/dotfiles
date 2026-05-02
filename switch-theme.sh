@@ -41,8 +41,10 @@ set -a
 source "$THEME_FILE"
 set +a
 
+WALLPAPER_PATH="$DOTFILES/Wallpapers/$WALLPAPER"
+
 # Only substitute theme variables, not any $variable references inside config files
-VARS='${BG}${SURFACE}${BG_ALT}${BORDER}${FG}${FG_BRIGHT}${ACCENT}${BLUE}${RED}${GREEN}${YELLOW}${ORANGE}${PURPLE}${FG_RGB}${BG_RGB}${SURFACE_RGB}${BG_ALT_RGB}${ACCENT_RGB}${BLUE_RGB}${RED_RGB}${GREEN_RGB}${NVIM_PLUGIN}${NVIM_COLORSCHEME}${ZED_THEME}${GHOSTTY_THEME}${VIFM_COLORSCHEME}'
+VARS='${BG}${SURFACE}${BG_ALT}${BORDER}${FG}${FG_BRIGHT}${ACCENT}${BLUE}${RED}${GREEN}${YELLOW}${ORANGE}${PURPLE}${FG_RGB}${BG_RGB}${SURFACE_RGB}${BG_ALT_RGB}${ACCENT_RGB}${BLUE_RGB}${RED_RGB}${GREEN_RGB}${NVIM_PLUGIN}${NVIM_COLORSCHEME}${ZED_THEME}${GHOSTTY_THEME}${VIFM_COLORSCHEME}${WALLPAPER_PATH}'
 
 generate() {
     local template="$1"
@@ -114,6 +116,16 @@ if [[ "$(uname -s)" == "Linux" ]]; then
     if command -v hyprctl &> /dev/null && hyprctl monitors &> /dev/null; then
         hyprctl reload
         echo "  reloaded: hyprland"
+    fi
+
+    if pgrep -x ghostty > /dev/null 2>&1; then
+        pkill -SIGUSR2 ghostty
+        echo "  reloaded: ghostty"
+    fi
+
+    if [[ -n "$WALLPAPER" ]] && pgrep -x awww-daemon > /dev/null 2>&1; then
+        awww img "$DOTFILES/Wallpapers/$WALLPAPER" --transition-type center
+        echo "  wallpaper: $WALLPAPER"
     fi
 fi
 

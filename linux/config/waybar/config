@@ -17,9 +17,10 @@
     "power-profiles-daemon",
     "pulseaudio",
     "backlight",
+    "custom/net-graph",
     "bluetooth",
-    "network",
     "custom/mullvad",
+    "network",
     "battery",
     "custom/power"
   ],
@@ -50,7 +51,7 @@
       "car": "",
       "default": [
         "",
-        ""
+        " "
       ]
     },
     "scroll-step": 1,
@@ -58,8 +59,8 @@
   },
     "bluetooth": {
     "format": "",
-    "format-connected": " {status}",
-    "format-connected-battery": " {status}",
+    "format-connected": "",
+    "format-connected-battery": " ",
     "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
     "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
@@ -78,16 +79,21 @@
     }
   },
   "network": {
-    // "interface": "wlp2*", // (Optional) To force the use of this interface
     "interval": 1,
-    "format-wifi": " {bandwidthTotalBytes:>2}", //({essid} {signalStrength}%)
-    "format-ethernet": " {bandwidthTotalBytes:>2}",
-    "tooltip-format-ethernet": "󰈀 {ipaddr}",
+    "format-wifi": " ", //({essid} {signalStrength}%)
+    "format-ethernet": " ",
+    "tooltip-format-ethernet": "󰈀 ",
     "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
     "tooltip-format": "󰤯  {ifname} via {gwaddr}",
     "format-linked": "󰀦 {ifname} (No IP)",
     "format-disconnected": "󰀦 Disconnected", //Disconnected ⚠
-    "format-alt": "{ifname}: {gwaddr}/{cidr}",
+    "on-click": "ghostty -e nmtui",
+  },
+  "custom/net-graph": {
+    "exec": "$HOME/.config/waybar/scripts/net-graph.sh",
+    "return-type": "json",
+    "interval": 1,
+    "tooltip": true
   },
   "backlight": {
     // "device": "acpi_video1",

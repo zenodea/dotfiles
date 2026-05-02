@@ -32,6 +32,7 @@
 #tray,
 #custom-power,
 #custom-mullvad,
+#custom-net-graph,
 #language,
 #bluetooth,
 #backlight,
@@ -52,10 +53,9 @@
   font-weight: bold;
 }
 
-#network {
-}
-
-#network.disconnected {
+#custom-net-graph {
+  font-size: 9px;
+  letter-spacing: -3px;
 }
 
 
