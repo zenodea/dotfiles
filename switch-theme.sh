@@ -101,6 +101,38 @@ generate "$TEMPLATES_DIR/sketchybar/sketchybarrc" "$DOTFILES/mac/sketchybar/sket
 generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/local/share/rofi/themes/power-menu.rasi"
 generate "$TEMPLATES_DIR/rofi/theme-picker.rasi" "$DOTFILES/linux/local/share/rofi/themes/theme-picker.rasi"
 
+# Firefox userChrome.css
+FIREFOX_PROFILE_DIR=""
+if [[ -f "$HOME/.mozilla/firefox/profiles.ini" ]]; then
+    _ff_rel=$(awk '/^\[Install/{found=1; next} found && /^Default=/{sub(/^Default=/, ""); print; exit}' \
+        "$HOME/.mozilla/firefox/profiles.ini" 2>/dev/null)
+    if [[ -n "$_ff_rel" ]]; then
+        FIREFOX_PROFILE_DIR="$HOME/.mozilla/firefox/$_ff_rel"
+    fi
+fi
+if [[ -n "$FIREFOX_PROFILE_DIR" && -d "$FIREFOX_PROFILE_DIR" ]]; then
+    mkdir -p "$FIREFOX_PROFILE_DIR/chrome"
+    generate "$TEMPLATES_DIR/firefox/userChrome.css"   "$FIREFOX_PROFILE_DIR/chrome/userChrome.css"
+    generate "$TEMPLATES_DIR/firefox/userContent.css"  "$FIREFOX_PROFILE_DIR/chrome/userContent.css"
+    # Ensure required prefs are set: userChrome.css + force dark mode
+    _userjs="$FIREFOX_PROFILE_DIR/user.js"
+    _set_pref() {
+        local key="$1" val="$2"
+        if grep -q "\"$key\"" "$_userjs" 2>/dev/null; then
+            # Replace existing line in place
+            sed -i "s|user_pref(\"$key\",.*);|user_pref(\"$key\", $val);|" "$_userjs"
+        else
+            echo "user_pref(\"$key\", $val);" >> "$_userjs"
+        fi
+    }
+    _set_pref "toolkit.legacyUserProfileCustomizations.stylesheets" "true"
+    _set_pref "ui.systemUsesDarkTheme"                              "1"
+    _set_pref "layout.css.prefers-color-scheme.content-override"    "0"
+    _set_pref "browser.theme.content-theme"                         "0"
+    _set_pref "browser.theme.toolbar-theme"                         "0"
+    echo "  wrote: user.js (userChrome + dark mode prefs)"
+fi
+
 # Save current theme name
 echo "$THEME" > "$DOTFILES/.current-theme"
 
@@ -121,6 +153,13 @@ if [[ "$(uname -s)" == "Linux" ]]; then
     if pgrep -x ghostty > /dev/null 2>&1; then
         pkill -SIGUSR2 ghostty
         echo "  reloaded: ghostty"
+    fi
+
+    if pgrep -x firefox > /dev/null 2>&1; then
+        pkill -x firefox
+        sleep 1
+        firefox &>/dev/null &
+        echo "  restarted: firefox"
     fi
 
     if [[ -n "$WALLPAPER" ]] && pgrep -x awww-daemon > /dev/null 2>&1; then
