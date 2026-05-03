@@ -130,7 +130,8 @@ if [[ -n "$FIREFOX_PROFILE_DIR" && -d "$FIREFOX_PROFILE_DIR" ]]; then
     _set_pref "layout.css.prefers-color-scheme.content-override"    "0"
     _set_pref "browser.theme.content-theme"                         "0"
     _set_pref "browser.theme.toolbar-theme"                         "0"
-    echo "  wrote: user.js (userChrome + dark mode prefs)"
+    _set_pref "browser.startup.page"                                "3"
+    echo "  wrote: user.js (userChrome + dark mode + session restore)"
 fi
 
 # Save current theme name
