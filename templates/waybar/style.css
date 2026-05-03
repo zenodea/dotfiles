@@ -11,15 +11,15 @@
   padding: 0;
 }
 
-/* The whole bar */
+/* The whole bar — single unified background */
 #waybar {
-  background: rgba(${BG_RGB}, 0.8);
+  background-color: rgba(${BG_RGB}, 0.6);
   color: #${FG};
   font-family: JetBrainsMono Nerd Font;
   font-size: 15px;
 }
 
-/* Each module */
+/* Each module — transparent so the bar background shows through */
 #battery,
 #clock,
 #cpu,
@@ -43,8 +43,7 @@
   padding-right: 10px;
   margin-left: 0px;
   margin-right: 0px;
-  border-radius: 0px; /* Less rounded corners */
-  background-color: rgba(${BG_ALT_RGB}, 0.8);
+  background-color: transparent;
 }
 
 /* Module-specific styles */
@@ -73,17 +72,22 @@ button:hover {
   box-shadow: inherit;
 }
 
+#workspaces {
+  background-color: transparent;
+}
+
 #workspaces button {
   color: #${FG};
   padding-left: 10px;
   padding-right: 10px;
+  background-color: transparent;
 }
 
 #workspaces button:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background-color: rgba(${FG_RGB}, 0.08);
 }
 
 #workspaces button.active {
-  border-color: #${GREEN};
-  background-color: #${BORDER};
+  color: #${ACCENT};
+  background-color: rgba(${ACCENT_RGB}, 0.15);
 }
