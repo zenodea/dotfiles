@@ -28,6 +28,6 @@ NVIM_PLUGIN="EdenEast/nightfox.nvim"
 NVIM_COLORSCHEME="nightfox"
 
 ZED_THEME="Nightfox"
-GHOSTTY_THEME="nightfox"
+GHOSTTY_THEME="Nightfox"
 VIFM_COLORSCHEME="Default"
-WALLPAPER=""
+WALLPAPER="../Wallpapers/wallhaven-1p6gwg.png"
