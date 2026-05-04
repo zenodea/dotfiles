@@ -1,6 +1,8 @@
 configuration {
-    display-drun: " ";
-    display-run:  " ";
+    display-drun:   "Apps";
+    display-run:    "Run";
+    display-window: "Windows";
+    display-calc:   "Calc";
 }
 
 * {
@@ -18,24 +20,23 @@ configuration {
 }
 
 window {
-    background-color: rgba(30, 30, 46, 0.7);
+    background-color: rgba(30, 30, 46, 0.78);
     border:           2px solid;
     border-color:     @accent;
     border-radius:    0px;
     padding:          0px;
-    width:            540px;
 }
 
 mainbox {
     background-color: transparent;
-    children:         [ inputbar, listview ];
+    children:         [ inputbar, listview, mode-switcher ];
     spacing:          0px;
 }
 
 inputbar {
     background-color: rgba(49, 50, 68, 0.65);
-    border-radius:    0px;
-    padding:          10px 12px;
+    border-radius:   0px;
+    padding:          12px 16px;
     border:           0px 0px 2px 0px;
     border-color:     @brd;
     children:         [ prompt, entry ];
@@ -44,8 +45,8 @@ inputbar {
 prompt {
     background-color: transparent;
     text-color:       @accent;
-    padding-right:    8px;
-    font:             "JetBrainsMono Nerd Font Bold 14";
+    padding-right:    10px;
+    font:             "JetBrainsMono Nerd Font Bold 15";
     vertical-align:   0.5;
 }
 
@@ -53,30 +54,33 @@ entry {
     background-color:  transparent;
     text-color:        @fg2;
     placeholder-color: @brd;
-    placeholder:       "Search apps...";
-    font:              "JetBrainsMono Nerd Font 14";
+    placeholder:       "Search...";
+    font:              "JetBrainsMono Nerd Font 15";
     vertical-align:    0.5;
+    margin: 0px 10px;
 }
 
 listview {
     background-color: transparent;
     scrollbar:        false;
     spacing:          0px;
-    lines:            9;
-    padding:          6px 0px;
+    columns:          5;
+    lines:            3;
+    layout:           vertical;
+    fixed-height:     true;
 }
 
 element {
     background-color: transparent;
     border-radius:    0px;
-    padding:          9px 16px;
-    spacing:          12px;
+    padding:          16px;
+    spacing:          6px;
     children:         [ element-icon, element-text ];
-    orientation:      horizontal;
+    orientation:      vertical;
 }
 
 element.selected.normal {
-    background-color: rgba(69, 71, 90, 0.35);
+    background-color: rgba(137, 220, 235, 0.14);
 }
 
 element.selected.normal element-text {
@@ -95,13 +99,37 @@ element.selected.urgent {
 
 element-icon {
     background-color: transparent;
-    size:             1.4em;
-    vertical-align:   0.5;
+    size:             3em;
+    horizontal-align: 0.5;
 }
 
 element-text {
     background-color: transparent;
     text-color:       inherit;
+    horizontal-align: 0.5;
     vertical-align:   0.5;
-    font:             "JetBrainsMono Nerd Font 13";
+    font:             "JetBrainsMono Nerd Font 10";
+}
+
+mode-switcher {
+    enabled:          true;
+    background-color: rgba(49, 50, 68, 0.65);
+    border:           2px 0px 0px 0px;
+    border-color:     @brd;
+    border-radius:    0px 0px 14px 14px;
+    spacing:          4px;
+}
+
+button {
+    background-color: transparent;
+    text-color:       rgba(205, 214, 244, 0.55);
+    padding:          8px 14px;
+    border-radius:    0px;
+    horizontal-align: 0.5;
+    font:             "JetBrainsMono Nerd Font 12";
+}
+
+button selected {
+    background-color: rgba(137, 220, 235, 0.14);
+    text-color:       @accent;
 }
