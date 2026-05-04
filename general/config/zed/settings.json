@@ -296,6 +296,7 @@
     "panel.focused_border": "#89dceb",
     "status_bar.background": "#1e1e2ecc",
     "title_bar.background": "#1e1e2ecc",
+    "title_bar.inactive_background": "#1e1e2ecc",
     "toolbar.background": "#45475a26",
     "terminal.background": "#00000000",
     "terminal.foreground": "#cdd6f4",
