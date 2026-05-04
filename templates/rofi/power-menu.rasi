@@ -7,7 +7,7 @@
 window {
     background-color: rgba(${BG_RGB}, 0.7);
     border:           2px solid;
-    border-color:     #${BORDER};
+    border-color:     #${ACCENT};
     padding:          12px;
     width:            240px;
 }
