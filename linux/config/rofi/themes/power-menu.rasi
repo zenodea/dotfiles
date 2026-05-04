@@ -7,7 +7,7 @@
 window {
     background-color: rgba(30, 30, 46, 0.7);
     border:           2px solid;
-    border-color:     #585b70;
+    border-color:     #89dceb;
     padding:          12px;
     width:            240px;
 }

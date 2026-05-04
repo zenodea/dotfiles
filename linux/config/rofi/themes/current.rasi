@@ -1,3 +1,8 @@
+configuration {
+    display-drun: " ";
+    display-run:  " ";
+}
+
 * {
     bg:      #1e1e2e;
     surface: #313244;
@@ -15,7 +20,7 @@
 window {
     background-color: rgba(30, 30, 46, 0.7);
     border:           2px solid;
-    border-color:     @brd;
+    border-color:     @accent;
     border-radius:    0px;
     padding:          0px;
     width:            540px;
@@ -30,25 +35,18 @@ mainbox {
 inputbar {
     background-color: rgba(49, 50, 68, 0.65);
     border-radius:    0px;
-    padding:          12px 16px;
+    padding:          10px 12px;
     border:           0px 0px 2px 0px;
     border-color:     @brd;
-    children:         [ prompt, separator, entry ];
-}
-
-separator {
-    background-color: transparent;
-    text-color:       @brd;
-    expand:           false;
-    str:              "│";
-    padding:          0px 6px;
+    children:         [ prompt, entry ];
 }
 
 prompt {
     background-color: transparent;
-    text-color:       @blue;
-    padding-right:    10px;
-    font:             "JetBrainsMono Nerd Font Bold 13";
+    text-color:       @accent;
+    padding-right:    8px;
+    font:             "JetBrainsMono Nerd Font Bold 14";
+    vertical-align:   0.5;
 }
 
 entry {
@@ -56,7 +54,8 @@ entry {
     text-color:        @fg2;
     placeholder-color: @brd;
     placeholder:       "Search apps...";
-    font:              "JetBrainsMono Nerd Font 13";
+    font:              "JetBrainsMono Nerd Font 14";
+    vertical-align:    0.5;
 }
 
 listview {
