@@ -1,0 +1,5 @@
+WRN 2026-05-04T09:42:11.115 ui.23749   tui_handle_term_mode:239: TUI: terminal mode 69 detected, state 2
+WRN 2026-05-04T09:42:11.115 ui.23749   tui_handle_term_mode:239: TUI: terminal mode 2026 detected, state 2
+WRN 2026-05-04T09:42:11.115 ui.23749   tui_handle_term_mode:239: TUI: terminal mode 2027 detected, state 1
+WRN 2026-05-04T09:42:11.115 ui.23749   tui_handle_term_mode:239: TUI: terminal mode 2031 detected, state 2
+WRN 2026-05-04T09:42:11.115 ui.23749   tui_handle_term_mode:239: TUI: terminal mode 2048 detected, state 2

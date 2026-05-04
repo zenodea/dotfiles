@@ -50,7 +50,10 @@ link_folder() {
     for src in "$folder"/[^.]*; do
         [ -e "$src" ] || continue
         local name="$(basename "$src")"
-        [ "$name" = "config" ] && continue
+        case "$name" in
+            config|scripts|local) continue ;;
+            *.sh) continue ;;
+        esac
         link "$src" "$HOME/.$name"
     done
 

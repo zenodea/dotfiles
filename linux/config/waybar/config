@@ -17,10 +17,10 @@
     "power-profiles-daemon",
     "pulseaudio",
     "backlight",
-    "custom/net-graph",
     "bluetooth",
     "custom/mullvad",
     "network",
+    "custom/net-graph",
     "battery",
     "custom/power"
   ],
