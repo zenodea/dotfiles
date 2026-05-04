@@ -28,6 +28,6 @@ NVIM_PLUGIN="sainnhe/sonokai"
 NVIM_COLORSCHEME="sonokai"
 
 ZED_THEME="Sonokai"
-GHOSTTY_THEME="Sonokai Default"
+GHOSTTY_THEME="Sonokai"
 VIFM_COLORSCHEME="Default"
-WALLPAPER=""
+WALLPAPER="../Wallpapers/wallhaven-6d8p9w.png"

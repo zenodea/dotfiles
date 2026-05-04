@@ -80,12 +80,6 @@ generate "$TEMPLATES_DIR/zed/settings.json"     "$DOTFILES/general/config/zed/se
 # Ghostty — write directly to live config (not in dotfiles install)
 generate "$TEMPLATES_DIR/ghostty/config"        "$HOME/.config/ghostty/config"
 
-# GTK — Thunar and other GTK apps (live config, not in dotfiles install)
-mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
-generate "$TEMPLATES_DIR/gtk/gtk.css"           "$HOME/.config/gtk-3.0/gtk.css"
-generate "$TEMPLATES_DIR/gtk/gtk.css"           "$HOME/.config/gtk-4.0/gtk.css"
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
-
 # vifm colorscheme include
 generate "$TEMPLATES_DIR/vifm/theme.vifm"       "$DOTFILES/linux/config/vifm/theme.vifm"
 
@@ -152,11 +146,6 @@ if [[ "$(uname -s)" == "Linux" ]]; then
     if pgrep -x ghostty > /dev/null 2>&1; then
         pkill -SIGUSR2 ghostty
         echo "  reloaded: ghostty"
-    fi
-
-    if pgrep -x Thunar > /dev/null 2>&1; then
-        thunar -q 2>/dev/null || true
-        echo "  reloaded: thunar (daemon quit; reopen to see new theme)"
     fi
 
     if pgrep -x firefox > /dev/null 2>&1; then
