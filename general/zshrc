@@ -103,3 +103,4 @@ export PATH=$HOME/.local/lib/node_modules/.bin:$PATH
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 export PATH="$HOME/.local/bin:$PATH"
+export NVIM_LOG_FILE="$HOME/.local/state/nvim/log"
