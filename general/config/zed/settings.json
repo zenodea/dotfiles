@@ -239,6 +239,7 @@
   "file_scan_inclusions": [".env"],
   // Move all panel to the right
   "project_panel": {
+    "sticky_scroll": false,
     "hide_root": false,
     "button": true,
     "dock": "left",

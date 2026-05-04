@@ -1,4 +1,4 @@
-@theme "~/.local/share/rofi/themes/current.rasi"
+@theme "~/.config/rofi/themes/current.rasi"
 
 configuration {
   // other config options

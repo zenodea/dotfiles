@@ -20,7 +20,7 @@ POWER_MENU_ARGS=(
     -kb-row-up "Up,Control+p,k"
     -kb-accept-entry "Control+j,Control+m,Return,KP_Enter,l"
     -kb-cancel "Escape,Control+g,Control+bracketleft,h"
-    -theme "$HOME/.local/share/rofi/themes/power-menu.rasi"
+    -theme "$HOME/.config/rofi/themes/power-menu.rasi"
 )
 
 # Build list of theme names in sorted order
@@ -54,7 +54,7 @@ show_theme_picker() {
         -kb-row-up "Up,Control+p,k" \
         -kb-accept-entry "Control+j,Control+m,Return,KP_Enter,l" \
         -kb-cancel "Escape,Control+g,Control+bracketleft,h" \
-        -theme "$HOME/.local/share/rofi/themes/theme-picker.rasi")
+        -theme "$HOME/.config/rofi/themes/theme-picker.rasi")
 
     [[ -z "$idx" ]] && return
 

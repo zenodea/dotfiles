@@ -66,24 +66,16 @@ generate "$TEMPLATES_DIR/waybar/style.css"      "$DOTFILES/linux/config/waybar/s
 generate "$TEMPLATES_DIR/fuzzel/fuzzel.ini"     "$DOTFILES/linux/config/fuzzel/fuzzel.ini"
 
 # Rofi
-generate "$TEMPLATES_DIR/rofi/theme.rasi"       "$DOTFILES/linux/local/share/rofi/themes/current.rasi"
+generate "$TEMPLATES_DIR/rofi/theme.rasi"       "$DOTFILES/linux/config/rofi/themes/current.rasi"
 
 # macOS Sketchybar
 generate "$TEMPLATES_DIR/sketchybar/colors.sh"  "$DOTFILES/mac/sketchybar/colors.sh"
 
-# Neovim — not symlinked, write to dotfiles path + live config if it exists
-generate "$TEMPLATES_DIR/nvim/colorscheme.lua"  "$DOTFILES/general/nvim/lua/plugins/colorscheme.lua"
-if [[ -d "$HOME/.config/nvim/lua/plugins" ]]; then
-    cp "$DOTFILES/general/nvim/lua/plugins/colorscheme.lua" "$HOME/.config/nvim/lua/plugins/colorscheme.lua"
-    echo "  wrote: ~/.config/nvim/lua/plugins/colorscheme.lua"
-fi
+# Neovim
+generate "$TEMPLATES_DIR/nvim/colorscheme.lua"  "$DOTFILES/general/config/nvim/lua/plugins/colorscheme.lua"
 
-# Zed — write to dotfiles path + live config (Zed on Linux reads ~/.config/zed/)
-generate "$TEMPLATES_DIR/zed/settings.json"     "$DOTFILES/general/zed/settings.json"
-if [[ -f "$HOME/.config/zed/settings.json" ]]; then
-    cp "$DOTFILES/general/zed/settings.json" "$HOME/.config/zed/settings.json"
-    echo "  wrote: ~/.config/zed/settings.json"
-fi
+# Zed
+generate "$TEMPLATES_DIR/zed/settings.json"     "$DOTFILES/general/config/zed/settings.json"
 
 # Ghostty — write directly to live config (not in dotfiles install)
 generate "$TEMPLATES_DIR/ghostty/config"        "$HOME/.config/ghostty/config"
@@ -98,8 +90,8 @@ generate "$TEMPLATES_DIR/borders/bordersrc"     "$DOTFILES/mac/borders/bordersrc
 generate "$TEMPLATES_DIR/sketchybar/sketchybarrc" "$DOTFILES/mac/sketchybar/sketchybarrc"
 
 # Rofi power menu + theme picker
-generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/local/share/rofi/themes/power-menu.rasi"
-generate "$TEMPLATES_DIR/rofi/theme-picker.rasi" "$DOTFILES/linux/local/share/rofi/themes/theme-picker.rasi"
+generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/config/rofi/themes/power-menu.rasi"
+generate "$TEMPLATES_DIR/rofi/theme-picker.rasi" "$DOTFILES/linux/config/rofi/themes/theme-picker.rasi"
 
 # Firefox userChrome.css
 FIREFOX_PROFILE_DIR=""
@@ -164,10 +156,10 @@ if [[ "$(uname -s)" == "Linux" ]]; then
     fi
 
     if [[ -n "$WALLPAPER" ]] && pgrep -x awww-daemon > /dev/null 2>&1; then
-        awww img "$DOTFILES/Wallpapers/$WALLPAPER" --transition-type center
+        awww img "$DOTFILES/Wallpapers/$WALLPAPER" --transition-type wipe --transition-duration 1 --transition-fps 60
         echo "  wallpaper: $WALLPAPER"
     fi
 fi
 
 echo "==> Done. Active theme: $THEME"
-echo "    Restart nvim and run :Lazy sync to install any new colorscheme plugin."
+echo "    Restart nvim to pick up the new palette."
