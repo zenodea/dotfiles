@@ -105,6 +105,14 @@ fi
 
 link_all
 
+# wallpapers/ is a submodule (github.com/zenodea/wallpapers). A plain `git
+# clone` leaves it empty, so check it out before the theme renders — otherwise
+# every theme's wallpaper silently resolves to nothing.
+if [ -f "$DOTFILES/.gitmodules" ] && [ -z "$(ls -A "$DOTFILES/wallpapers" 2> /dev/null)" ]; then
+    echo "==> Fetching wallpapers..."
+    git -C "$DOTFILES" submodule update --init wallpapers
+fi
+
 # The themed configs are gitignored — they're rendered from templates/ — so a
 # fresh clone has none until a theme is applied. Do that now.
 THEME="$(cat "$DOTFILES_DIR/.current-theme" 2>/dev/null || true)"

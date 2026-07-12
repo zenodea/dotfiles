@@ -5,11 +5,14 @@ Personal configs for Linux and macOS, with a live theme system.
 ## Install
 
 ```sh
+git clone --recurse-submodules https://github.com/zenodea/dotfiles_nixless
 ./install.sh
 ```
 
 Symlinks the configs and the `dotfiles` CLI, then renders the active theme.
-Existing files are backed up as `<file>.bak`.
+Existing files are backed up as `<file>.bak`. If you cloned without
+`--recurse-submodules`, `install.sh` checks out the wallpapers submodule for
+you.
 
 ## Layout
 
@@ -23,7 +26,7 @@ apps/<general|mac|linux>/<name>/
 
 home/<general|mac|linux>/    mirrors $HOME (.zshrc, scripts/, …)
 themes/<name>.sh             the palettes
-wallpapers/
+wallpapers/                  submodule → github.com/zenodea/wallpapers
 ```
 
 `general/` applies everywhere, `mac/` and `linux/` only on that OS. Apps with
