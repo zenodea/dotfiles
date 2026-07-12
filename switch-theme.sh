@@ -130,15 +130,29 @@ generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/config/rofi/th
 generate "$TEMPLATES_DIR/rofi/theme-picker.rasi" "$DOTFILES/linux/config/rofi/themes/theme-picker.rasi"
 
 # Firefox userChrome.css
-FIREFOX_PROFILE_DIR=""
+FIREFOX_BASE=""
 if [[ -f "$HOME/.mozilla/firefox/profiles.ini" ]]; then
+    FIREFOX_BASE="$HOME/.mozilla/firefox"
+elif [[ -f "$HOME/Library/Application Support/Firefox/profiles.ini" ]]; then
+    FIREFOX_BASE="$HOME/Library/Application Support/Firefox"
+fi
+FIREFOX_PROFILE_DIR=""
+if [[ -n "$FIREFOX_BASE" ]]; then
     _ff_rel=$(awk '/^\[Install/{found=1; next} found && /^Default=/{sub(/^Default=/, ""); print; exit}' \
-        "$HOME/.mozilla/firefox/profiles.ini" 2>/dev/null)
+        "$FIREFOX_BASE/profiles.ini" 2>/dev/null)
     if [[ -n "$_ff_rel" ]]; then
-        FIREFOX_PROFILE_DIR="$HOME/.mozilla/firefox/$_ff_rel"
+        FIREFOX_PROFILE_DIR="$FIREFOX_BASE/$_ff_rel"
     fi
 fi
+firefox_state() {
+    cat "$FIREFOX_PROFILE_DIR/chrome/userChrome.css" \
+        "$FIREFOX_PROFILE_DIR/chrome/userContent.css" \
+        "$FIREFOX_PROFILE_DIR/user.js" 2>/dev/null | cksum
+}
+
+FIREFOX_CHANGED=0
 if [[ -n "$FIREFOX_PROFILE_DIR" && -d "$FIREFOX_PROFILE_DIR" ]]; then
+    _ff_before="$(firefox_state)"
     mkdir -p "$FIREFOX_PROFILE_DIR/chrome"
     generate "$TEMPLATES_DIR/firefox/userChrome.css"   "$FIREFOX_PROFILE_DIR/chrome/userChrome.css"
     generate "$TEMPLATES_DIR/firefox/userContent.css"  "$FIREFOX_PROFILE_DIR/chrome/userContent.css"
@@ -147,8 +161,9 @@ if [[ -n "$FIREFOX_PROFILE_DIR" && -d "$FIREFOX_PROFILE_DIR" ]]; then
     _set_pref() {
         local key="$1" val="$2"
         if grep -q "\"$key\"" "$_userjs" 2>/dev/null; then
-            # Replace existing line in place
-            sed -i "s|user_pref(\"$key\",.*);|user_pref(\"$key\", $val);|" "$_userjs"
+            # -i.bak works with both GNU and BSD sed; bare -i doesn't
+            sed -i.bak "s|user_pref(\"$key\",.*);|user_pref(\"$key\", $val);|" "$_userjs"
+            rm -f "$_userjs.bak"
         else
             echo "user_pref(\"$key\", $val);" >> "$_userjs"
         fi
@@ -160,6 +175,9 @@ if [[ -n "$FIREFOX_PROFILE_DIR" && -d "$FIREFOX_PROFILE_DIR" ]]; then
     _set_pref "browser.theme.toolbar-theme"                         "0"
     _set_pref "browser.startup.page"                                "3"
     echo "  wrote: user.js (userChrome + dark mode + session restore)"
+    if [[ "$(firefox_state)" != "$_ff_before" ]]; then
+        FIREFOX_CHANGED=1
+    fi
 fi
 
 # Save current theme name
@@ -184,7 +202,7 @@ if [[ "$(uname -s)" == "Linux" ]]; then
         echo "  reloaded: ghostty"
     fi
 
-    if pgrep -x firefox > /dev/null 2>&1; then
+    if [[ "$FIREFOX_CHANGED" == 1 ]] && pgrep -x firefox > /dev/null 2>&1; then
         pkill -x firefox
         sleep 1
         firefox &>/dev/null &
@@ -207,6 +225,13 @@ elif [[ "$(uname -s)" == "Darwin" ]]; then
     if pgrep -x borders > /dev/null 2>&1; then
         bash "$DOTFILES/mac/config/borders/bordersrc"
         echo "  reloaded: borders"
+    fi
+
+    if [[ "$FIREFOX_CHANGED" == 1 ]] && pgrep -x firefox > /dev/null 2>&1; then
+        pkill -x firefox
+        sleep 1
+        open -a Firefox
+        echo "  restarted: firefox"
     fi
 
     # Use the source file: macOS caches by path, so re-setting the stable
