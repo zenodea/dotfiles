@@ -1,0 +1,366 @@
+#!/usr/bin/env bash
+# dotfiles — CLI entry point for this repo (linked into ~/.local/bin by install.sh)
+set -e
+
+# Resolve symlinks so the repo is found when invoked via ~/.local/bin/dotfiles
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    DIR="$(cd "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+DOTFILES="$(cd "$(dirname "$SOURCE")/.." && pwd)"
+
+WALLPAPERS_DIR="$DOTFILES/Wallpapers"
+
+case "$(uname -s)" in
+    Darwin) PLATFORM="mac"   ;;
+    Linux)  PLATFORM="linux" ;;
+    *)      PLATFORM=""      ;;
+esac
+
+theme_names() {
+    for f in "$DOTFILES/themes"/*.sh; do basename "$f" .sh; done
+}
+
+wallpaper_names() {
+    for f in "$WALLPAPERS_DIR"/*; do
+        [ -f "$f" ] && basename "$f"
+    done
+}
+
+current_theme() {
+    cat "$DOTFILES/.current-theme" 2>/dev/null || true
+}
+
+usage() {
+    cat <<EOF
+Usage: dotfiles <command>
+
+Themes:
+  --theme <name>, -t   Switch theme (regenerates configs, live-reloads apps)
+  --theme              List available themes
+  --pick, -p           Pick a theme interactively (fzf if available)
+  --random, -r         Switch to a random theme
+  --list, -l           List available themes
+
+Wallpaper:
+  --wallpaper <name|random>, -w
+                       Set wallpaper only (no theme change)
+  --wallpaper          List available wallpapers
+
+Maintenance:
+  --update, -u         git pull, then re-apply the current theme
+  --doctor, -d         Check symlinks, dependencies, and config drift
+  --sync               Re-run install.sh (symlink configs)
+  --save [msg]         git add + commit + push the repo
+  --help, -h           Show this help
+EOF
+}
+
+# --- wallpaper -------------------------------------------------------------
+
+set_wallpaper() {
+    local wp="$1"
+    # Keep the stable copy in sync (hyprlock/hyprland configs point at it)
+    cp "$wp" "$HOME/.config/current-wallpaper" 2>/dev/null || true
+    case "$PLATFORM" in
+        linux)
+            if pgrep -x awww-daemon > /dev/null 2>&1; then
+                awww img "$wp" --transition-type wipe --transition-duration 1 --transition-fps 60
+            else
+                echo "Error: awww-daemon is not running" >&2
+                return 1
+            fi
+            ;;
+        mac)
+            osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$wp\""
+            ;;
+        *)
+            echo "Error: unsupported platform" >&2
+            return 1
+            ;;
+    esac
+    echo "wallpaper: $(basename "$wp")"
+}
+
+cmd_wallpaper() {
+    local arg="$1"
+
+    if [[ -z "$arg" ]]; then
+        echo "Usage: dotfiles --wallpaper <name|random>"
+        echo ""
+        echo "Available wallpapers:"
+        wallpaper_names | sed 's/^/  /'
+        return 0
+    fi
+
+    local wp
+    if [[ "$arg" == "random" ]]; then
+        local names=()
+        while IFS= read -r line; do names+=("$line"); done < <(wallpaper_names)
+        if [[ ${#names[@]} -eq 0 ]]; then
+            echo "Error: no wallpapers found in $WALLPAPERS_DIR" >&2
+            return 1
+        fi
+        wp="$WALLPAPERS_DIR/${names[RANDOM % ${#names[@]}]}"
+    elif [[ -f "$WALLPAPERS_DIR/$arg" ]]; then
+        wp="$WALLPAPERS_DIR/$arg"
+    elif [[ -f "$arg" ]]; then
+        wp="$(cd "$(dirname "$arg")" && pwd)/$(basename "$arg")"
+    else
+        echo "Error: wallpaper '$arg' not found (in $WALLPAPERS_DIR or as a path)" >&2
+        return 1
+    fi
+
+    set_wallpaper "$wp"
+    echo "Note: the next theme switch resets the wallpaper to the theme's own."
+}
+
+# --- theme picking ---------------------------------------------------------
+
+cmd_pick() {
+    local theme
+    if command -v fzf > /dev/null 2>&1; then
+        theme="$(theme_names | fzf \
+            --prompt 'theme> ' \
+            --height 40% --reverse \
+            --preview "cat '$DOTFILES/themes/{}.sh'" \
+            --preview-window right:50%)" || true
+    else
+        local names=()
+        while IFS= read -r line; do names+=("$line"); done < <(theme_names)
+        PS3="theme> "
+        select theme in "${names[@]}"; do
+            [[ -n "$theme" ]] && break
+        done
+    fi
+    [[ -z "$theme" ]] && return 0
+    exec "$DOTFILES/switch-theme.sh" "$theme"
+}
+
+cmd_random() {
+    local current names=()
+    current="$(current_theme)"
+    while IFS= read -r line; do
+        [[ "$line" == "$current" ]] || names+=("$line")
+    done < <(theme_names)
+    if [[ ${#names[@]} -eq 0 ]]; then
+        echo "Error: no other themes to pick from" >&2
+        return 1
+    fi
+    exec "$DOTFILES/switch-theme.sh" "${names[RANDOM % ${#names[@]}]}"
+}
+
+# --- maintenance -----------------------------------------------------------
+
+cmd_update() {
+    echo "==> Pulling latest dotfiles..."
+    git -C "$DOTFILES" pull --ff-only
+
+    local theme
+    theme="$(current_theme)"
+    if [[ -n "$theme" ]]; then
+        echo ""
+        "$DOTFILES/switch-theme.sh" "$theme"
+    else
+        echo "No .current-theme found; skipping theme re-apply."
+    fi
+}
+
+cmd_save() {
+    local msg="${1:-chore: update dotfiles}"
+    git -C "$DOTFILES" add -A
+    if git -C "$DOTFILES" diff --cached --quiet; then
+        echo "Nothing to commit."
+    else
+        git -C "$DOTFILES" commit -m "$msg"
+    fi
+    if git -C "$DOTFILES" remote | grep -q .; then
+        git -C "$DOTFILES" push
+    else
+        echo "No git remote configured; skipped push."
+    fi
+}
+
+# --- doctor ----------------------------------------------------------------
+
+OKS=0 WARNS=0 FAILS=0
+C_OK="" C_WARN="" C_ERR="" C_OFF=""
+if [ -t 1 ]; then
+    C_OK=$'\033[32m' C_WARN=$'\033[33m' C_ERR=$'\033[31m' C_OFF=$'\033[0m'
+fi
+
+ok()   { echo "  ${C_OK}✓${C_OFF} $1"; OKS=$((OKS + 1)); }
+warn() { echo "  ${C_WARN}!${C_OFF} $1"; WARNS=$((WARNS + 1)); }
+bad()  { echo "  ${C_ERR}✗${C_OFF} $1"; FAILS=$((FAILS + 1)); }
+
+check_dep() {
+    if command -v "$1" > /dev/null 2>&1; then
+        ok "$1"
+    else
+        warn "$1 not found${2:+ — $2}"
+    fi
+}
+
+check_link() {
+    local src="$1" dst="$2"
+    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+        ok "$dst"
+    elif [ -L "$dst" ]; then
+        warn "$dst → $(readlink "$dst") (expected $src)"
+    elif [ -e "$dst" ]; then
+        warn "$dst exists but is not a symlink"
+    else
+        bad "$dst missing (run: dotfiles --sync)"
+    fi
+}
+
+# Mirrors the link_folder mapping in install.sh, read-only
+check_folder() {
+    local folder="$1"
+    [ -d "$folder" ] || return 0
+
+    for src in "$folder"/[^.]*; do
+        [ -e "$src" ] || continue
+        local name
+        name="$(basename "$src")"
+        case "$name" in
+            config|scripts|local|raycast) continue ;;
+            *.sh) continue ;;
+        esac
+        check_link "$src" "$HOME/.$name"
+    done
+
+    if [ -d "$folder/config" ]; then
+        for src in "$folder/config"/[^.]*; do
+            [ -e "$src" ] || continue
+            check_link "$src" "$HOME/.config/$(basename "$src")"
+        done
+    fi
+
+    if [ -d "$folder/scripts" ]; then
+        check_link "$folder/scripts" "$HOME/scripts"
+    fi
+
+    if [ -d "$folder/local/share" ]; then
+        for src in "$folder/local/share"/[^.]*; do
+            [ -e "$src" ] || continue
+            check_link "$src" "$HOME/.local/share/$(basename "$src")"
+        done
+    fi
+}
+
+cmd_doctor() {
+    echo "==> Platform: $PLATFORM"
+
+    local theme
+    theme="$(current_theme)"
+    if [[ -n "$theme" && -f "$DOTFILES/themes/$theme.sh" ]]; then
+        echo "==> Active theme: $theme"
+    elif [[ -n "$theme" ]]; then
+        echo "==> Active theme: $theme (theme file missing!)"
+    else
+        echo "==> Active theme: none (.current-theme not found)"
+    fi
+
+    echo ""
+    echo "==> Dependencies"
+    check_dep git
+    if command -v envsubst > /dev/null 2>&1; then
+        ok "envsubst"
+    else
+        check_dep perl "needed as envsubst fallback"
+    fi
+    check_dep nvim
+    if [[ "$PLATFORM" == "mac" ]]; then
+        check_dep sketchybar
+        check_dep borders
+        check_dep fzf "used by dotfiles --pick"
+    elif [[ "$PLATFORM" == "linux" ]]; then
+        check_dep hyprctl
+        check_dep waybar
+        check_dep rofi
+        check_dep fuzzel
+        check_dep awww "needed for wallpapers"
+        check_dep vifm
+    fi
+
+    echo ""
+    echo "==> Symlinks"
+    check_folder "$DOTFILES/general"
+    check_folder "$DOTFILES/$PLATFORM"
+    check_link "$DOTFILES/bin/dotfiles" "$HOME/.local/bin/dotfiles"
+
+    echo ""
+    echo "==> Config drift"
+    if [[ "$PLATFORM" == "mac" ]]; then
+        if command -v sketchybar > /dev/null 2>&1 && [ ! -e "$HOME/.config/sketchybar/sketchybarrc" ]; then
+            warn "sketchybar config not linked at ~/.config/sketchybar (run: dotfiles --sync)"
+        fi
+        if command -v borders > /dev/null 2>&1 && [ ! -e "$HOME/.config/borders/bordersrc" ]; then
+            warn "borders config not linked at ~/.config/borders (run: dotfiles --sync)"
+        fi
+    fi
+    if ! git -C "$DOTFILES" diff --quiet || ! git -C "$DOTFILES" diff --cached --quiet; then
+        warn "repo has uncommitted changes (dotfiles --save to commit & push)"
+    fi
+    if [[ $WARNS -eq 0 && $FAILS -eq 0 ]]; then
+        echo "  none"
+    fi
+
+    echo ""
+    echo "==> $OKS ok, $WARNS warnings, $FAILS problems"
+    [[ $FAILS -eq 0 ]]
+}
+
+# --- dispatch ----------------------------------------------------------------
+
+case "${1:-}" in
+    --theme|-t)
+        if [[ -n "${2:-}" ]]; then
+            exec "$DOTFILES/switch-theme.sh" "$2"
+        else
+            exec "$DOTFILES/switch-theme.sh" --list
+        fi
+        ;;
+    --list|-l)
+        exec "$DOTFILES/switch-theme.sh" --list
+        ;;
+    --pick|-p)
+        cmd_pick
+        ;;
+    --random|-r)
+        cmd_random
+        ;;
+    --wallpaper|-w)
+        cmd_wallpaper "${2:-}"
+        ;;
+    --update|-u)
+        cmd_update
+        ;;
+    --doctor|-d)
+        cmd_doctor
+        ;;
+    --sync)
+        exec "$DOTFILES/install.sh"
+        ;;
+    --save)
+        cmd_save "${2:-}"
+        ;;
+    --themes-plain)
+        # Plain lists, one per line (used by zsh completion)
+        theme_names
+        ;;
+    --wallpapers-plain)
+        wallpaper_names
+        ;;
+    --help|-h|"")
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1" >&2
+        usage >&2
+        exit 1
+        ;;
+esac
