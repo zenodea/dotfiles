@@ -30,9 +30,9 @@ wallpapers/                  submodule → github.com/zenodea/wallpapers
 ```
 
 `general/` applies everywhere, `mac/` and `linux/` only on that OS. Apps with
-no `app.sh` (lazygit, yazi) are static config that just gets symlinked; apps
-with no `config/` (ghostty, borders, fuzzel) are wholly generated and render
-straight to `~/.config`.
+no `app.sh` (lazygit, yazi, aerospace) are static config that just gets
+symlinked; apps with no `config/` (ghostty, borders, fuzzel) are wholly
+generated and render straight to `~/.config`.
 
 ## Theme switching
 

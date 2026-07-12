@@ -3,6 +3,32 @@
 source "$HOME/.config/sketchybar/icons.sh"
 source "$HOME/.config/sketchybar/colors.sh"
 
+# pmset's battery line reads:
+#   -InternalBattery-0 (id=…)	51%; discharging; 4:25 remaining present: true
+# The time field is "(no estimate)" while it settles, and absent on AC.
+case "$SENDER" in
+  mouse.entered)
+    BATT_LINE=$(pmset -g batt | tail -1)
+    PCT=$(echo "$BATT_LINE" | grep -Eo '[0-9]+%')
+    STATE=$(echo "$BATT_LINE" | awk -F'; ' '{ print $2 }')
+    REMAINING=$(echo "$BATT_LINE" | awk -F'; ' '{ print $3 }' | sed 's/ present: true//')
+
+    case "$REMAINING" in
+      *:*) REMAINING="${REMAINING% remaining} remaining" ;;
+      *) REMAINING="no estimate yet" ;;
+    esac
+
+    sketchybar --set battery.charge label="${PCT} · ${STATE}" \
+      --set battery.time label="$REMAINING" \
+      --set battery popup.drawing=on
+    exit 0
+    ;;
+  mouse.exited | mouse.exited.global)
+    sketchybar --set battery popup.drawing=off
+    exit 0
+    ;;
+esac
+
 PERCENTAGE=$(pmset -g batt | grep -Eo "\d+%" | cut -d% -f1)
 CHARGING=$(pmset -g batt | grep 'AC Power')
 

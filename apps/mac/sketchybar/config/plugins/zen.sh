@@ -7,8 +7,7 @@ zen_on() {
     --set calendar icon.drawing=off \
     --set front_app drawing=off \
     --set volume_icon drawing=off \
-    --set spotify.anchor drawing=off \
-    --set spotify.play updates=off \
+    --set music drawing=off updates=off \
     --set brew drawing=off
 }
 
@@ -19,8 +18,11 @@ zen_off() {
     --set calendar icon.drawing=on \
     --set front_app drawing=on \
     --set volume_icon drawing=on \
-    --set spotify.play updates=on \
     --set brew drawing=on
+
+  # Not drawing=on: music.sh decides that from whether anything is playing, and
+  # only runs again once updates are back on.
+  sketchybar --set music updates=on
 }
 
 if [ "$1" = "on" ]; then

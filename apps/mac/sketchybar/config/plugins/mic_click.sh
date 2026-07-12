@@ -1,8 +1,13 @@
 #!/bin/bash
 
-MIC_VOLUME=$(osascript -e 'input volume of (get volume settings)')
-
 source "$HOME/.config/sketchybar/icons.sh"
+
+if [ "$BUTTON" = "right" ]; then
+  open "x-apple.systempreferences:com.apple.Sound-Settings.extension"
+  exit 0
+fi
+
+MIC_VOLUME=$(osascript -e 'input volume of (get volume settings)')
 
 if [[ $MIC_VOLUME -eq 0 ]]; then
   osascript -e 'set volume input volume 25'
