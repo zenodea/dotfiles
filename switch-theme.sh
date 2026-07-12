@@ -69,7 +69,7 @@ generate "$TEMPLATES_DIR/fuzzel/fuzzel.ini"     "$DOTFILES/linux/config/fuzzel/f
 generate "$TEMPLATES_DIR/rofi/theme.rasi"       "$DOTFILES/linux/config/rofi/themes/current.rasi"
 
 # macOS Sketchybar
-generate "$TEMPLATES_DIR/sketchybar/colors.sh"  "$DOTFILES/mac/sketchybar/colors.sh"
+generate "$TEMPLATES_DIR/sketchybar/colors.sh"  "$DOTFILES/mac/config/sketchybar/colors.sh"
 
 # Neovim
 generate "$TEMPLATES_DIR/nvim/colorscheme.lua"  "$DOTFILES/general/config/nvim/lua/plugins/colorscheme.lua"
@@ -84,10 +84,10 @@ generate "$TEMPLATES_DIR/ghostty/config"        "$HOME/.config/ghostty/config"
 generate "$TEMPLATES_DIR/vifm/theme.vifm"       "$DOTFILES/linux/config/vifm/theme.vifm"
 
 # macOS borders
-generate "$TEMPLATES_DIR/borders/bordersrc"     "$DOTFILES/mac/borders/bordersrc"
+generate "$TEMPLATES_DIR/borders/bordersrc"     "$DOTFILES/mac/config/borders/bordersrc"
 
 # macOS Sketchybar (rc file)
-generate "$TEMPLATES_DIR/sketchybar/sketchybarrc" "$DOTFILES/mac/sketchybar/sketchybarrc"
+generate "$TEMPLATES_DIR/sketchybar/sketchybarrc" "$DOTFILES/mac/config/sketchybar/sketchybarrc"
 
 # Rofi power menu + theme picker
 generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/config/rofi/themes/power-menu.rasi"
