@@ -125,6 +125,9 @@ generate "$TEMPLATES_DIR/borders/bordersrc"     "$DOTFILES/mac/config/borders/bo
 # macOS Sketchybar (rc file)
 generate "$TEMPLATES_DIR/sketchybar/sketchybarrc" "$DOTFILES/mac/config/sketchybar/sketchybarrc"
 
+# Raycast (imported via deeplink on macOS; JSON kept for Theme Studio import)
+generate "$TEMPLATES_DIR/raycast/theme.json"      "$DOTFILES/mac/raycast/theme.json"
+
 # Rofi power menu + theme picker
 generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/config/rofi/themes/power-menu.rasi"
 generate "$TEMPLATES_DIR/rofi/theme-picker.rasi" "$DOTFILES/linux/config/rofi/themes/theme-picker.rasi"
@@ -301,6 +304,14 @@ elif [[ "$(uname -s)" == "Darwin" ]]; then
         sleep 2
         open -a Obsidian
         echo "  restarted: obsidian"
+    fi
+
+    # Raycast — theme is imported via deeplink (Theme Studio needs one ⏎ to apply).
+    # Color order per ray.so: bg, bgSecondary, text, selection, loader,
+    # red, orange, yellow, green, blue, purple, magenta
+    if [[ -d "/Applications/Raycast.app" || -d "$HOME/Applications/Raycast.app" ]]; then
+        open "raycast://theme?version=1&name=${THEME}&appearance=${THEME_APPEARANCE}&colors=%23${BG},%23${SURFACE},%23${FG},%23${ACCENT},%23${ACCENT},%23${RED},%23${ORANGE},%23${YELLOW},%23${GREEN},%23${BLUE},%23${PURPLE},%23${PURPLE}"
+        echo "  raycast: import opened — press ⏎ in Raycast to apply"
     fi
 fi
 
