@@ -2,6 +2,7 @@
 
 source "$HOME/.config/sketchybar/colors.sh" # Loads all defined colors
 source "$HOME/.config/sketchybar/icons.sh"  # Loads all defined icons
+source "$HOME/.config/sketchybar/styles.sh" # Shared item styling (popup rows)
 
 ITEM_DIR="$HOME/.config/sketchybar/items"     # Directory where the items are configured
 PLUGIN_DIR="$HOME/.config/sketchybar/plugins" # Directory where all the plugin scripts are stored
@@ -9,8 +10,17 @@ PLUGIN_DIR="$HOME/.config/sketchybar/plugins" # Directory where all the plugin s
 FONT="SF Pro" # Needs to have Regular, Bold, Semibold, Heavy and Black variants
 PADDINGS=3    # All paddings use this value (icon, label, background)
 
-# Unload the macOS on screen indicator overlay for volume change
-launchctl unload -F /System/Library/LaunchAgents/com.apple.OSDUIHelper.plist >/dev/null 2>&1 &
+# Suppress the macOS on-screen volume overlay — the bar already shows volume.
+#
+# `launchctl unload` (what this used to do) is a deprecated API that fails with
+# "Input/output error" on current macOS, and `bootout` is refused outright by
+# SIP. `disable` is the one that still takes: it's persistent, so launchd won't
+# spawn the helper on the next volume keypress.
+#
+# Caveat: OSDUIHelper draws *every* HUD, so brightness and caps-lock lose theirs
+# too. Undo with:
+#   launchctl enable gui/$(id -u)/com.apple.OSDUIHelper
+launchctl disable "gui/$(id -u)/com.apple.OSDUIHelper" > /dev/null 2>&1 &
 
 # Setting up the general bar appearance of the bar
 bar=(
@@ -26,7 +36,7 @@ bar=(
   margin=7
   border_width=1
   border_color=0xff${GREEN}
-  blur_radius=60
+  blur_radius=30
   notch_width=0
 )
 
@@ -66,8 +76,6 @@ source "$ITEM_DIR/front_app.sh"
 source "$ITEM_DIR/label.sh"
 source "$ITEM_DIR/music.sh"
 
-# Center
-source "$ITEM_DIR/spotify.sh"
 
 # Right
 source "$ITEM_DIR/calendar.sh"
@@ -77,6 +85,10 @@ source "$ITEM_DIR/battery.sh"
 source "$ITEM_DIR/volume.sh"
 source "$ITEM_DIR/mic.sh"
 source "$ITEM_DIR/network.sh"
+# Right-side items are laid out right to left in the order they're added, so
+# sourcing the graphs last lands them left of the status bracket, in their own
+# box.
+source "$ITEM_DIR/network_graph.sh"
 
 # Forcing all item scripts to run (never do this outside of sketchybarrc)
 sketchybar --update

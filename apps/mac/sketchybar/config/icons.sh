@@ -60,3 +60,11 @@ NET_USB=􀟜          # iPhone USB hotspot connected
 NET_THUNDERBOLT=􀒗  # Thunderbolt bridge connected
 NET_DISCONNECTED=􀙇 # Network disconnected, but Wi-Fi turned on
 NET_OFF=􀙈          # Network disconnected, Wi-Fi turned off
+NET_DOWN=􀄩         # Throughput in
+NET_UP=􀄨           # Throughput out
+
+# Hover popup rows
+NET_IP=􀉪           # IP address
+NET_LOCK=􀎠         # Wi-Fi security
+BATTERY_TIME=􀐫     # Time remaining
+MIC_HINT=􀍟         # Sound settings hint
