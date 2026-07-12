@@ -77,14 +77,29 @@ link_home() {
 
 # Alfred reads workflows straight from its prefs bundle, so a symlink keeps the
 # workflow in the repo and live-editable. Restart Alfred to pick up new ones.
+#
+# The bundle may sit in a synced folder (Dropbox/iCloud), so its path comes from
+# prefs.json rather than the default location — same as apps/mac/alfred/app.sh.
+# Alfred only writes prefs.json on first launch, so on a fresh machine there's
+# nothing to link into yet; say so instead of skipping in silence.
 link_alfred_workflows() {
     local src="$DOTFILES_DIR/apps/mac/alfred/workflows"
-    local prefs="$HOME/Library/Application Support/Alfred/Alfred.alfredpreferences/workflows"
+    [ -d "$src" ] || return 0
+
+    local json="$HOME/Library/Application Support/Alfred/prefs.json" prefs=""
+    [ -f "$json" ] && prefs="$(python3 -c "
+import json, sys
+print(json.load(open(sys.argv[1])).get('current', ''))" "$json" 2> /dev/null)"
+
+    if [ -z "$prefs" ] || [ ! -d "$prefs" ]; then
+        warn "Alfred workflows not linked — launch Alfred once, then: dotfiles --sync"
+        return 0
+    fi
+
     local wf
-    [ -d "$src" ] && [ -d "$prefs" ] || return 0
     for wf in "$src"/*/; do
         [ -d "$wf" ] || continue
-        link "${wf%/}" "$prefs/user.workflow.$(basename "$wf")"
+        link "${wf%/}" "$prefs/workflows/user.workflow.$(basename "$wf")"
     done
 }
 

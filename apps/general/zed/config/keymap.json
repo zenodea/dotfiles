@@ -13,15 +13,31 @@
 			"ctrl-/": "workspace::ToggleBottomDock"
 		}
 	},
-	// Window's navigation
+	// Window's navigation. ActivatePane{Left,Right,Up,Down} crosses into docks,
+	// so these also move between the panels and the center pane.
+	//
+	// Don't guard this with `!menu`: ProjectPanel and GitPanel both add `menu` to
+	// their own context, so it would switch this off in exactly the panels we
+	// want it in. `!Picker` is the right guard — the file finder and command
+	// palette carry no `menu` context at all, and `!` matches against the whole
+	// focus chain.
 	{
-		"context": "Dock || Terminal || Editor",
+		"context": "(Dock || Terminal || Editor || ProjectPanel || GitPanel || OutlinePanel || AgentPanel) && !Picker",
 		"bindings": {
 			// Window's motions
 			"ctrl-h": "workspace::ActivatePaneLeft",
 			"ctrl-l": "workspace::ActivatePaneRight",
 			"ctrl-k": "workspace::ActivatePaneUp",
 			"ctrl-j": "workspace::ActivatePaneDown"
+		}
+	},
+	// Pickers: file finder, command palette, tab switcher, recent projects.
+	// The query field is an editor nested under the picker, hence `Picker > Editor`.
+	{
+		"context": "Picker > Editor",
+		"bindings": {
+			"ctrl-j": "menu::SelectNext",
+			"ctrl-k": "menu::SelectPrevious"
 		}
 	},
 	{
