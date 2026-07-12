@@ -46,11 +46,22 @@ export WALLPAPER_PATH="$DOTFILES/Wallpapers/$WALLPAPER"
 # Only substitute theme variables, not any $variable references inside config files
 VARS='${BG}${SURFACE}${BG_ALT}${BORDER}${FG}${FG_BRIGHT}${ACCENT}${BLUE}${RED}${GREEN}${YELLOW}${ORANGE}${PURPLE}${FG_RGB}${BG_RGB}${SURFACE_RGB}${BG_ALT_RGB}${ACCENT_RGB}${BLUE_RGB}${RED_RGB}${GREEN_RGB}${NVIM_PLUGIN}${NVIM_COLORSCHEME}${ZED_THEME}${GHOSTTY_THEME}${VIFM_COLORSCHEME}${WALLPAPER_PATH}'
 
+# envsubst ships with gettext, which stock macOS lacks — fall back to perl
+if command -v envsubst &> /dev/null; then
+    substitute() { envsubst "$VARS"; }
+else
+    substitute() {
+        THEME_VARS="$VARS" perl -pe \
+            's/\$\{(\w+)\}/(index($ENV{THEME_VARS}, "{$1}") >= 0 && defined $ENV{$1}) ? $ENV{$1} : $&/ge'
+    }
+fi
+
 generate() {
     local template="$1"
     local output="$2"
-    envsubst "$VARS" < "$template" > "$output"
-    echo "  wrote: $(realpath --relative-to="$DOTFILES" "$output")"
+    mkdir -p "$(dirname "$output")"
+    substitute < "$template" > "$output"
+    echo "  wrote: ${output#"$DOTFILES"/}"
 }
 
 echo "==> Switching to: $THEME"
@@ -129,7 +140,7 @@ fi
 # Save current theme name
 echo "$THEME" > "$DOTFILES/.current-theme"
 
-# Reload running apps (Linux only)
+# Reload running apps
 if [[ "$(uname -s)" == "Linux" ]]; then
     echo "==> Reloading..."
 
@@ -158,6 +169,19 @@ if [[ "$(uname -s)" == "Linux" ]]; then
     if [[ -n "$WALLPAPER" ]] && pgrep -x awww-daemon > /dev/null 2>&1; then
         awww img "$DOTFILES/Wallpapers/$WALLPAPER" --transition-type wipe --transition-duration 1 --transition-fps 60
         echo "  wallpaper: $WALLPAPER"
+    fi
+elif [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "==> Reloading..."
+
+    if pgrep -x sketchybar > /dev/null 2>&1; then
+        sketchybar --reload
+        echo "  reloaded: sketchybar"
+    fi
+
+    # Running borders with options updates the live instance
+    if pgrep -x borders > /dev/null 2>&1; then
+        bash "$DOTFILES/mac/config/borders/bordersrc"
+        echo "  reloaded: borders"
     fi
 fi
 
