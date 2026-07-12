@@ -13,24 +13,13 @@ DOTFILES="$(cd "$(dirname "$SOURCE")/.." && pwd)"
 
 WALLPAPERS_DIR="$DOTFILES/wallpapers"
 
-case "$(uname -s)" in
-    Darwin) PLATFORM="mac"   ;;
-    Linux)  PLATFORM="linux" ;;
-    *)      PLATFORM=""      ;;
-esac
-
-theme_names() {
-    for f in "$DOTFILES/themes"/*.sh; do basename "$f" .sh; done
-}
+# shellcheck source=../lib/common.sh
+source "$DOTFILES/lib/common.sh"
 
 wallpaper_names() {
     for f in "$WALLPAPERS_DIR"/*; do
         [ -f "$f" ] && basename "$f"
     done
-}
-
-current_theme() {
-    cat "$DOTFILES/.current-theme" 2>/dev/null || true
 }
 
 usage() {

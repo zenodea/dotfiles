@@ -19,28 +19,23 @@ THEMES_DIR="$DOTFILES/themes"
 APPS_DIR="$DOTFILES/apps"
 export DOTFILES
 
-case "$(uname -s)" in
-    Darwin) PLATFORM="mac"   ;;
-    Linux)  PLATFORM="linux" ;;
-    *)      echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
-esac
+# shellcheck source=lib/common.sh
+source "$DOTFILES/lib/common.sh"
 
 # --- theme selection -------------------------------------------------------
 
 list_themes() {
-    local current=""
-    [[ -f "$DOTFILES/.current-theme" ]] && current="$(cat "$DOTFILES/.current-theme")"
+    local current name
+    current="$(current_theme)"
 
     echo "Available themes:"
-    for f in "$THEMES_DIR"/*.sh; do
-        local name
-        name="$(basename "$f" .sh)"
+    while IFS= read -r name; do
         if [[ "$name" == "$current" ]]; then
             echo "  $name (active)"
         else
             echo "  $name"
         fi
-    done
+    done < <(theme_names)
 }
 
 RELOAD=1
@@ -86,7 +81,15 @@ source "$THEME_FILE"
 set +a
 
 export THEME_NAME="$THEME"
-export THEME_APPEARANCE="${APPEARANCE:-dark}"
+
+# Light or dark is a fact about the palette, not a field to keep in sync, so
+# read it off the background's perceived brightness (ITU-R BT.601).
+_bg_lum=$(( (16#${BG:0:2} * 299 + 16#${BG:2:2} * 587 + 16#${BG:4:2} * 114) / 1000 ))
+if [[ $_bg_lum -gt 127 ]]; then
+    export THEME_APPEARANCE="light"
+else
+    export THEME_APPEARANCE="dark"
+fi
 
 for _c in "${PALETTE[@]}"; do
     _hex="${!_c}"
