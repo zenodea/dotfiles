@@ -2,10 +2,11 @@
 # switch-theme.sh — render every app's config from a theme's palette, then
 # live-reload whatever is running.
 #
-# Each app lives in apps/<general|mac|linux>/<name>.sh and defines:
+# Each app is a directory, apps/<general|mac|linux>/<name>/, holding:
 #
-#   render()                     write its config(s) from templates/
-#   reload() | reload_<os>()     poke the running app (both optional)
+#   app.sh       render() writes its config(s); reload() pokes the running app
+#   templates/   the templated configs render() draws from
+#   config/      static config, symlinked to ~/.config/<name> by install.sh
 #
 # Apps under general/ run on every platform; mac/ and linux/ only run on
 # theirs. A general app whose reload differs per OS defines reload_mac and
@@ -15,8 +16,8 @@ set -e
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THEMES_DIR="$DOTFILES/themes"
-TEMPLATES_DIR="$DOTFILES/templates"
 APPS_DIR="$DOTFILES/apps"
+export DOTFILES
 
 case "$(uname -s)" in
     Darwin) PLATFORM="mac"   ;;
@@ -136,19 +137,27 @@ note() { echo "    $1"; }
 skip() { echo "    skipped: $1"; }
 have() { command -v "$1" > /dev/null 2>&1; }
 
-# generate <template-path-under-templates/> <destination>
+# Both take a template name relative to the app's own templates/ dir, and a
+# destination that's either absolute (a live path outside the repo) or relative
+# to the app's dir — in practice config/, which install.sh symlinks into place.
+resolve() {
+    case "$1" in
+        /*) printf '%s' "$1" ;;
+        *)  printf '%s' "$APP_DIR/$1" ;;
+    esac
+}
+
 generate() {
-    local template="$TEMPLATES_DIR/$1" output="$2"
+    local output; output="$(resolve "$2")"
     mkdir -p "$(dirname "$output")"
-    substitute < "$template" > "$output"
+    substitute < "$APP_DIR/templates/$1" > "$output"
     note "wrote: $(pretty "$output")"
 }
 
-# copy <template-path-under-templates/> <destination>   (no substitution)
 copy() {
-    local template="$TEMPLATES_DIR/$1" output="$2"
+    local output; output="$(resolve "$2")"
     mkdir -p "$(dirname "$output")"
-    cp "$template" "$output"
+    cp "$APP_DIR/templates/$1" "$output"
     note "wrote: $(pretty "$output")"
 }
 
@@ -157,9 +166,12 @@ copy() {
 echo "==> Switching to: $THEME"
 
 for _dir in general "$PLATFORM"; do
-    for _app in "$APPS_DIR/$_dir"/*.sh; do
-        [[ -f "$_app" ]] || continue
-        echo "  $(basename "$_app" .sh)"
+    for APP_DIR in "$APPS_DIR/$_dir"/*/; do
+        APP_DIR="${APP_DIR%/}"
+        # Apps with no app.sh (lazygit, yazi) are static config only — nothing
+        # to render, install.sh just symlinks them.
+        [[ -f "$APP_DIR/app.sh" ]] || continue
+        echo "  $(basename "$APP_DIR")"
 
         # The subshell must not be the operand of `||` or `if`: bash suppresses
         # errexit inside one, so a half-failed render would carry on to reload.
@@ -168,7 +180,7 @@ for _dir in general "$PLATFORM"; do
         (
             set -e
             # shellcheck source=/dev/null
-            source "$_app"
+            source "$APP_DIR/app.sh"
 
             declare -f render > /dev/null && render
 

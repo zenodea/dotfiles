@@ -1,25 +1,25 @@
 .DS_Store
-general/vifm/vifminfo.json
 nvim.log
+apps/linux/vifm/config/vifminfo.json
 
 # Zed's local prompt store — binary, rewritten on every session
-general/config/zed/prompts/
+apps/general/zed/config/prompts/
 
-# Rendered by switch-theme.sh from templates/ + the active theme.
-# They live in the tree because the config dirs are symlinked into ~/.config,
-# but they're derived, so tracking them just churns the repo on every switch.
-# install.sh re-renders them from .current-theme.
-general/config/nvim/lua/plugins/colorscheme.lua
-general/config/zed/settings.json
-linux/config/fuzzel/fuzzel.ini
-linux/config/hypr/hyprland.conf
-linux/config/hypr/hyprlock.conf
-linux/config/rofi/themes/current.rasi
-linux/config/rofi/themes/power-menu.rasi
-linux/config/rofi/themes/theme-picker.rasi
-linux/config/vifm/theme.vifm
-linux/config/waybar/style.css
-mac/config/borders/bordersrc
-mac/config/sketchybar/colors.sh
-mac/config/sketchybar/sketchybarrc
-mac/raycast/theme.json
+# Rendered by switch-theme.sh from each app's templates/ + the active theme.
+# They sit inside the app's config/ because that dir is symlinked into
+# ~/.config, but they're derived, so tracking them just churns the repo on
+# every switch. install.sh renders them from .current-theme.
+# (ghostty, borders and fuzzel are wholly generated and render straight to
+# ~/.config, so they have nothing here.)
+apps/general/nvim/config/lua/plugins/colorscheme.lua
+apps/general/zed/config/settings.json
+apps/linux/hypr/config/hyprland.conf
+apps/linux/hypr/config/hyprlock.conf
+apps/linux/rofi/config/themes/current.rasi
+apps/linux/rofi/config/themes/power-menu.rasi
+apps/linux/rofi/config/themes/theme-picker.rasi
+apps/linux/vifm/config/theme.vifm
+apps/linux/waybar/config/style.css
+apps/mac/raycast/theme.json
+apps/mac/sketchybar/config/colors.sh
+apps/mac/sketchybar/config/sketchybarrc
