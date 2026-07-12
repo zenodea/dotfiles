@@ -11,7 +11,7 @@ while [ -L "$SOURCE" ]; do
 done
 DOTFILES="$(cd "$(dirname "$SOURCE")/.." && pwd)"
 
-WALLPAPERS_DIR="$DOTFILES/Wallpapers"
+WALLPAPERS_DIR="$DOTFILES/wallpapers"
 
 case "$(uname -s)" in
     Darwin) PLATFORM="mac"   ;;
@@ -204,54 +204,6 @@ check_dep() {
     fi
 }
 
-check_link() {
-    local src="$1" dst="$2"
-    if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
-        ok "$dst"
-    elif [ -L "$dst" ]; then
-        warn "$dst → $(readlink "$dst") (expected $src)"
-    elif [ -e "$dst" ]; then
-        warn "$dst exists but is not a symlink"
-    else
-        bad "$dst missing (run: dotfiles --sync)"
-    fi
-}
-
-# Mirrors the link_folder mapping in install.sh, read-only
-check_folder() {
-    local folder="$1"
-    [ -d "$folder" ] || return 0
-
-    for src in "$folder"/[^.]*; do
-        [ -e "$src" ] || continue
-        local name
-        name="$(basename "$src")"
-        case "$name" in
-            config|scripts|local|raycast|alfred) continue ;;
-            *.sh) continue ;;
-        esac
-        check_link "$src" "$HOME/.$name"
-    done
-
-    if [ -d "$folder/config" ]; then
-        for src in "$folder/config"/[^.]*; do
-            [ -e "$src" ] || continue
-            check_link "$src" "$HOME/.config/$(basename "$src")"
-        done
-    fi
-
-    if [ -d "$folder/scripts" ]; then
-        check_link "$folder/scripts" "$HOME/scripts"
-    fi
-
-    if [ -d "$folder/local/share" ]; then
-        for src in "$folder/local/share"/[^.]*; do
-            [ -e "$src" ] || continue
-            check_link "$src" "$HOME/.local/share/$(basename "$src")"
-        done
-    fi
-}
-
 cmd_doctor() {
     echo "==> Platform: $PLATFORM"
 
@@ -289,34 +241,17 @@ cmd_doctor() {
 
     echo ""
     echo "==> Symlinks"
-    check_folder "$DOTFILES/general"
-    check_folder "$DOTFILES/$PLATFORM"
-    check_link "$DOTFILES/bin/dotfiles" "$HOME/.local/bin/dotfiles"
-
-    if [[ "$PLATFORM" == "mac" && -d "$DOTFILES/mac/alfred" ]]; then
-        local prefs="$HOME/Library/Application Support/Alfred/Alfred.alfredpreferences/workflows"
-        if [ -d "$prefs" ]; then
-            for src in "$DOTFILES/mac/alfred"/[^.]*; do
-                [ -d "$src" ] || continue
-                check_link "$src" "$prefs/user.workflow.$(basename "$src")"
-            done
-        fi
-    fi
+    # install.sh --check walks the same map it links with, so the two can't drift
+    # shellcheck source=/dev/null
+    source "$DOTFILES/install.sh" --check
 
     echo ""
     echo "==> Config drift"
-    if [[ "$PLATFORM" == "mac" ]]; then
-        if command -v sketchybar > /dev/null 2>&1 && [ ! -e "$HOME/.config/sketchybar/sketchybarrc" ]; then
-            warn "sketchybar config not linked at ~/.config/sketchybar (run: dotfiles --sync)"
-        fi
-        if command -v borders > /dev/null 2>&1 && [ ! -e "$HOME/.config/borders/bordersrc" ]; then
-            warn "borders config not linked at ~/.config/borders (run: dotfiles --sync)"
-        fi
-    fi
+    local drift=$WARNS
     if ! git -C "$DOTFILES" diff --quiet || ! git -C "$DOTFILES" diff --cached --quiet; then
         warn "repo has uncommitted changes (dotfiles --save to commit & push)"
     fi
-    if [[ $WARNS -eq 0 && $FAILS -eq 0 ]]; then
+    if [[ $WARNS -eq $drift ]]; then
         echo "  none"
     fi
 

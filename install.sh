@@ -1,117 +1,113 @@
 #!/usr/bin/env bash
-# install.sh — symlink dotfiles to home or ~/.config
+# install.sh — symlink configs into place, then render the active theme.
 #
 # Layout:
-#   general/            → always linked
-#   linux/              → linked on Linux only
-#   mac/                → linked on macOS only
+#   apps/<general|mac|linux>/<name>/config/  → $HOME/.config/<name>
+#   home/<general|mac|linux>/<path>          → $HOME/<path>
 #
-# Inside each folder:
-#   <file>              → $HOME/.<file>
-#   config/<name>       → $HOME/.config/<name>
+# general/ applies everywhere; mac/ and linux/ only on that OS.
+#
+# Pass --check to report what's linked without changing anything (dotfiles
+# --doctor uses this, so the two can't drift).
 
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_DIR="$HOME/.config"
 
-# Detect OS
 case "$(uname -s)" in
     Darwin) PLATFORM="mac"   ;;
     Linux)  PLATFORM="linux" ;;
     *)      echo "Unsupported OS: $(uname -s)"; exit 1 ;;
 esac
 
+CHECK=0
+[ "${1:-}" = "--check" ] && CHECK=1
+
+# Set by --check callers to count results; no-ops otherwise.
+type ok   > /dev/null 2>&1 || ok()   { echo "  ✓ $1"; }
+type warn > /dev/null 2>&1 || warn() { echo "  ! $1"; }
+type bad  > /dev/null 2>&1 || bad()  { echo "  ✗ $1"; }
+
 link() {
-    local src="$1"
-    local dst="$2"
+    local src="$1" dst="$2"
+
+    if [ "$CHECK" = 1 ]; then
+        if [ -L "$dst" ] && [ "$(readlink "$dst")" = "$src" ]; then
+            ok "$dst"
+        elif [ -L "$dst" ]; then
+            warn "$dst → $(readlink "$dst") (expected $src)"
+        elif [ -e "$dst" ]; then
+            warn "$dst exists but is not a symlink"
+        else
+            bad "$dst missing (run: dotfiles --sync)"
+        fi
+        return 0
+    fi
 
     mkdir -p "$(dirname "$dst")"
-
     if [ -L "$dst" ]; then
-        echo "  updating: $dst"
         rm "$dst"
     elif [ -e "$dst" ]; then
         echo "  backing up: $dst → $dst.bak"
         mv "$dst" "$dst.bak"
     fi
-
     ln -s "$src" "$dst"
     echo "  linked: $dst"
 }
 
-link_folder() {
-    local folder="$1"
-    [ -d "$folder" ] || return 0
-
-    echo "==> $folder"
-
-    # Root-level → $HOME/.<name>
-    for src in "$folder"/[^.]*; do
-        [ -e "$src" ] || continue
-        local name="$(basename "$src")"
-        case "$name" in
-            config|scripts|local|raycast) continue ;;  # raycast: imported via deeplink, nothing to link
-            alfred) continue ;;                        # alfred: linked into Alfred's prefs below
-            *.sh) continue ;;
-        esac
-        link "$src" "$HOME/.$name"
+# apps/<platform>/<name>/config → ~/.config/<name>
+# An app with no config/ is either wholly generated (ghostty, borders, fuzzel
+# render straight to ~/.config) or has nothing to link.
+link_apps() {
+    local dir="$1" app
+    [ -d "$DOTFILES_DIR/apps/$dir" ] || return 0
+    for app in "$DOTFILES_DIR/apps/$dir"/*/; do
+        [ -d "$app/config" ] || continue
+        link "${app%/}/config" "$HOME/.config/$(basename "$app")"
     done
-
-    # config/<name> → $HOME/.config/<name>
-    if [ -d "$folder/config" ]; then
-        for src in "$folder/config"/[^.]*; do
-            [ -e "$src" ] || continue
-            link "$src" "$CONFIG_DIR/$(basename "$src")"
-        done
-    fi
-
-    # scripts/ → $HOME/scripts
-    if [ -d "$folder/scripts" ]; then
-        link "$folder/scripts" "$HOME/scripts"
-    fi
-
-    # local/share/<name> → $HOME/.local/share/<name>
-    if [ -d "$folder/local/share" ]; then
-        for src in "$folder/local/share"/[^.]*; do
-            [ -e "$src" ] || continue
-            link "$src" "$HOME/.local/share/$(basename "$src")"
-        done
-    fi
 }
 
-# mac/alfred/<name> → Alfred's workflows folder
-# Alfred reads workflows straight from these folders, so a symlink keeps the
+# home/<platform>/<path> → ~/<path>   (the tree mirrors $HOME exactly)
+link_home() {
+    local dir="$DOTFILES_DIR/home/$1" entry
+    [ -d "$dir" ] || return 0
+    for entry in "$dir"/* "$dir"/.[!.]*; do
+        [ -e "$entry" ] || continue
+        link "$entry" "$HOME/$(basename "$entry")"
+    done
+}
+
+# Alfred reads workflows straight from its prefs bundle, so a symlink keeps the
 # workflow in the repo and live-editable. Restart Alfred to pick up new ones.
-link_alfred() {
-    local folder="$DOTFILES_DIR/mac/alfred"
+link_alfred_workflows() {
+    local src="$DOTFILES_DIR/apps/mac/alfred/workflows"
     local prefs="$HOME/Library/Application Support/Alfred/Alfred.alfredpreferences/workflows"
-
-    [ -d "$folder" ] || return 0
-    if [ ! -d "$prefs" ]; then
-        echo "==> $folder"
-        echo "  skipped: Alfred not installed"
-        return 0
-    fi
-
-    echo "==> $folder"
-    for src in "$folder"/[^.]*; do
-        [ -d "$src" ] || continue
-        link "$src" "$prefs/user.workflow.$(basename "$src")"
+    local wf
+    [ -d "$src" ] && [ -d "$prefs" ] || return 0
+    for wf in "$src"/*/; do
+        [ -d "$wf" ] || continue
+        link "${wf%/}" "$prefs/user.workflow.$(basename "$wf")"
     done
 }
 
-link_folder "$DOTFILES_DIR/general"
-link_folder "$DOTFILES_DIR/$PLATFORM"
-if [ "$PLATFORM" = "mac" ]; then
-    link_alfred
+link_all() {
+    link_apps general
+    link_apps "$PLATFORM"
+    link_home general
+    link_home "$PLATFORM"
+    [ "$PLATFORM" = "mac" ] && link_alfred_workflows
+    link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
+}
+
+# --check is a library call from `dotfiles --doctor`; it prints and returns.
+if [ "$CHECK" = 1 ]; then
+    link_all
+    return 0 2> /dev/null || exit 0
 fi
 
-# dotfiles CLI → ~/.local/bin
-echo "==> $DOTFILES_DIR/bin"
-link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
+link_all
 
-# Themed configs aren't tracked in git — they're rendered from templates/ — so a
+# The themed configs are gitignored — they're rendered from templates/ — so a
 # fresh clone has none until a theme is applied. Do that now.
 THEME="$(cat "$DOTFILES_DIR/.current-theme" 2>/dev/null || true)"
 if [ -z "$THEME" ]; then
