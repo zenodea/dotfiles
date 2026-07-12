@@ -180,6 +180,49 @@ if [[ -n "$FIREFOX_PROFILE_DIR" && -d "$FIREFOX_PROFILE_DIR" ]]; then
     fi
 fi
 
+# Obsidian — theme every vault listed in obsidian.json (both platforms).
+# Obsidian hot-reloads the active theme's CSS; a restart is only needed
+# when appearance.json (theme selection / accent) actually changes.
+OBSIDIAN_RESTART=0
+_obsidian_json=""
+for _cand in "$HOME/Library/Application Support/obsidian/obsidian.json" \
+             "$HOME/.config/obsidian/obsidian.json" \
+             "$HOME/.var/app/md.obsidian.Obsidian/config/obsidian/obsidian.json"; do
+    if [[ -f "$_cand" ]]; then
+        _obsidian_json="$_cand"
+        break
+    fi
+done
+if [[ -n "$_obsidian_json" ]] && command -v python3 > /dev/null 2>&1; then
+    while IFS= read -r _vault; do
+        [[ -n "$_vault" && -d "$_vault/.obsidian" ]] || continue
+        generate "$TEMPLATES_DIR/obsidian/theme.css" "$_vault/.obsidian/themes/Dotfiles/theme.css"
+        cp "$TEMPLATES_DIR/obsidian/manifest.json"   "$_vault/.obsidian/themes/Dotfiles/manifest.json"
+        _changed="$(python3 - "$_vault/.obsidian/appearance.json" "#$ACCENT" <<'PY'
+import json, os, sys
+path, accent = sys.argv[1], sys.argv[2]
+d = {}
+if os.path.exists(path):
+    with open(path) as f:
+        d = json.load(f)
+before = (d.get("cssTheme"), d.get("theme"), d.get("accentColor"))
+d["cssTheme"] = "Dotfiles"
+d["theme"] = "obsidian"
+d["accentColor"] = accent
+with open(path, "w") as f:
+    json.dump(d, f, indent=2)
+print("changed" if before != ("Dotfiles", "obsidian", accent) else "unchanged")
+PY
+)"
+        if [[ "$_changed" == "changed" ]]; then
+            OBSIDIAN_RESTART=1
+        fi
+    done < <(python3 -c "
+import json, sys
+for v in json.load(open(sys.argv[1])).get('vaults', {}).values():
+    print(v.get('path', ''))" "$_obsidian_json")
+fi
+
 # Save current theme name
 echo "$THEME" > "$DOTFILES/.current-theme"
 
@@ -213,6 +256,17 @@ if [[ "$(uname -s)" == "Linux" ]]; then
         awww img "$DOTFILES/Wallpapers/$WALLPAPER" --transition-type wipe --transition-duration 1 --transition-fps 60
         echo "  wallpaper: $WALLPAPER"
     fi
+
+    if [[ "$OBSIDIAN_RESTART" == 1 ]] && pgrep -x obsidian > /dev/null 2>&1; then
+        pkill -x obsidian
+        sleep 1
+        if command -v obsidian > /dev/null 2>&1; then
+            obsidian &> /dev/null &
+            echo "  restarted: obsidian"
+        else
+            echo "  obsidian: quit — relaunch it to pick up the theme"
+        fi
+    fi
 elif [[ "$(uname -s)" == "Darwin" ]]; then
     echo "==> Reloading..."
 
@@ -240,6 +294,13 @@ elif [[ "$(uname -s)" == "Darwin" ]]; then
         if osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$DOTFILES/Wallpapers/$WALLPAPER\"" > /dev/null 2>&1; then
             echo "  wallpaper: $WALLPAPER"
         fi
+    fi
+
+    if [[ "$OBSIDIAN_RESTART" == 1 ]] && pgrep -x Obsidian > /dev/null 2>&1; then
+        osascript -e 'tell application "Obsidian" to quit' > /dev/null 2>&1
+        sleep 2
+        open -a Obsidian
+        echo "  restarted: obsidian"
     fi
 fi
 
