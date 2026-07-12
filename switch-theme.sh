@@ -128,6 +128,23 @@ generate "$TEMPLATES_DIR/sketchybar/sketchybarrc" "$DOTFILES/mac/config/sketchyb
 # Raycast (imported via deeplink on macOS; JSON kept for Theme Studio import)
 generate "$TEMPLATES_DIR/raycast/theme.json"      "$DOTFILES/mac/raycast/theme.json"
 
+# Alfred (macOS) — theme goes straight into Alfred's preferences bundle,
+# whose location is recorded in prefs.json (it may be a synced folder)
+ALFRED_PREFS="" ALFRED_LOCALHASH=""
+if [[ "$(uname -s)" == "Darwin" && -f "$HOME/Library/Application Support/Alfred/prefs.json" ]]; then
+    IFS=$'\t' read -r ALFRED_PREFS ALFRED_LOCALHASH <<< "$(python3 -c "
+import json, sys
+d = json.load(open(sys.argv[1]))
+print(d.get('current', ''), d.get('localhash', ''), sep='\t')" \
+        "$HOME/Library/Application Support/Alfred/prefs.json" 2>/dev/null)"
+fi
+if [[ -n "$ALFRED_PREFS" && -d "$ALFRED_PREFS" ]]; then
+    # Custom themes live at the bundle root (like workflows/), NOT under
+    # preferences/appearance/ — Alfred silently ignores themes placed there
+    generate "$TEMPLATES_DIR/alfred/theme.json" \
+        "$ALFRED_PREFS/themes/theme.custom.dotfiles.$THEME/theme.json"
+fi
+
 # Rofi power menu + theme picker
 generate "$TEMPLATES_DIR/rofi/power-menu.rasi"   "$DOTFILES/linux/config/rofi/themes/power-menu.rasi"
 generate "$TEMPLATES_DIR/rofi/theme-picker.rasi" "$DOTFILES/linux/config/rofi/themes/theme-picker.rasi"
@@ -304,6 +321,36 @@ elif [[ "$(uname -s)" == "Darwin" ]]; then
         sleep 2
         open -a Obsidian
         echo "  restarted: obsidian"
+    fi
+
+    # Alfred — select the theme in the machine-local appearance prefs and
+    # restart Alfred (background app, invisible). AppleScript "set theme"
+    # silently no-ops when Alfred follows the macOS appearance.
+    reload_alfred() {
+        local plist="$ALFRED_PREFS/preferences/local/$ALFRED_LOCALHASH/appearance/prefs.plist"
+        local uid="theme.custom.dotfiles.$THEME"
+        mkdir -p "$(dirname "$plist")"
+        [[ -f "$plist" ]] || plutil -create xml1 "$plist"
+        plutil -replace theme         -string "$uid" "$plist"
+        plutil -replace darkthemeuid  -string "$uid" "$plist"
+        plutil -replace lightthemeuid -string "$uid" "$plist"
+        # Hide the Alfred hat logo on the search window (synced appearance option)
+        local options_plist="$ALFRED_PREFS/preferences/appearance/options/prefs.plist"
+        mkdir -p "$(dirname "$options_plist")"
+        [[ -f "$options_plist" ]] || plutil -create xml1 "$options_plist"
+        plutil -replace hidehat -bool true "$options_plist"
+        if pgrep -x Alfred > /dev/null 2>&1; then
+            osascript -e 'tell application id "com.runningwithcrayons.Alfred" to quit' > /dev/null 2>&1
+            sleep 1
+            open -a "Alfred 5" 2>/dev/null || open -a Alfred
+        fi
+    }
+    if [[ -n "$ALFRED_PREFS" && -n "$ALFRED_LOCALHASH" ]]; then
+        if reload_alfred; then
+            echo "  reloaded: alfred"
+        else
+            echo "  alfred: couldn't activate — pick 'Dotfiles $THEME' in Alfred's Appearance prefs"
+        fi
     fi
 
     # Raycast — theme is imported via deeplink (Theme Studio needs one ⏎ to apply).
