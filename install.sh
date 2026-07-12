@@ -111,4 +111,12 @@ fi
 echo "==> $DOTFILES_DIR/bin"
 link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
 
+# Themed configs aren't tracked in git — they're rendered from templates/ — so a
+# fresh clone has none until a theme is applied. Do that now.
+THEME="$(cat "$DOTFILES_DIR/.current-theme" 2>/dev/null || true)"
+if [ -z "$THEME" ]; then
+    THEME="$(basename "$(ls "$DOTFILES_DIR"/themes/*.sh | head -1)" .sh)"
+fi
+"$DOTFILES_DIR/switch-theme.sh" "$THEME"
+
 echo "Done."
