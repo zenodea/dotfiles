@@ -14,11 +14,9 @@ set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-case "$(uname -s)" in
-    Darwin) PLATFORM="mac"   ;;
-    Linux)  PLATFORM="linux" ;;
-    *)      echo "Unsupported OS: $(uname -s)"; exit 1 ;;
-esac
+DOTFILES="$DOTFILES_DIR"
+# shellcheck source=lib/common.sh
+source "$DOTFILES/lib/common.sh"
 
 CHECK=0
 [ "${1:-}" = "--check" ] && CHECK=1
