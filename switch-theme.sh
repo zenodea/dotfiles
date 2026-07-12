@@ -316,6 +316,16 @@ elif [[ "$(uname -s)" == "Darwin" ]]; then
         fi
     fi
 
+    # Ghostty reloads config on SIGUSR2 (handled on macOS since 1.2). pgrep
+    # can't find it here — the app's kernel proc name is the truncated bundle
+    # path ("/Applications/Gh"), not "ghostty" — so match on ucomm via ps.
+    _ghostty_pids="$(ps ax -o pid=,ucomm= | awk '$2 == "ghostty" {print $1}')"
+    if [[ -n "$_ghostty_pids" ]]; then
+        # shellcheck disable=SC2086
+        kill -USR2 $_ghostty_pids 2>/dev/null || true
+        echo "  reloaded: ghostty"
+    fi
+
     if [[ "$OBSIDIAN_RESTART" == 1 ]] && pgrep -x Obsidian > /dev/null 2>&1; then
         osascript -e 'tell application "Obsidian" to quit' > /dev/null 2>&1
         sleep 2
