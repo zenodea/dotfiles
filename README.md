@@ -1,31 +1,43 @@
 # dotfiles
 
-Personal config files managed with symlinks.
+Personal configs for Linux and macOS, with a live theme system.
 
-## Structure
-
-```
-configFiles/
-├── install.sh
-├── general/          # all platforms
-│   ├── zshrc
-│   └── config/
-│       └── nvim/
-├── linux/            # Linux only
-│   └── config/
-│       └── hypr/
-└── mac/              # macOS only
-    └── config/
-        └── aerospace/
-```
-
-- Root-level files → `$HOME/.<name>`
-- `config/` entries → `$HOME/.config/<name>`
-
-## Usage
+## Install
 
 ```sh
 ./install.sh
 ```
 
-Existing files are backed up as `<file>.bak` before being replaced.
+Symlinks configs (`general/` always, `linux/` or `mac/` per OS) and the
+`dotfiles` CLI. Existing files are backed up as `<file>.bak`.
+
+## Theme switching
+
+```sh
+dotfiles --theme <name>     # switch everything, live (tab-completes)
+dotfiles --pick             # interactive picker
+dotfiles --random           # surprise me
+dotfiles --list             # available themes
+```
+
+Palettes live in `themes/<name>.sh`, app configs in `templates/`.
+A switch regenerates the configs and reloads running apps.
+
+Themed: hyprland · waybar · fuzzel · rofi · vifm · sketchybar · borders ·
+Alfred · Raycast · ghostty · nvim · zed · Firefox · Obsidian · wallpaper
+
+## Other commands
+
+```sh
+dotfiles --wallpaper <name|random>   # wallpaper only
+dotfiles --update                    # git pull + re-apply theme
+dotfiles --doctor                    # check symlinks, deps, drift
+dotfiles --save [msg]                # add + commit + push
+dotfiles --sync                      # re-run install.sh
+```
+
+## Notes
+
+- After switching themes on one machine, run `dotfiles --update` on the
+  other to pull and live-reload it there.
+- Raycast needs Pro and one ⏎ in its popup; everything else is automatic.

@@ -104,3 +104,24 @@ export PATH=$HOME/.local/lib/node_modules/.bin:$PATH
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 export PATH="$HOME/.local/bin:$PATH"
 export NVIM_LOG_FILE="$HOME/.local/state/nvim/log"
+
+# macOS extras (no-ops elsewhere)
+[ -d /opt/homebrew/opt/ruby/bin ] && export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
+[ -d /opt/homebrew/opt/ruby@3.2/bin ] && export PATH="/opt/homebrew/opt/ruby@3.2/bin:$PATH"
+[ -d "$HOME/.npm-global/bin" ] && export PATH="$HOME/.npm-global/bin:$PATH"
+
+# Completion for the dotfiles CLI (completes theme/wallpaper names)
+if command -v dotfiles > /dev/null 2>&1; then
+    _dotfiles_cli() {
+        case "${words[CURRENT-1]}" in
+            --theme|-t)
+                compadd -- $(dotfiles --themes-plain 2>/dev/null) ;;
+            --wallpaper|-w)
+                compadd -- random $(dotfiles --wallpapers-plain 2>/dev/null) ;;
+            *)
+                compadd -- --theme --pick --random --list --wallpaper \
+                    --update --doctor --sync --save --help ;;
+        esac
+    }
+    compdef _dotfiles_cli dotfiles
+fi

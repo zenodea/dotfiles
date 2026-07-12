@@ -82,4 +82,8 @@ link_folder() {
 link_folder "$DOTFILES_DIR/general"
 link_folder "$DOTFILES_DIR/$PLATFORM"
 
+# dotfiles CLI → ~/.local/bin
+echo "==> $DOTFILES_DIR/bin"
+link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
+
 echo "Done."
