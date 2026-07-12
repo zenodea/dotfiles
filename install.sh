@@ -52,6 +52,7 @@ link_folder() {
         local name="$(basename "$src")"
         case "$name" in
             config|scripts|local|raycast) continue ;;  # raycast: imported via deeplink, nothing to link
+            alfred) continue ;;                        # alfred: linked into Alfred's prefs below
             *.sh) continue ;;
         esac
         link "$src" "$HOME/.$name"
@@ -79,8 +80,32 @@ link_folder() {
     fi
 }
 
+# mac/alfred/<name> → Alfred's workflows folder
+# Alfred reads workflows straight from these folders, so a symlink keeps the
+# workflow in the repo and live-editable. Restart Alfred to pick up new ones.
+link_alfred() {
+    local folder="$DOTFILES_DIR/mac/alfred"
+    local prefs="$HOME/Library/Application Support/Alfred/Alfred.alfredpreferences/workflows"
+
+    [ -d "$folder" ] || return 0
+    if [ ! -d "$prefs" ]; then
+        echo "==> $folder"
+        echo "  skipped: Alfred not installed"
+        return 0
+    fi
+
+    echo "==> $folder"
+    for src in "$folder"/[^.]*; do
+        [ -d "$src" ] || continue
+        link "$src" "$prefs/user.workflow.$(basename "$src")"
+    done
+}
+
 link_folder "$DOTFILES_DIR/general"
 link_folder "$DOTFILES_DIR/$PLATFORM"
+if [ "$PLATFORM" = "mac" ]; then
+    link_alfred
+fi
 
 # dotfiles CLI → ~/.local/bin
 echo "==> $DOTFILES_DIR/bin"

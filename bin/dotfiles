@@ -43,6 +43,7 @@ Themes:
   --pick, -p           Pick a theme interactively (fzf if available)
   --random, -r         Switch to a random theme
   --list, -l           List available themes
+  --current, -c        Print the active theme
 
 Wallpaper:
   --wallpaper <name|random>, -w
@@ -226,7 +227,7 @@ check_folder() {
         local name
         name="$(basename "$src")"
         case "$name" in
-            config|scripts|local|raycast) continue ;;
+            config|scripts|local|raycast|alfred) continue ;;
             *.sh) continue ;;
         esac
         check_link "$src" "$HOME/.$name"
@@ -292,6 +293,16 @@ cmd_doctor() {
     check_folder "$DOTFILES/$PLATFORM"
     check_link "$DOTFILES/bin/dotfiles" "$HOME/.local/bin/dotfiles"
 
+    if [[ "$PLATFORM" == "mac" && -d "$DOTFILES/mac/alfred" ]]; then
+        local prefs="$HOME/Library/Application Support/Alfred/Alfred.alfredpreferences/workflows"
+        if [ -d "$prefs" ]; then
+            for src in "$DOTFILES/mac/alfred"/[^.]*; do
+                [ -d "$src" ] || continue
+                check_link "$src" "$prefs/user.workflow.$(basename "$src")"
+            done
+        fi
+    fi
+
     echo ""
     echo "==> Config drift"
     if [[ "$PLATFORM" == "mac" ]]; then
@@ -326,6 +337,9 @@ case "${1:-}" in
         ;;
     --list|-l)
         exec "$DOTFILES/switch-theme.sh" --list
+        ;;
+    --current|-c)
+        current_theme
         ;;
     --pick|-p)
         cmd_pick
