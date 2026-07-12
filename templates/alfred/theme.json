@@ -1,0 +1,64 @@
+{
+  "alfredtheme": {
+    "result": {
+      "textSpacing": 5,
+      "subtext": {
+        "size": 12,
+        "colorSelected": "#${FG_BRIGHT}ff",
+        "font": "System",
+        "color": "#${FG_BRIGHT}cc"
+      },
+      "shortcut": {
+        "size": 16,
+        "colorSelected": "#${ACCENT}ff",
+        "font": "System",
+        "color": "#${FG_BRIGHT}ff"
+      },
+      "backgroundSelected": "#${BG_ALT}ff",
+      "text": {
+        "size": 18,
+        "colorSelected": "#${FG}ff",
+        "font": "System",
+        "color": "#${FG_BRIGHT}ff"
+      },
+      "iconPaddingHorizontal": 4,
+      "roundness": 0,
+      "paddingVertical": 3,
+      "iconSize": 40
+    },
+    "search": {
+      "backgroundSelected": "#${BG_ALT}ff",
+      "paddingHorizontal": 8,
+      "spacing": 8,
+      "text": {
+        "size": 34,
+        "colorSelected": "#${FG}ff",
+        "font": "System Light",
+        "color": "#${FG}ff"
+      },
+      "background": "#${SURFACE}ff",
+      "roundness": 0,
+      "paddingVertical": 5
+    },
+    "window": {
+      "color": "#${BG}e6",
+      "paddingHorizontal": 9,
+      "width": 560,
+      "borderPadding": 0,
+      "borderColor": "#${BORDER}ff",
+      "blur": 15,
+      "roundness": 3,
+      "paddingVertical": 8
+    },
+    "separator": {
+      "color": "#${BORDER}ff",
+      "thickness": 0
+    },
+    "scrollbar": {
+      "color": "#${BORDER}ff",
+      "thickness": 2
+    },
+    "name": "Dotfiles ${THEME_NAME}",
+    "credit": "dotfiles"
+  }
+}
