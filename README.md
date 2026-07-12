@@ -20,11 +20,36 @@ dotfiles --random           # surprise me
 dotfiles --list             # available themes
 ```
 
-Palettes live in `themes/<name>.sh`, app configs in `templates/`.
+Palettes live in `themes/<name>.sh`, config templates in `templates/`.
 A switch regenerates the configs and reloads running apps.
 
 Themed: hyprland · waybar · fuzzel · rofi · vifm · sketchybar · borders ·
 Alfred · Raycast · ghostty · nvim · zed · Firefox · Obsidian · wallpaper
+
+### Adding an app
+
+Each themed app is one file in `apps/<general|mac|linux>/<name>.sh`:
+
+```sh
+render() {                              # write config(s) from templates/
+    generate ghostty/config "$HOME/.config/ghostty/config"
+}
+
+reload() {                              # poke the running app (optional)
+    pgrep -x ghostty > /dev/null 2>&1 || return 0
+    pkill -SIGUSR2 ghostty
+    note "reloaded"
+}
+```
+
+The directory says where the app exists: `general/` runs everywhere, `mac/` and
+`linux/` only on that OS. A `general/` app whose reload differs per OS defines
+`reload_mac` and `reload_linux` instead of `reload`.
+
+`switch-theme.sh` sources each app in its own subshell with the palette exported
+(`$BG`, `$ACCENT`, `$ACCENT_RGB`, …) and `generate`/`copy`/`note`/`skip`/`have`
+available. An app that fails is reported and skipped; the rest still run.
+Pass `--no-reload` to render without touching running apps.
 
 ## Other commands
 
