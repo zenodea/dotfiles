@@ -14,7 +14,7 @@
         "font": "System",
         "color": "#${FG_BRIGHT}ff"
       },
-      "backgroundSelected": "#${BG_ALT}ff",
+      "backgroundSelected": "#${BG_ALT}56",
       "text": {
         "size": 18,
         "colorSelected": "#${FG}ff",
@@ -36,7 +36,7 @@
         "font": "System Light",
         "color": "#${FG}ff"
       },
-      "background": "#${SURFACE}ff",
+      "background": "#${SURFACE}00",
       "roundness": 0,
       "paddingVertical": 5
     },
@@ -46,8 +46,8 @@
       "width": 560,
       "borderPadding": 0,
       "borderColor": "#${BORDER}ff",
-      "blur": 15,
-      "roundness": 3,
+      "blur": 0,
+      "roundness": 11,
       "paddingVertical": 8
     },
     "separator": {
