@@ -1,0 +1,19 @@
+{
+  "version": "1",
+  "name": "${THEME_NAME}",
+  "appearance": "${THEME_APPEARANCE}",
+  "colors": {
+    "background": "#${BG}",
+    "backgroundSecondary": "#${SURFACE}",
+    "text": "#${FG}",
+    "selection": "#${ACCENT}",
+    "loader": "#${ACCENT}",
+    "red": "#${RED}",
+    "orange": "#${ORANGE}",
+    "yellow": "#${YELLOW}",
+    "green": "#${GREEN}",
+    "blue": "#${BLUE}",
+    "purple": "#${PURPLE}",
+    "magenta": "#${PURPLE}"
+  }
+}

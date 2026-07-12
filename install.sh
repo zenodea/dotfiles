@@ -51,7 +51,7 @@ link_folder() {
         [ -e "$src" ] || continue
         local name="$(basename "$src")"
         case "$name" in
-            config|scripts|local) continue ;;
+            config|scripts|local|raycast) continue ;;  # raycast: imported via deeplink, nothing to link
             *.sh) continue ;;
         esac
         link "$src" "$HOME/.$name"
