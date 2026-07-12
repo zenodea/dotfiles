@@ -1,3 +1,25 @@
 .DS_Store
 general/vifm/vifminfo.json
 nvim.log
+
+# Zed's local prompt store — binary, rewritten on every session
+general/config/zed/prompts/
+
+# Rendered by switch-theme.sh from templates/ + the active theme.
+# They live in the tree because the config dirs are symlinked into ~/.config,
+# but they're derived, so tracking them just churns the repo on every switch.
+# install.sh re-renders them from .current-theme.
+general/config/nvim/lua/plugins/colorscheme.lua
+general/config/zed/settings.json
+linux/config/fuzzel/fuzzel.ini
+linux/config/hypr/hyprland.conf
+linux/config/hypr/hyprlock.conf
+linux/config/rofi/themes/current.rasi
+linux/config/rofi/themes/power-menu.rasi
+linux/config/rofi/themes/theme-picker.rasi
+linux/config/vifm/theme.vifm
+linux/config/waybar/style.css
+mac/config/borders/bordersrc
+mac/config/sketchybar/colors.sh
+mac/config/sketchybar/sketchybarrc
+mac/raycast/theme.json

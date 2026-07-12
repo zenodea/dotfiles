@@ -83,3 +83,6 @@ Type `dotfiles` in Alfred, then:
 - After switching themes on one machine, run `dotfiles --update` on the
   other to pull and live-reload it there.
 - Raycast needs Pro and one ⏎ in its popup; everything else is automatic.
+- The rendered configs are gitignored — only the palette, the templates and
+  `.current-theme` are tracked, so switching themes doesn't dirty the repo.
+  `install.sh` renders them, which is why a fresh clone must run it first.
