@@ -147,6 +147,7 @@ cmd_random() {
 cmd_update() {
     echo "==> Pulling latest dotfiles..."
     git -C "$DOTFILES" pull --ff-only
+    git -C "$DOTFILES" submodule update --init wallpapers
 
     local theme
     theme="$(current_theme)"
@@ -237,6 +238,9 @@ cmd_doctor() {
     echo ""
     echo "==> Config drift"
     local drift=$WARNS
+    if [[ -z "$(ls -A "$WALLPAPERS_DIR" 2> /dev/null)" ]]; then
+        warn "wallpapers submodule not checked out (run: dotfiles --sync)"
+    fi
     if ! git -C "$DOTFILES" diff --quiet || ! git -C "$DOTFILES" diff --cached --quiet; then
         warn "repo has uncommitted changes (dotfiles --save to commit & push)"
     fi
