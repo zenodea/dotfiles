@@ -13,8 +13,8 @@
 
 /* The whole bar — single unified background */
 #waybar {
-  background-color: rgba(30, 30, 46, 0.6);
-  color: #cdd6f4;
+  background-color: rgba(40, 42, 54, 0.6);
+  color: #f8f8f2;
   font-family: JetBrainsMono Nerd Font;
   font-size: 15px;
 }
@@ -77,17 +77,17 @@ button:hover {
 }
 
 #workspaces button {
-  color: #cdd6f4;
+  color: #f8f8f2;
   padding-left: 10px;
   padding-right: 10px;
   background-color: transparent;
 }
 
 #workspaces button:hover {
-  background-color: rgba(205, 214, 244, 0.08);
+  background-color: rgba(248, 248, 242, 0.08);
 }
 
 #workspaces button.active {
-  color: #89dceb;
-  background-color: rgba(137, 220, 235, 0.15);
+  color: #bd93f9;
+  background-color: rgba(189, 147, 249, 0.15);
 }
