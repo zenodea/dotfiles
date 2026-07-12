@@ -34,7 +34,24 @@ dotfiles --update                    # git pull + re-apply theme
 dotfiles --doctor                    # check symlinks, deps, drift
 dotfiles --save [msg]                # add + commit + push
 dotfiles --sync                      # re-run install.sh
+dotfiles --current                   # print the active theme
 ```
+
+## Alfred (macOS)
+
+`mac/alfred/dotfiles/` is an Alfred workflow wrapping the CLI. `install.sh`
+symlinks it into Alfred's workflow folder, so editing it in the repo edits the
+installed workflow — restart Alfred once after the first install.
+
+Type `dotfiles` in Alfred, then:
+
+| | |
+|---|---|
+| `theme <name>` | switch theme (⇥ to drill into the list) |
+| `wallpaper <name>` | wallpaper only, `random` included |
+| `random` | random theme |
+| `update` / `sync` / `doctor` | output shown in Large Type |
+| `save` | commit + push the repo |
 
 ## Notes
 
