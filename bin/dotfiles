@@ -126,7 +126,7 @@ cmd_pick() {
         done
     fi
     [[ -z "$theme" ]] && return 0
-    exec "$DOTFILES/switch-theme.sh" "$theme"
+    exec "$DOTFILES/bin/switch-theme" "$theme"
 }
 
 cmd_random() {
@@ -139,7 +139,7 @@ cmd_random() {
         echo "Error: no other themes to pick from" >&2
         return 1
     fi
-    exec "$DOTFILES/switch-theme.sh" "${names[RANDOM % ${#names[@]}]}"
+    exec "$DOTFILES/bin/switch-theme" "${names[RANDOM % ${#names[@]}]}"
 }
 
 # --- maintenance -----------------------------------------------------------
@@ -152,7 +152,7 @@ cmd_update() {
     theme="$(current_theme)"
     if [[ -n "$theme" ]]; then
         echo ""
-        "$DOTFILES/switch-theme.sh" "$theme"
+        "$DOTFILES/bin/switch-theme" "$theme"
     else
         echo "No .current-theme found; skipping theme re-apply."
     fi
@@ -254,13 +254,13 @@ cmd_doctor() {
 case "${1:-}" in
     --theme|-t)
         if [[ -n "${2:-}" ]]; then
-            exec "$DOTFILES/switch-theme.sh" "$2"
+            exec "$DOTFILES/bin/switch-theme" "$2"
         else
-            exec "$DOTFILES/switch-theme.sh" --list
+            exec "$DOTFILES/bin/switch-theme" --list
         fi
         ;;
     --list|-l)
-        exec "$DOTFILES/switch-theme.sh" --list
+        exec "$DOTFILES/bin/switch-theme" --list
         ;;
     --current|-c)
         current_theme
