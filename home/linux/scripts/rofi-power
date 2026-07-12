@@ -1,7 +1,8 @@
 #!/bin/bash
 
-DOTFILES_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../.." && pwd)"
-SWITCH_THEME="$DOTFILES_DIR/switch-theme.sh"
+# scripts → linux → home → repo root
+DOTFILES_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../.." && pwd)"
+SWITCH_THEME="$DOTFILES_DIR/bin/switch-theme"
 THEMES_DIR="$DOTFILES_DIR/themes"
 
 THEMES="󰔯  Themes"

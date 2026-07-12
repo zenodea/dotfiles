@@ -5,7 +5,7 @@ apps/linux/vifm/config/vifminfo.json
 # Zed's local prompt store — binary, rewritten on every session
 apps/general/zed/config/prompts/
 
-# Rendered by switch-theme.sh from each app's templates/ + the active theme.
+# Rendered by switch-theme from each app's templates/ + the active theme.
 # They sit inside the app's config/ because that dir is symlinked into
 # ~/.config, but they're derived, so tracking them just churns the repo on
 # every switch. install.sh renders them from .current-theme.

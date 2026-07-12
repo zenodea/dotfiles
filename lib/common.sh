@@ -1,4 +1,4 @@
-# Shared by install.sh, switch-theme.sh and bin/dotfiles.
+# Shared by install.sh, switch-theme and bin/dotfiles.
 # Expects $DOTFILES to be set to the repo root before sourcing.
 
 case "$(uname -s)" in

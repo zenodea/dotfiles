@@ -111,6 +111,6 @@ THEME="$(cat "$DOTFILES_DIR/.current-theme" 2>/dev/null || true)"
 if [ -z "$THEME" ]; then
     THEME="$(basename "$(ls "$DOTFILES_DIR"/themes/*.sh | head -1)" .sh)"
 fi
-"$DOTFILES_DIR/switch-theme.sh" "$THEME"
+"$DOTFILES_DIR/bin/switch-theme" "$THEME"
 
 echo "Done."

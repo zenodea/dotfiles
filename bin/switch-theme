@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# switch-theme.sh — render every app's config from a theme's palette, then
+# switch-theme — render every app's config from a theme's palette, then
 # live-reload whatever is running.
 #
 # Each app is a directory, apps/<general|mac|linux>/<name>/, holding:
@@ -14,7 +14,7 @@
 # helper functions and state stay local to it.
 set -e
 
-DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 THEMES_DIR="$DOTFILES/themes"
 APPS_DIR="$DOTFILES/apps"
 export DOTFILES
@@ -49,7 +49,7 @@ done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
 
 if [[ -z "${1:-}" || "$1" == "--list" || "$1" == "-l" ]]; then
-    echo "Usage: switch-theme.sh <theme> [--no-reload]"
+    echo "Usage: switch-theme <theme> [--no-reload]"
     echo ""
     list_themes
     exit 0

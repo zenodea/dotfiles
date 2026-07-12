@@ -66,7 +66,7 @@ absolute for a live path, or relative to the app dir (i.e. `config/…`) for
 something symlinked into `~/.config`. A `general/` app whose reload differs per
 OS defines `reload_mac` and `reload_linux` instead of `reload`.
 
-`switch-theme.sh` sources each `app.sh` in its own subshell with the palette
+`switch-theme` sources each `app.sh` in its own subshell with the palette
 exported (`$BG`, `$ACCENT`, `$ACCENT_RGB`, …) and `generate`/`copy`/`note`/
 `skip`/`have` available. An app that fails is reported and skipped; the rest
 still run. Pass `--no-reload` to render without touching running apps.
