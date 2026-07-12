@@ -41,10 +41,29 @@ set -a
 source "$THEME_FILE"
 set +a
 
-export WALLPAPER_PATH="$DOTFILES/Wallpapers/$WALLPAPER"
+export THEME_NAME="$THEME"
+export THEME_APPEARANCE="${APPEARANCE:-dark}"
+
+# Derive <COLOR>_RGB ("r, g, b") for every palette color
+for _c in BG SURFACE BG_ALT BORDER FG FG_BRIGHT ACCENT BLUE RED GREEN YELLOW ORANGE PURPLE; do
+    eval "_hex=\$$_c"
+    _r=$((16#${_hex:0:2})); _g=$((16#${_hex:2:2})); _b=$((16#${_hex:4:2}))
+    eval "export ${_c}_RGB='$_r, $_g, $_b'"
+done
+
+# Accent as HSL components (Obsidian's accent format)
+ACCENT_H="" ACCENT_S="" ACCENT_L=""
+if command -v python3 > /dev/null 2>&1; then
+    read -r ACCENT_H ACCENT_S ACCENT_L <<< "$(python3 -c "
+import colorsys
+r, g, b = (int('$ACCENT'[i:i+2], 16) / 255 for i in (0, 2, 4))
+h, l, s = colorsys.rgb_to_hls(r, g, b)
+print(round(h * 360), round(s * 100), round(l * 100))")"
+fi
+export ACCENT_H ACCENT_S ACCENT_L
 
 # Only substitute theme variables, not any $variable references inside config files
-VARS='${BG}${SURFACE}${BG_ALT}${BORDER}${FG}${FG_BRIGHT}${ACCENT}${BLUE}${RED}${GREEN}${YELLOW}${ORANGE}${PURPLE}${FG_RGB}${BG_RGB}${SURFACE_RGB}${BG_ALT_RGB}${ACCENT_RGB}${BLUE_RGB}${RED_RGB}${GREEN_RGB}${NVIM_PLUGIN}${NVIM_COLORSCHEME}${ZED_THEME}${GHOSTTY_THEME}${VIFM_COLORSCHEME}${WALLPAPER_PATH}'
+VARS='${BG}${SURFACE}${BG_ALT}${BORDER}${FG}${FG_BRIGHT}${ACCENT}${BLUE}${RED}${GREEN}${YELLOW}${ORANGE}${PURPLE}${FG_RGB}${FG_BRIGHT_RGB}${BG_RGB}${SURFACE_RGB}${BG_ALT_RGB}${BORDER_RGB}${ACCENT_RGB}${BLUE_RGB}${RED_RGB}${GREEN_RGB}${YELLOW_RGB}${ORANGE_RGB}${PURPLE_RGB}${NVIM_PLUGIN}${NVIM_COLORSCHEME}${ZED_THEME}${GHOSTTY_THEME}${VIFM_COLORSCHEME}${THEME_NAME}${THEME_APPEARANCE}${ACCENT_H}${ACCENT_S}${ACCENT_L}'
 
 # envsubst ships with gettext, which stock macOS lacks — fall back to perl
 if command -v envsubst &> /dev/null; then
@@ -65,6 +84,12 @@ generate() {
 }
 
 echo "==> Switching to: $THEME"
+
+# Wallpaper — copied to a stable path so configs never embed machine paths
+if [[ -n "$WALLPAPER" && -f "$DOTFILES/Wallpapers/$WALLPAPER" ]]; then
+    cp "$DOTFILES/Wallpapers/$WALLPAPER" "$HOME/.config/current-wallpaper"
+    echo "  wrote: ~/.config/current-wallpaper ($WALLPAPER)"
+fi
 
 # Hyprland
 generate "$TEMPLATES_DIR/hypr/hyprland.conf"    "$DOTFILES/linux/config/hypr/hyprland.conf"
@@ -182,6 +207,14 @@ elif [[ "$(uname -s)" == "Darwin" ]]; then
     if pgrep -x borders > /dev/null 2>&1; then
         bash "$DOTFILES/mac/config/borders/bordersrc"
         echo "  reloaded: borders"
+    fi
+
+    # Use the source file: macOS caches by path, so re-setting the stable
+    # copy's path with new content would be a no-op
+    if [[ -n "$WALLPAPER" ]]; then
+        if osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$DOTFILES/Wallpapers/$WALLPAPER\"" > /dev/null 2>&1; then
+            echo "  wallpaper: $WALLPAPER"
+        fi
     fi
 fi
 
