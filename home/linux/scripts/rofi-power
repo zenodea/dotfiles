@@ -2,8 +2,7 @@
 
 # scripts → linux → home → repo root
 DOTFILES_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../.." && pwd)"
-SWITCH_THEME="$DOTFILES_DIR/bin/switch-theme"
-THEMES_DIR="$DOTFILES_DIR/themes"
+DOTFILES="$DOTFILES_DIR/bin/dotfiles"
 
 THEMES="󰔯  Themes"
 LOCK="󰌾  Lock"
@@ -25,9 +24,7 @@ POWER_MENU_ARGS=(
 )
 
 # Build list of theme names in sorted order
-mapfile -t theme_names < <(
-    for f in "$THEMES_DIR"/*.sh; do basename "$f" .sh; done | sort
-)
+mapfile -t theme_names < <("$DOTFILES" --themes-plain)
 
 build_display_list() {
     local current="$1"
@@ -42,7 +39,7 @@ build_display_list() {
 
 show_theme_picker() {
     local current
-    current="$(cat "$DOTFILES_DIR/.current-theme" 2>/dev/null)"
+    current="$("$DOTFILES" --current)"
 
     local idx
     idx=$(build_display_list "$current" | rofi -dmenu \
@@ -60,7 +57,7 @@ show_theme_picker() {
     [[ -z "$idx" ]] && return
 
     local theme="${theme_names[$idx]}"
-    [[ -n "$theme" ]] && "$SWITCH_THEME" "$theme"
+    [[ -n "$theme" ]] && "$DOTFILES" --theme "$theme"
 }
 
 # Main power menu
