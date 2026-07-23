@@ -2,6 +2,7 @@ return {
   -- Treesitter
   {
     'nvim-treesitter/nvim-treesitter',
+    branch = 'master', -- frozen legacy branch; the 'main' rewrite drops nvim-treesitter.configs
     build = ':TSUpdate',
     main = 'nvim-treesitter.configs',
     opts = {
@@ -204,6 +205,31 @@ return {
         map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
         map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = '[T]oggle git show [D]eleted' })
       end,
+    },
+  },
+  {
+    'zenodea/acp.nvim',
+    cmd = { 'Acp', 'AcpNew' },
+    opts = {},
+  },
+  {
+    'kdheepak/lazygit.nvim',
+    lazy = true,
+    cmd = {
+      'LazyGit',
+      'LazyGitConfig',
+      'LazyGitCurrentFile',
+      'LazyGitFilter',
+      'LazyGitFilterCurrentFile',
+    },
+    -- optional for floating window border decoration
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    -- setting the keybinding for LazyGit with 'keys' is recommended in
+    -- order to load the plugin when the command is run for the first time
+    keys = {
+      { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
     },
   },
 }
