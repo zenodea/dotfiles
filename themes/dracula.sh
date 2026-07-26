@@ -15,11 +15,8 @@ YELLOW="f1fa8c"
 ORANGE="ffb86c"
 PURPLE="ff79c6"
 
-
 NVIM_PLUGIN="Mofiqul/dracula.nvim"
 NVIM_COLORSCHEME="dracula"
-
-ZED_THEME="Dracula"
 GHOSTTY_THEME="Dracula"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-p96w2p.png"

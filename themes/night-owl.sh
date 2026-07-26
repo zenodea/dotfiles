@@ -15,11 +15,8 @@ YELLOW="ffeb95"
 ORANGE="f78c6c"
 PURPLE="c792ea"
 
-
 NVIM_PLUGIN="oxfist/night-owl.nvim"
 NVIM_COLORSCHEME="night-owl"
-
-ZED_THEME="Night Owl"
 GHOSTTY_THEME="Night Owl"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-zm825o.jpg"

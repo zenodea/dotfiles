@@ -15,11 +15,8 @@ YELLOW="e0af68"
 ORANGE="ff9e64"
 PURPLE="bb9af7"
 
-
 NVIM_PLUGIN="folke/tokyonight.nvim"
 NVIM_COLORSCHEME="tokyonight-night"
-
-ZED_THEME="Tokyo Night"
 GHOSTTY_THEME="TokyoNight Night"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-vq898p.png"

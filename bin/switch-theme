@@ -72,8 +72,8 @@ fi
 PALETTE=(BG SURFACE BG_ALT BORDER FG FG_BRIGHT ACCENT BLUE RED GREEN YELLOW ORANGE PURPLE)
 
 # Non-color fields a theme sets, plus the ones this script derives.
-THEME_FIELDS=(NVIM_PLUGIN NVIM_COLORSCHEME ZED_THEME GHOSTTY_THEME VIFM_COLORSCHEME)
-DERIVED=(THEME_NAME THEME_APPEARANCE ACCENT_H ACCENT_S ACCENT_L)
+THEME_FIELDS=(NVIM_PLUGIN NVIM_COLORSCHEME GHOSTTY_THEME VIFM_COLORSCHEME OPACITY)
+DERIVED=(THEME_NAME THEME_APPEARANCE ZED_BASE ACCENT_H ACCENT_S ACCENT_L)
 
 # shellcheck source=/dev/null
 set -a
@@ -81,15 +81,26 @@ source "$THEME_FILE"
 set +a
 
 export THEME_NAME="$THEME"
+THEME_APPEARANCE="$(appearance_of "$BG")"
+export THEME_APPEARANCE
 
-# Light or dark is a fact about the palette, not a field to keep in sync, so
-# read it off the background's perceived brightness (ITU-R BT.601).
-_bg_lum=$(( (16#${BG:0:2} * 299 + 16#${BG:2:2} * 587 + 16#${BG:4:2} * 114) / 1000 ))
-if [[ $_bg_lum -gt 127 ]]; then
-    export THEME_APPEARANCE="light"
+# Terminal transparency, and the Zed base theme the settings.json overrides sit
+# on top of — both follow from light vs dark, so a theme need only override the
+# odd one out. Zed's base only has to get the bits the overrides don't reach
+# right (scrollbars, icon variants), so two built-ins beat a per-theme name.
+if [[ "$THEME_APPEARANCE" == "light" ]]; then
+    export OPACITY="${OPACITY:-0.92}"       # 0.7 over a light palette just goes grey
+    export ZED_BASE="One Light"
 else
-    export THEME_APPEARANCE="dark"
+    export OPACITY="${OPACITY:-0.7}"
+    export ZED_BASE="One Dark"
 fi
+
+# A light half with no wallpaper of its own shares the dark half's.
+if [[ -z "${WALLPAPER:-}" && "$THEME" == *-light ]]; then
+    WALLPAPER="$(theme_field "$(theme_base "$THEME")" WALLPAPER)"
+fi
+export WALLPAPER
 
 for _c in "${PALETTE[@]}"; do
     _hex="${!_c}"
@@ -138,7 +149,6 @@ pretty() {
 
 note() { echo "    $1"; }
 skip() { echo "    skipped: $1"; }
-have() { command -v "$1" > /dev/null 2>&1; }
 
 # Both take a template name relative to the app's own templates/ dir, and a
 # destination that's either absolute (a live path outside the repo) or relative
@@ -165,6 +175,22 @@ copy() {
 }
 
 # --- run the apps ----------------------------------------------------------
+
+# Auto mode runs this on a timer while you also switch by hand, and two renders
+# writing one config would interleave. mkdir is the atomic test-and-set that
+# exists everywhere (macOS ships no flock).
+LOCK="${TMPDIR:-/tmp}/dotfiles-switch-theme.lock"
+
+# Don't let a run killed mid-render block every switch from here on.
+if [[ -d "$LOCK" && -z "$(find "$LOCK" -maxdepth 0 -mmin -5 2> /dev/null)" ]]; then
+    rmdir "$LOCK" 2> /dev/null || true
+fi
+
+if ! mkdir "$LOCK" 2> /dev/null; then
+    echo "==> Another theme switch is already running; skipping."
+    exit 0
+fi
+trap 'rmdir "$LOCK" 2> /dev/null || true' EXIT
 
 echo "==> Switching to: $THEME"
 

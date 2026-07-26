@@ -41,12 +41,12 @@
       "paddingVertical": 5
     },
     "window": {
-      "color": "#${BG}ff",
+      "color": "#${BG}e6",
       "paddingHorizontal": 9,
       "width": 560,
-      "borderPadding": 1,
-      "borderColor": "#${GREEN}ff",
-      "blur": 0,
+      "borderPadding": 0,
+      "borderColor": "#${BORDER}ff",
+      "blur": 15,
       "roundness": 11,
       "paddingVertical": 8
     },

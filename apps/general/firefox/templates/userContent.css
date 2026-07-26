@@ -4,16 +4,17 @@
 /* All about: pages */
 @-moz-document url-prefix("about:") {
   :root {
-    color-scheme: dark !important;
+    /* Governs every background this sheet does *not* set explicitly — UA widget
+       defaults, form controls, scrollbars. Pinned to dark it kept those dark
+       under a light palette, which is why only "some" backgrounds changed. */
+    color-scheme: ${THEME_APPEARANCE} !important;
 
     /* New design-system tokens (Firefox 115+) */
     --background-color-canvas:        #${BG} !important;
     --background-color-box:           #${SURFACE} !important;
-    --background-color-box-thumbnail: #${SURFACE} !important;
     --text-color:                     #${FG} !important;
     --text-color-deemphasized:        #${FG} !important;
     --border-color:                   #${BORDER} !important;
-    --border-color-card:              #${BORDER} !important;
     --border-color-interactive:       #${BORDER} !important;
     --border-color-interactive-hover: #${ACCENT} !important;
     --border-color-interactive-active:#${ACCENT} !important;
@@ -41,48 +42,31 @@
 
     --focus-outline-color:            #${ACCENT} !important;
 
-    /* Legacy --in-content-* tokens (older code paths) */
-    --in-content-page-background:        #${BG} !important;
-    --in-content-page-color:             #${FG} !important;
-    --in-content-text-color:             #${FG} !important;
-    --in-content-deemphasized-text:      #${FG} !important;
-    --in-content-box-background:         #${SURFACE} !important;
-    --in-content-box-background-odd:     #${SURFACE} !important;
-    --in-content-box-background-hover:   #${BG_ALT} !important;
-    --in-content-box-background-active:  #${BG_ALT} !important;
-    --in-content-box-info-background:    #${SURFACE} !important;
-    --in-content-table-background:       #${SURFACE} !important;
-    --in-content-table-border-color:     #${BORDER} !important;
-    --in-content-table-header-background:#${BG_ALT} !important;
-    --in-content-border-color:           #${BORDER} !important;
-    --in-content-border-hover:           #${ACCENT} !important;
-    --in-content-border-focus:           #${ACCENT} !important;
-    --in-content-border-active:          #${ACCENT} !important;
-    --in-content-focus-outline-color:    #${ACCENT} !important;
-    --in-content-button-background:           #${BG_ALT} !important;
-    --in-content-button-background-hover:     #${BORDER} !important;
-    --in-content-button-background-active:    #${BORDER} !important;
-    --in-content-button-text-color:           #${FG} !important;
-    --in-content-button-text-color-hover:     #${FG_BRIGHT} !important;
-    --in-content-primary-button-background:        #${ACCENT} !important;
-    --in-content-primary-button-background-hover:  #${ACCENT} !important;
-    --in-content-primary-button-background-active: #${ACCENT} !important;
-    --in-content-primary-button-text-color:        #${BG} !important;
-    --in-content-link-color:          #${ACCENT} !important;
-    --in-content-link-color-hover:    #${BLUE} !important;
-    --in-content-link-color-active:   #${BLUE} !important;
-    --in-content-link-color-visited:  #${BLUE} !important;
-    --in-content-categories-background: #${BG} !important;
-    --in-content-category-text:                       #${FG} !important;
-    --in-content-category-text-selected:              #${FG_BRIGHT} !important;
-    --in-content-category-text-selected-active:       #${FG_BRIGHT} !important;
-    --in-content-category-background-hover:           #${BG_ALT} !important;
-    --in-content-category-background-active:          #${BG_ALT} !important;
-    --in-content-category-background-selected-hover:  #${BG_ALT} !important;
-    --in-content-item-hover:          #${BG_ALT} !important;
-    --in-content-item-hover-text:     #${FG_BRIGHT} !important;
-    --in-content-item-selected:       #${BG_ALT} !important;
-    --in-content-item-selected-text:  #${FG_BRIGHT} !important;
+    /* The whole legacy --in-content-* layer (43 tokens: page/box/table/button/
+       category/item/link) was dropped in Firefox 153 — nothing reads any of it
+       any more, which is why about:preferences, about:addons and friends stayed
+       dark. Its live replacements are the design-system tokens above plus these. */
+    --icon-color:                     #${FG} !important;
+    --icon-color-information:         #${BLUE} !important;
+    --icon-color-success:             #${GREEN} !important;
+    --icon-color-warning:             #${YELLOW} !important;
+    --icon-color-critical:            #${RED} !important;
+
+    --background-color-list-item-hover: #${BG_ALT} !important;
+    --text-color-list-item-hover:      #${FG_BRIGHT} !important;
+
+    --table-row-background-color:           #${SURFACE} !important;
+    --table-row-background-color-alternate: #${BG_ALT} !important;
+    --table-header-background-color:        #${BG_ALT} !important;
+    --table-border-color:                   #${BORDER} !important;
+    --table-zebra-background:               #${BG_ALT} !important;
+
+    --color-accent-primary-selected:  #${ACCENT} !important;
+    --color-accent-attention:         #${ACCENT} !important;
+    --card-border-color:              #${BORDER} !important;
+    --border-color-deemphasized:      #${BORDER} !important;
+    --theme-link-color:               #${ACCENT} !important;
+    --theme-icon-color:               #${FG} !important;
   }
 
   html, body {
@@ -161,8 +145,35 @@
   table tr:hover           { background-color: #${BG_ALT} !important; }
 }
 
-/* New tab / home */
+/* New tab / home
+   Nova (browser.newtabpage.activity-stream.nova.enabled, on by default) rebuilt
+   this page: the search box is now a <content-search-handoff-ui> custom element
+   and .search-handoff-button / .search-input / .fake-textbox no longer exist, so
+   the rules further down match nothing there. Nova paints from the --newtab-*
+   tokens instead, which is what actually themes it. The old selectors are kept
+   for the Proton layout, which about:privatebrowsing can still use. */
 @-moz-document url("about:home"), url("about:newtab"), url("about:blank"), url("about:privatebrowsing") {
+  :root, body {
+    --newtab-background-color:           #${BG} !important;
+    --newtab-background-color-secondary: #${SURFACE} !important;
+    --newtab-text-primary-color:         #${FG_BRIGHT} !important;
+    --newtab-text-secondary-color:       #${FG} !important;
+    --newtab-primary-action-background:  #${ACCENT} !important;
+    --newtab-element-hover-color:        #${BG_ALT} !important;
+    --newtab-element-secondary-color:    #${BG_ALT} !important;
+    --newtab-overlay-color:              #${SURFACE} !important;
+    --newtab-wordmark-color:             #${FG} !important;
+  }
+
+  /* Set on the host: custom properties cross the shadow boundary, so this is
+     what reaches the input inside the custom element. */
+  content-search-handoff-ui {
+    --content-search-handoff-ui-background-color: #${BG_ALT} !important;
+    --content-search-handoff-ui-color:            #${FG_BRIGHT} !important;
+    --content-search-handoff-ui-fill:             #${FG} !important;
+    --content-search-handoff-ui-caret-color:      #${FG_BRIGHT} !important;
+  }
+
   body { background-color: #${BG} !important; }
   .main-content,
   .search-container,

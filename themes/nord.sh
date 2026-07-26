@@ -15,11 +15,8 @@ YELLOW="ebcb8b"
 ORANGE="d08770"
 PURPLE="b48ead"
 
-
 NVIM_PLUGIN="rmehri01/onenord.nvim"
 NVIM_COLORSCHEME="onenord"
-
-ZED_THEME="Nordfox - blurred"
 GHOSTTY_THEME="Nord"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="ign-0000.png"

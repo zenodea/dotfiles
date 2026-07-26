@@ -15,11 +15,8 @@ YELLOW="e7c664"
 ORANGE="f39660"
 PURPLE="b39df3"
 
-
 NVIM_PLUGIN="sainnhe/sonokai"
 NVIM_COLORSCHEME="sonokai"
-
-ZED_THEME="Sonokai"
 GHOSTTY_THEME="Sonokai"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-6d8p9w.png"

@@ -2,6 +2,12 @@
 /* Solid theme driven by Firefox's built-in CSS vars. */
 
 :root {
+  /* The variables below only reach what Firefox paints from them. Context
+     menus, <select> dropdowns and form widgets come from UA/native defaults,
+     which key off this instead — without it they keep rendering dark under a
+     light palette. Same reason userContent.css sets it for about: pages. */
+  color-scheme: ${THEME_APPEARANCE} !important;
+
   /* Palette */
   --t-bg:       #${BG};
   --t-surface:  #${SURFACE};
@@ -12,8 +18,32 @@
   --t-accent:   #${ACCENT};
   --t-red:      #${RED};
 
+  /* Design-system tokens. Firefox 153 routes nearly every chrome surface
+     through these — --text-color alone is read in 457 rules — so setting them
+     covers panels, menus, dialogs and the autocomplete popup at once instead
+     of per-widget. The older per-widget names this file used (--arrowpanel-*,
+     --autocomplete-popup-*, --menu-background-color, --in-content-page-*, and
+     ~29 others) are no longer read by anything and have been dropped. */
+  --background-color-canvas:               var(--t-bg) !important;
+  --background-color-box:                  var(--t-surface) !important;
+  --text-color:                            var(--t-fg) !important;
+  --text-color-deemphasized:               var(--t-border) !important;
+  --border-color:                          var(--t-border) !important;
+  --border-color-deemphasized:             var(--t-border) !important;
+  --border-color-interactive:              var(--t-border) !important;
+  --card-border-color:                     var(--t-border) !important;
+  --button-background-color:               var(--t-bg-alt) !important;
+  --button-background-color-hover:         var(--t-border) !important;
+  --button-background-color-active:        var(--t-border) !important;
+  --button-text-color:                     var(--t-fg) !important;
+  --button-text-color-hover:               var(--t-fg-br) !important;
+  --button-text-color-active:              var(--t-fg-br) !important;
+  --button-background-color-menu:          var(--t-surface) !important;
+  --button-text-color-menu:                var(--t-fg) !important;
+
   /* Toolbars */
-  --toolbar-bgcolor:                       var(--t-bg) !important;
+  --toolbar-background-color:              var(--t-bg) !important;
+  --toolbar-background:                    var(--t-bg) !important;
   --toolbar-color:                         var(--t-fg) !important;
   --lwt-accent-color:                      var(--t-bg) !important;
   --lwt-accent-color-inactive:             var(--t-bg) !important;
@@ -21,69 +51,81 @@
 
   /* URL / search field */
   --toolbar-field-background-color:        var(--t-surface) !important;
-  --toolbar-field-focus-background-color:  var(--t-surface) !important;
-  --toolbar-field-color:                   var(--t-fg) !important;
-  --toolbar-field-focus-color:             var(--t-fg-br) !important;
+  --toolbar-field-background-color-focus:  var(--t-surface) !important;
+  --toolbar-field-text-color:              var(--t-fg) !important;
   --toolbar-field-border-color:            var(--t-border) !important;
-  --toolbar-field-focus-border-color:      var(--t-accent) !important;
-  --urlbar-box-bgcolor:                    var(--t-surface) !important;
-  --urlbar-box-focus-bgcolor:              var(--t-surface) !important;
-  --urlbar-box-hover-bgcolor:              var(--t-bg-alt) !important;
+  --urlbar-box-background-color:           var(--t-surface) !important;
+  --urlbar-box-background-color-focus:     var(--t-surface) !important;
+  --urlbar-box-text-color:                 var(--t-fg) !important;
 
   /* Tabs */
-  --lwt-selected-tab-background-color:     var(--t-surface) !important;
-  --tab-selected-bgcolor:                  var(--t-surface) !important;
+  --tab-background-color-selected:         var(--t-surface) !important;
+  --tab-group-background-color:            var(--t-surface) !important;
   --tab-selected-textcolor:                var(--t-fg-br) !important;
-  --lwt-tabs-border-color:                 var(--t-border) !important;
   --lwt-tab-line-color:                    var(--t-accent) !important;
 
   /* Toolbar buttons */
+  --toolbarbutton-background:              var(--t-bg-alt) !important;
   --toolbarbutton-icon-fill:               var(--t-fg) !important;
   --toolbarbutton-icon-fill-attention:     var(--t-accent) !important;
-  --lwt-toolbarbutton-hover-background:    var(--t-bg-alt) !important;
-  --lwt-toolbarbutton-active-background:   var(--t-bg-alt) !important;
   --toolbarbutton-hover-background:        var(--t-bg-alt) !important;
-  --toolbarbutton-active-background:       var(--t-bg-alt) !important;
 
   /* Panels / popups (hamburger, bookmarks, downloads, ext, identity) */
-  --arrowpanel-background:                 var(--t-surface) !important;
-  --arrowpanel-color:                      var(--t-fg) !important;
-  --arrowpanel-border-color:               var(--t-border) !important;
-  --arrowpanel-dimmed:                     var(--t-bg-alt) !important;
-  --arrowpanel-dimmed-further:             var(--t-bg-alt) !important;
-  --arrowpanel-dimmed-even-further:        var(--t-bg-alt) !important;
   --panel-background:                      var(--t-surface) !important;
-  --panel-color:                           var(--t-fg) !important;
   --panel-border-color:                    var(--t-border) !important;
   --panel-separator-color:                 var(--t-border) !important;
-  --panel-item-hover-bgcolor:              var(--t-bg-alt) !important;
-  --panel-item-active-bgcolor:             var(--t-bg-alt) !important;
-
-  /* Autocomplete (urlbar dropdown) */
-  --autocomplete-popup-background:           var(--t-surface) !important;
-  --autocomplete-popup-color:                var(--t-fg) !important;
-  --autocomplete-popup-highlight-background: var(--t-bg-alt) !important;
-  --autocomplete-popup-highlight-color:      var(--t-fg-br) !important;
-
-  /* Menus */
-  --menu-background-color:                 var(--t-surface) !important;
-  --menu-color:                            var(--t-fg) !important;
   --menu-border-color:                     var(--t-border) !important;
-  --menuitem-hover-background-color:       var(--t-bg-alt) !important;
 
   /* Sidebar */
+  --theme-sidebar-background:              var(--t-bg) !important;
   --sidebar-background-color:              var(--t-bg) !important;
   --sidebar-text-color:                    var(--t-fg) !important;
   --sidebar-border-color:                  var(--t-border) !important;
-  --lwt-sidebar-background-color:          var(--t-bg) !important;
-  --lwt-sidebar-text-color:                var(--t-fg) !important;
+  --sidebar-box-border:                    var(--t-border) !important;
 
-  /* In-content (about: pages chrome side) */
-  --in-content-page-background:            var(--t-bg) !important;
-  --in-content-page-color:                 var(--t-fg) !important;
+  /* Shared theme tokens some chrome surfaces still read */
+  --theme-body-background:                 var(--t-bg) !important;
+  --theme-toolbar-background:              var(--t-bg) !important;
+  --theme-toolbar-color:                   var(--t-fg) !important;
+  --theme-toolbar-hover:                   var(--t-bg-alt) !important;
+  --theme-selection-background:            var(--t-accent) !important;
 
   /* Focus ring */
   --focus-outline-color:                   var(--t-accent) !important;
+}
+
+/* Firefox pins color-scheme onto individual chrome surfaces from lwt-toolbar,
+   lwt-popup, lwt-sidebar, lwt-tab-selected and lwt-toolbar-field(-focus) —
+   attributes the theme add-on drives. color-scheme is inherited, so any
+   declaration on the element beats what :root says no matter how important
+   ours is; it has to be set on the elements themselves or the widgets inside
+   them render for the wrong scheme whatever the palette says. */
+#navigator-toolbox, #titlebar, #TabsToolbar, #toolbar-menubar,
+#nav-bar, #PersonalToolbar,
+.urlbar, #urlbar, #searchbar, .urlbarView, .urlbar-background,
+panel, menupopup, .panel-arrowcontent, panelview,
+#sidebar-box, #sidebar, sidebar-main, tooltip, dialog, window {
+  color-scheme: ${THEME_APPEARANCE} !important;
+}
+
+/* Popup surfaces, painted directly — several of these are drawn from UA
+   defaults rather than any variable we can set. */
+panel, menupopup, .panel-arrowcontent, panelview,
+.urlbarView, #sidebar-box, #sidebar {
+  background-color: var(--t-surface) !important;
+  color:            var(--t-fg) !important;
+}
+
+menupopup menuitem, menupopup menu,
+panel menuitem, panelview toolbarbutton {
+  color: var(--t-fg) !important;
+}
+
+menupopup menuitem[_moz-menuactive="true"],
+menupopup menu[_moz-menuactive="true"],
+panelview toolbarbutton:hover {
+  background-color: var(--t-bg-alt) !important;
+  color:            var(--t-fg-br) !important;
 }
 
 /* Window */
@@ -182,4 +224,40 @@ menupopup scrollbar thumb:hover,
 .urlbarView scrollbar thumb:hover,
 #sidebar-box scrollbar thumb:hover {
   background-color: var(--t-accent) !important;
+}
+
+/* Address / search bar.
+   Three separate reasons the :root vars above don't reach it in Firefox 153:
+     - it paints from --urlbar-background-background-color, which .urlbar
+       declares on itself, not from --toolbar-field-background-color directly;
+     - the focus token was renamed to --toolbar-field-background-color-focus,
+       so the old --toolbar-field-focus-background-color name sets nothing;
+     - Firefox forces color-scheme onto .urlbar from a lwt-toolbar-field
+       attribute driven by the theme add-on. color-scheme is inherited, so a
+       declaration on the element beats an inherited one from :root no matter
+       how important ours is — it has to be set here, on the element itself.
+   Painting the element directly sidesteps all three and survives the next
+   round of token renames. */
+.urlbar,
+#urlbar,
+#searchbar {
+  color-scheme: ${THEME_APPEARANCE} !important;
+
+  --toolbar-field-background-color:             var(--t-surface) !important;
+  --toolbar-field-background-color-focus:       var(--t-surface) !important;
+  --urlbar-background-background-color:         var(--t-surface) !important;
+  --urlbar-background-background-color-focused: var(--t-surface) !important;
+}
+
+.urlbar-background,
+#urlbar-background,
+#searchbar {
+  background-color: var(--t-surface) !important;
+}
+
+.urlbar-input,
+#urlbar-input,
+.searchbar-textbox,
+#urlbar-scheme {
+  color: var(--t-fg) !important;
 }
