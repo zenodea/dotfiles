@@ -15,11 +15,8 @@ YELLOW="d29922"
 ORANGE="db6d28"
 PURPLE="bc8cff"
 
-
 NVIM_PLUGIN="projekt0n/github-nvim-theme"
 NVIM_COLORSCHEME="github_dark_default"
-
-ZED_THEME="GitHub Dark Default"
 GHOSTTY_THEME="GitHub Dark"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-we76xx.png"

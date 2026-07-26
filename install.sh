@@ -136,4 +136,11 @@ if [ -z "$THEME" ]; then
 fi
 "$DOTFILES_DIR/bin/switch-theme" "$THEME"
 
+# .auto-theme is tracked, so a fresh clone with auto mode on still needs the
+# launchd agent / systemd timer put back before anything honours it.
+if auto_enabled; then
+    echo "==> Auto light/dark is on — reinstalling the scheduler"
+    "$DOTFILES_DIR/bin/dotfiles" --auto on || warn "auto mode could not be restored"
+fi
+
 echo "Done."

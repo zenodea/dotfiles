@@ -12,10 +12,8 @@ YELLOW="dbbc7f"
 ORANGE="e69875"
 PURPLE="d699b6"
 
-
 NVIM_PLUGIN="sainnhe/everforest"
 NVIM_COLORSCHEME="everforest"
-ZED_THEME="Everforest Dark Hard (blur)"
 GHOSTTY_THEME="Everforest Dark Hard"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-5gym13.jpg"

@@ -48,6 +48,42 @@ A switch regenerates every app's config from its templates and reloads it live.
 Themed: hyprland · waybar · fuzzel · rofi · vifm · sketchybar · borders ·
 Alfred · Raycast · ghostty · nvim · zed · Firefox · Obsidian · wallpaper
 
+## Light / dark
+
+```sh
+dotfiles --auto on          # follow the system's light/dark setting
+dotfiles --auto off
+dotfiles --auto             # status
+```
+
+A theme is light or dark by virtue of its background's brightness — nothing
+declares it, and the terminal opacity and Zed base theme follow from that too.
+A *pair* is one name plus a suffix: `gruvbox` is the dark half, `gruvbox-light`
+the light one. `--auto on` tracks the pair the active theme belongs to and
+refuses if the other half doesn't exist.
+
+All twelve themes are paired. To add another, drop a `<name>-light.sh` next to
+the dark one; it's picked up with no further wiring.
+
+On macOS the system is the schedule — set Appearance to **Auto** in System
+Settings and you inherit real sunrise/sunset, plus manual ⌃-click toggles. A
+launchd agent polls once a minute and only re-renders when the answer changed.
+Linux has no such setting, so the boundaries come from the clock (07:00/19:00,
+override with `DOTFILES_DAY_START` / `DOTFILES_DAY_END`) on a systemd user
+timer. `--auto on` installs the agent or timer; `--auto off` removes it.
+
+Picking a theme by hand while auto is on wins until light/dark next flips — so
+a mid-afternoon `dotfiles --theme dracula` isn't undone a minute later. If the
+theme you pick is itself paired, auto rebases onto it.
+
+A light half inherits the dark half's `WALLPAPER`, so the desktop stays put
+across a flip. Give it its own `WALLPAPER=` to override that.
+
+One note on what auto mode deliberately does *not* do: on macOS it never writes
+the system appearance (`apps/mac/appearance/` skips while auto is on). Setting
+Light or Dark explicitly is what turns Auto *off*, so doing it would disable the
+schedule being followed.
+
 ### Adding an app
 
 Drop a directory in `apps/<general|mac|linux>/<name>/` with an `app.sh`:
@@ -70,9 +106,11 @@ something symlinked into `~/.config`. A `general/` app whose reload differs per
 OS defines `reload_mac` and `reload_linux` instead of `reload`.
 
 `switch-theme` sources each `app.sh` in its own subshell with the palette
-exported (`$BG`, `$ACCENT`, `$ACCENT_RGB`, …) and `generate`/`copy`/`note`/
-`skip`/`have` available. An app that fails is reported and skipped; the rest
-still run. Pass `--no-reload` to render without touching running apps.
+exported (`$BG`, `$ACCENT`, `$ACCENT_RGB`, `$THEME_APPEARANCE`, …) and
+`generate`/`copy`/`note`/`skip`/`have` available. An app that only pokes the
+system (`mac/appearance`, `linux/gtk`) can define `reload` and skip `render`.
+An app that fails is reported and skipped; the rest still run. Pass
+`--no-reload` to render without touching running apps.
 
 ## Other commands
 
@@ -109,3 +147,8 @@ Type `dotfiles` in Alfred, then:
 - The rendered configs are gitignored — only the palette, the templates and
   `.current-theme` are tracked, so switching themes doesn't dirty the repo.
   `install.sh` renders them, which is why a fresh clone must run it first.
+- `.auto-theme` (which pair auto mode tracks) is tracked too, so both machines
+  agree; `install.sh` reinstalls the agent/timer when it's present. The pin
+  that holds a manual pick is machine-local and gitignored.
+- Auto mode rewrites `.current-theme` twice a day, so the repo goes dirty on
+  its own — `--doctor` will say so, and `--save` clears it.

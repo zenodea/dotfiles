@@ -15,11 +15,8 @@ YELLOW="dbc074"
 ORANGE="f4a261"
 PURPLE="9d79d6"
 
-
 NVIM_PLUGIN="EdenEast/nightfox.nvim"
 NVIM_COLORSCHEME="nightfox"
-
-ZED_THEME="Nightfox"
 GHOSTTY_THEME="Nightfox"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-1p6gwg.png"

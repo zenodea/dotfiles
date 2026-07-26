@@ -15,11 +15,8 @@ YELLOW="f9e2af"
 ORANGE="fab387"
 PURPLE="cba6f7"
 
-
 NVIM_PLUGIN="catppuccin/nvim"
 NVIM_COLORSCHEME="catppuccin-mocha"
-
-ZED_THEME="Catppuccin Macchiato (Blur)"
 GHOSTTY_THEME="Catppuccin Mocha"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="calder-moore-aliencrack.jpg"

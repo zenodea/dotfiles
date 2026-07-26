@@ -12,10 +12,8 @@ YELLOW="f6c177"
 ORANGE="ebbcba"
 PURPLE="c4a7e7"
 
-
 NVIM_PLUGIN="rose-pine/neovim"
 NVIM_COLORSCHEME="rose-pine"
-ZED_THEME="Rosé Pine"
 GHOSTTY_THEME="Rose Pine"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-rr81e7.png"

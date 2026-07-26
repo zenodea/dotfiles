@@ -1,5 +1,8 @@
 .DS_Store
 nvim.log
+
+# Machine-local: which appearance a manual theme pick is holding against.
+.auto-pin
 apps/linux/vifm/config/vifminfo.json
 
 # Zed's local prompt store — binary, rewritten on every session

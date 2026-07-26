@@ -12,10 +12,8 @@ YELLOW="fabd2f"
 ORANGE="fe8019"
 PURPLE="d3869b"
 
-
 NVIM_PLUGIN="ellisonleao/gruvbox.nvim"
 NVIM_COLORSCHEME="gruvbox"
-ZED_THEME="Gruvbox Dark Hard"
 GHOSTTY_THEME="Gruvbox Dark"
 VIFM_COLORSCHEME="Default"
 WALLPAPER="wallhaven-4djooo.jpg"

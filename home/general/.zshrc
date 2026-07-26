@@ -74,6 +74,9 @@ plugins=(git)
 source $ZSH/oh-my-zsh.sh
 export PATH=$HOME/.local/lib/node_modules/.bin:$PATH
 
+# Secrets and per-machine overrides — this file is tracked, that one isn't.
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
@@ -118,8 +121,11 @@ if command -v dotfiles > /dev/null 2>&1; then
                 compadd -- $(dotfiles --themes-plain 2>/dev/null) ;;
             --wallpaper|-w)
                 compadd -- random $(dotfiles --wallpapers-plain 2>/dev/null) ;;
+            --auto)
+                compadd -- on off status ;;
             *)
                 compadd -- --theme --pick --random --list --wallpaper \
+                    --auto --sync-appearance \
                     --update --doctor --sync --save --help ;;
         esac
     }
