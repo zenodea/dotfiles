@@ -14,7 +14,7 @@ apps/general/zed/config/prompts/
 # every switch. install.sh renders them from .current-theme.
 # (ghostty, borders and fuzzel are wholly generated and render straight to
 # ~/.config, so they have nothing here.)
-apps/general/nvim/config/lua/plugins/colorscheme.lua
+apps/general/nvim/config/lua/dotfiles/theme.lua
 apps/general/zed/config/settings.json
 apps/linux/hypr/config/hyprland.conf
 apps/linux/hypr/config/hyprlock.conf

@@ -8,11 +8,11 @@ export BLUE=0xff${ACCENT}
 export YELLOW=0xff${YELLOW}
 export ORANGE=0xff${ORANGE}
 export MAGENTA=0xff${PURPLE}
-export GREY=0xff${BORDER}
+export GREY=0xff${MUTED}
 export TRANSPARENT=0x00000000
 
 # General bar colors
-export BAR_COLOR=0x99${BG}
+export BAR_COLOR=0x${OPACITY_HEX}${BG}
 export ICON_COLOR=$WHITE
 export LABEL_COLOR=$WHITE
 export BACKGROUND_1=0x90${BG_ALT}

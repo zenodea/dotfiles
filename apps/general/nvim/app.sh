@@ -1,7 +1,7 @@
-# Neovim — the colorscheme plugin spec is regenerated per theme. Nvim has no
-# reload hook here; a running instance keeps its old palette until restarted.
+# Neovim — the palette renders as data (lua/dotfiles/theme.lua) and the
+# colorscheme plugin spec watches that file, so a running instance re-themes
+# itself. Nothing to poke from out here, hence no reload().
 
 render() {
-    generate colorscheme.lua config/lua/plugins/colorscheme.lua
-    note "restart nvim to pick up the new palette"
+    generate theme.lua config/lua/dotfiles/theme.lua
 }

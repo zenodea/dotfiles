@@ -69,11 +69,11 @@ fi
 
 # Every color a theme defines. Each one also gets a <COLOR>_RGB ("r, g, b")
 # form, derived below — some config formats want decimal channels.
-PALETTE=(BG SURFACE BG_ALT BORDER FG FG_BRIGHT ACCENT BLUE RED GREEN YELLOW ORANGE PURPLE)
+PALETTE=(BG SURFACE BG_ALT BORDER MUTED FG FG_BRIGHT ACCENT BLUE RED GREEN YELLOW ORANGE PURPLE)
 
 # Non-color fields a theme sets, plus the ones this script derives.
 THEME_FIELDS=(NVIM_PLUGIN NVIM_COLORSCHEME GHOSTTY_THEME VIFM_COLORSCHEME OPACITY)
-DERIVED=(THEME_NAME THEME_APPEARANCE ZED_BASE ACCENT_H ACCENT_S ACCENT_L)
+DERIVED=(THEME_NAME THEME_APPEARANCE ZED_BASE OPACITY_HEX ACCENT_H ACCENT_S ACCENT_L)
 
 # shellcheck source=/dev/null
 set -a
@@ -89,18 +89,56 @@ export THEME_APPEARANCE
 # odd one out. Zed's base only has to get the bits the overrides don't reach
 # right (scrollbars, icon variants), so two built-ins beat a per-theme name.
 if [[ "$THEME_APPEARANCE" == "light" ]]; then
-    export OPACITY="${OPACITY:-0.92}"       # 0.7 over a light palette just goes grey
+    export OPACITY="${OPACITY:-0.85}"       # 0.7 over a light palette just goes grey
     export ZED_BASE="One Light"
 else
-    export OPACITY="${OPACITY:-0.7}"
+    export OPACITY="${OPACITY:-0.7}"       # 0.7 over a dark palette
     export ZED_BASE="One Dark"
 fi
+
+# Same transparency, for the configs that want an alpha byte on a hex color
+# rather than a fraction of their own. A surface that sets its own alpha reads
+# as a different color than the terminal next to it, because what shows through
+# is the wallpaper — so anything painting BG as a window background should take
+# this, and track light/dark for free.
+OPACITY_HEX="$(awk -v o="$OPACITY" 'BEGIN { printf "%02x", int(o * 255 + 0.5) }')"
+export OPACITY_HEX
 
 # A light half with no wallpaper of its own shares the dark half's.
 if [[ -z "${WALLPAPER:-}" && "$THEME" == *-light ]]; then
     WALLPAPER="$(theme_field "$(theme_base "$THEME")" WALLPAPER)"
 fi
 export WALLPAPER
+
+# Muted text — comments, placeholders, inactive labels — is its own role, and
+# BORDER is the wrong color for it: BORDER is tuned to sit close to BG so
+# dividers stay quiet, which leaves it around 1.2-1.9:1 against the background
+# on a light palette. Fade FG toward BG instead, stopping at the first step that
+# still clears the 4.5:1 body-text floor, so the color is as quiet as it can be
+# without becoming unreadable. The 0.85 cap keeps muted distinct from normal
+# text when a theme's own FG sits so near the floor that nothing short of FG
+# itself would clear it — that's the case to set MUTED by hand. A theme that
+# does so (to reclaim its upstream comment hue) skips all of this.
+if [[ -z "${MUTED:-}" ]]; then
+    MUTED="$(awk \
+        -v r1="$((16#${FG:0:2}))" -v g1="$((16#${FG:2:2}))" -v b1="$((16#${FG:4:2}))" \
+        -v r0="$((16#${BG:0:2}))" -v g0="$((16#${BG:2:2}))" -v b0="$((16#${BG:4:2}))" '
+        function lin(c,   x) { x = c / 255; return (x <= 0.04045) ? x / 12.92 : ((x + 0.055) / 1.055) ^ 2.4 }
+        function lum(r, g, b) { return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) }
+        function ratio(a, b) { return (a > b) ? (a + 0.05) / (b + 0.05) : (b + 0.05) / (a + 0.05) }
+        function mix(x, y, t) { return x * t + y * (1 - t) }
+        BEGIN {
+            lbg = lum(r0, g0, b0)
+            t = 0.85
+            for (i = 1; i <= 85; i++) {
+                u = i / 100
+                if (ratio(lum(mix(r1, r0, u), mix(g1, g0, u), mix(b1, b0, u)), lbg) >= 4.5) { t = u; break }
+            }
+            printf "%02x%02x%02x", \
+                int(mix(r1, r0, t) + 0.5), int(mix(g1, g0, t) + 0.5), int(mix(b1, b0, t) + 0.5)
+        }')"
+fi
+export MUTED
 
 for _c in "${PALETTE[@]}"; do
     _hex="${!_c}"
