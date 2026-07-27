@@ -87,6 +87,8 @@ return {
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       { 'j-hui/fidget.nvim', opts = {} },
       'saghen/blink.cmp',
+      'b0o/schemastore.nvim',
+      'towolf/vim-helm', -- helm filetype detection, which nvim has no builtin for
     },
     config = function()
       vim.api.nvim_create_autocmd('LspAttach', {
@@ -239,9 +241,68 @@ return {
           end,
         },
 
+        jsonls = {
+          settings = {
+            json = {
+              schemas = require('schemastore').json.schemas(),
+              validate = { enable = true },
+            },
+          },
+        },
+
+        -- Kubernetes manifests are just YAML until something tells the server
+        -- what they are; without a schema they get no validation at all.
+        yamlls = {
+          settings = {
+            yaml = {
+              -- SchemaStore.nvim supplies the catalogue, so the server's own
+              -- fetcher is turned off to avoid the two disagreeing
+              schemaStore = { enable = false, url = '' },
+              schemas = vim.tbl_extend('force', require('schemastore').yaml.schemas(), {
+                -- "kubernetes" is a magic URI resolved against the schemas
+                -- bundled with yaml-language-server
+                kubernetes = {
+                  'k8s/**/*.yaml',
+                  'kubernetes/**/*.yaml',
+                  'manifests/**/*.yaml',
+                  '*-deployment.yaml',
+                  '*-service.yaml',
+                  '*-configmap.yaml',
+                  '*-ingress.yaml',
+                },
+              }),
+              validate = true,
+              -- the server flags non-alphabetical keys by default, which is
+              -- noise in a manifest where order is meaningful to a reader
+              keyOrdering = false,
+            },
+          },
+        },
+
+        helm_ls = {
+          settings = {
+            ['helm-ls'] = {
+              yamlls = { path = 'yaml-language-server' },
+            },
+          },
+        },
+
+        terraformls = {
+          -- upstream's on_attach calls vim.lsp.codelens.enable, which only
+          -- exists on 0.12; on 0.11 it throws on every terraform buffer
+          on_attach = function(_, bufnr)
+            if vim.lsp.codelens.enable then
+              vim.lsp.codelens.enable(true, { bufnr = bufnr })
+            end
+          end,
+        },
+        tflint = {},
+        prismals = {},
+        dockerls = {},
+        docker_compose_language_service = {},
+
         rust_analyzer = {},
         pyright = {},
-        jsonls = {},
         tailwindcss = {},
         cssls = {},
         clangd = {},
@@ -263,6 +324,9 @@ return {
         'prettier',
         'prettierd',
         'eslint_d',
+        -- nvim-dap is lazy-loaded, and mason-tool-installer.setup replaces its
+        -- list rather than appending, so the adapter is requested here
+        'js-debug-adapter',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -316,6 +380,13 @@ return {
         scss = { 'prettierd', 'prettier', stop_after_first = true },
         html = { 'prettierd', 'prettier', stop_after_first = true },
         markdown = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'prettierd', 'prettier', stop_after_first = true },
+        graphql = { 'prettierd', 'prettier', stop_after_first = true },
+        terraform = { 'terraform_fmt' },
+        hcl = { 'terraform_fmt' },
+        ['terraform-vars'] = { 'terraform_fmt' },
+        -- prisma has no standalone formatter; prismals handles it and
+        -- lsp_format = 'fallback' above picks that up
       },
     },
   },
