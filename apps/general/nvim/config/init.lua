@@ -12,35 +12,6 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   end
 end
 vim.opt.rtp:prepend(lazypath)
-vim.lsp.config('tsgo', {
-  cmd = { 'tsgo', '--lsp', '--stdio' },
-  filetypes = {
-    'javascript',
-
-    'javascriptreact',
-
-    'javascript.jsx',
-
-    'typescript',
-
-    'typescriptreact',
-
-    'typescript.tsx',
-  },
-
-  root_markers = {
-
-    'tsconfig.json',
-
-    'jsconfig.json',
-
-    'package.json',
-
-    '.git',
-
-    'tsconfig.base.json',
-  },
-})
 
 -- Configure and install plugins
 require('lazy').setup('plugins', {

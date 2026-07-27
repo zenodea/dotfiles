@@ -54,7 +54,7 @@ return {
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>sg', builtin.git_status, { desc = '[S]earch [G]it status' })
+      vim.keymap.set('n', '<leader>sG', builtin.git_status, { desc = '[S]earch [G]it status' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
@@ -222,10 +222,11 @@ return {
         harpoon:list():select(4)
       end, { desc = 'Harpoon: Go to file 4' })
 
-      vim.keymap.set('n', '<leader>hn', function()
+      -- capitalised because gitsigns owns the lowercase <leader>h* hunk maps
+      vim.keymap.set('n', '<leader>hN', function()
         harpoon:list():next()
       end, { desc = 'Harpoon: Next file' })
-      vim.keymap.set('n', '<leader>hp', function()
+      vim.keymap.set('n', '<leader>hP', function()
         harpoon:list():prev()
       end, { desc = 'Harpoon: Previous file' })
 
