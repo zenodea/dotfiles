@@ -362,12 +362,23 @@ return {
         local disable_filetypes = { c = true, cpp = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
           return nil
-        else
-          return {
-            timeout_ms = 500,
-            lsp_format = 'fallback',
-          }
         end
+
+        -- Obsidian owns formatting inside a vault. Prettier reflows
+        -- paragraphs and strips trailing double-spaces, which markdown treats
+        -- as hard line breaks, so every note edited here would come back with
+        -- a diff against what Obsidian wrote.
+        if vim.bo[bufnr].filetype == 'markdown' then
+          local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr))
+          if dir ~= '' and vim.fs.find('.obsidian', { path = dir, upward = true, type = 'directory' })[1] then
+            return nil
+          end
+        end
+
+        return {
+          timeout_ms = 500,
+          lsp_format = 'fallback',
+        }
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
