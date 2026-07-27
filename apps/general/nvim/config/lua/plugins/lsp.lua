@@ -25,6 +25,24 @@ return {
             silent = true,
           }),
         },
+        -- top-level plugin options, not `settings` — nesting them made the
+        -- monorepo root detection below a no-op
+        root_dir = function(fname)
+          local util = require 'lspconfig.util'
+          return util.root_pattern(
+            'package.json',
+            'tsconfig.json',
+            'jsconfig.json',
+            '.git',
+            'lerna.json',
+            'nx.json',
+            'turbo.json',
+            'pnpm-workspace.yaml',
+            'yarn.lock',
+            'pnpm-lock.yaml'
+          )(fname)
+        end,
+        single_file_support = false,
         settings = {
           tsserver_max_memory = 8192,
           complete_function_calls = true,
@@ -56,22 +74,6 @@ return {
           tsserver_plugins = {
             '@styled/typescript-styled-plugin',
           },
-          root_dir = function(fname)
-            local util = require 'lspconfig.util'
-            return util.root_pattern(
-              'package.json',
-              'tsconfig.json',
-              'jsconfig.json',
-              '.git',
-              'lerna.json',
-              'nx.json',
-              'turbo.json',
-              'pnpm-workspace.yaml',
-              'yarn.lock',
-              'pnpm-lock.yaml'
-            )(fname)
-          end,
-          single_file_support = false,
         },
       }
     end,
@@ -131,7 +133,7 @@ return {
 
           local client = vim.lsp.get_client_by_id(event.data.client_id)
 
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, { bufnr = event.buf }) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
@@ -154,7 +156,7 @@ return {
             })
           end
 
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, { bufnr = event.buf }) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
@@ -189,7 +191,9 @@ return {
         },
       }
 
-      local capabilities = require('blink.cmp').get_lsp_capabilities()
+      -- captured before vim.lsp.config() overwrites it below, otherwise our
+      -- on_attach would resolve to itself and recurse
+      local eslint_on_attach = vim.lsp.config.eslint.on_attach
 
       local servers = {
         lua_ls = {
@@ -201,11 +205,7 @@ return {
               runtime = { version = 'LuaJIT' },
               diagnostics = { globals = { 'vim' } },
               workspace = {
-                library = {
-                  vim.env.VIMRUNTIME,
-                  '${pkgs.lua}/lib',
-                  '${pkgs.vimPlugins.plenary-nvim}',
-                },
+                library = { vim.env.VIMRUNTIME },
               },
               telemetry = { enable = false },
             },
@@ -226,43 +226,38 @@ return {
             useESLintClass = true,
             run = 'onType',
           },
-          root_dir = function(fname)
-            local util = require 'lspconfig.util'
-            return util.root_pattern(
-              '.eslintrc',
-              '.eslintrc.js',
-              '.eslintrc.json',
-              '.eslintrc.yaml',
-              '.eslintrc.yml',
-              'eslint.config.js',
-              'eslint.config.mjs',
-              'package.json'
-            )(fname)
-          end,
+          -- the stock config already resolves eslint configs per-package in a
+          -- monorepo; only the fix-on-save hook is ours
           on_attach = function(client, bufnr)
+            if eslint_on_attach then
+              eslint_on_attach(client, bufnr)
+            end
             vim.api.nvim_create_autocmd('BufWritePre', {
               buffer = bufnr,
-              callback = function()
-                vim.lsp.buf.code_action {
-                  filter = function(action)
-                    return action.kind == 'source.fixAll.eslint'
-                  end,
-                  apply = true,
-                }
-              end,
+              command = 'LspEslintFixAll',
             })
           end,
         },
 
-        rust_analyzer = { enable = true },
-        pyright = { enable = true },
-        jsonls = { enable = true },
-        tailwindcss = { enable = true },
-        cssls = { enable = true },
-        clangd = { enable = true },
+        rust_analyzer = {},
+        pyright = {},
+        jsonls = {},
+        tailwindcss = {},
+        cssls = {},
+        clangd = {},
       }
 
-      local ensure_installed = vim.tbl_keys(servers or {})
+      -- mason-lspconfig v2 dropped `handlers`, so servers are registered with
+      -- nvim 0.11's native vim.lsp.config and enabled explicitly here.
+      vim.lsp.config('*', {
+        capabilities = require('blink.cmp').get_lsp_capabilities(),
+      })
+
+      for name, config in pairs(servers) do
+        vim.lsp.config(name, config)
+      end
+
+      local ensure_installed = vim.tbl_keys(servers)
       vim.list_extend(ensure_installed, {
         'stylua',
         'prettier',
@@ -275,14 +270,10 @@ return {
       require('mason-lspconfig').setup {
         ensure_installed = {},
         automatic_installation = false,
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
+        automatic_enable = false,
       }
+
+      vim.lsp.enable(vim.tbl_keys(servers))
     end,
   },
 
@@ -367,4 +358,3 @@ return {
     },
   },
 }
-
