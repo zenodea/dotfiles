@@ -79,6 +79,14 @@ theme you pick is itself paired, auto rebases onto it.
 A light half inherits the dark half's `WALLPAPER`, so the desktop stays put
 across a flip. Give it its own `WALLPAPER=` to override that.
 
+`MUTED` — comments, placeholders, line numbers, inactive labels — is derived
+rather than declared: `FG` is faded toward `BG` only as far as the 4.5:1
+body-text contrast floor allows, so muted text stays as quiet as it can be
+without going unreadable. This used to reuse `BORDER`, which is tuned to sit
+*close* to `BG` so dividers stay quiet, and on a light palette that left
+comments around 1.2–1.9:1 against the background. A theme can set `MUTED=`
+itself to reclaim its upstream comment hue; the derivation is then skipped.
+
 One note on what auto mode deliberately does *not* do: on macOS it never writes
 the system appearance (`apps/mac/appearance/` skips while auto is on). Setting
 Light or Dark explicitly is what turns Auto *off*, so doing it would disable the

@@ -26,7 +26,7 @@ body {
 
   /* Text */
   --text-normal: #${FG};
-  --text-muted: #${FG_BRIGHT};
+  --text-muted: #${MUTED};
   --text-faint: #${BORDER};
   --text-accent: #${ACCENT};
   --text-accent-hover: #${BLUE};

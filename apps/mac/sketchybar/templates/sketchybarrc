@@ -36,7 +36,7 @@ bar=(
   margin=7
   border_width=1
   border_color=0xff${GREEN}
-  blur_radius=30
+  blur_radius=60
   notch_width=0
 )
 
