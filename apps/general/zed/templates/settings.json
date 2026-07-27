@@ -14,12 +14,19 @@
     "tree_view": true,
     "dock": "left"
   },
+  // Must live here, not in config/settings.json: every theme switch regenerates
+  // that file from this template with a truncating write, so anything Zed's UI
+  // adds there is gone at the next light/dark flip. IDs are the ACP registry's,
+  // not display names — see external_agents/registry/registry.json.
   "agent_servers": {
-    "your_agent": {
-      "type": "custom",
-      "command": "path_to_executable",
-      "args": [],
-      "env": {}
+    "claude-acp": {
+      "type": "registry"
+    },
+    "codex-acp": {
+      "type": "registry"
+    },
+    "gemini": {
+      "type": "registry"
     }
   },
   "edit_predictions": {
