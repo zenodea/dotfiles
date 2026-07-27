@@ -79,6 +79,7 @@ return {
         { '<leader>T', group = '[T]est' },
         { '<leader>R', group = '[R]est client' },
         { '<leader>Q', group = '[Q]uery database' },
+        { '<leader>n', group = '[N]otes (Obsidian)', mode = { 'n', 'v' } },
       },
     },
   },
