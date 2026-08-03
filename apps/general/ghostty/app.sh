@@ -2,6 +2,7 @@
 
 render() {
     generate config "$HOME/.config/ghostty/config"
+    copy shaders/cursor_warp.glsl "$HOME/.config/ghostty/shaders/cursor_warp.glsl"
 }
 
 reload_linux() {

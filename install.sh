@@ -53,15 +53,28 @@ link() {
     echo "  linked: $dst"
 }
 
+# Where an app's config/ lands. Almost always ~/.config/<name>, but lazygit
+# asks Go for os.UserConfigDir(), which on macOS is ~/Library/Application
+# Support — it never looks at ~/.config unless XDG_CONFIG_HOME is set.
+# `lazygit --print-config-dir` confirms the path on any machine.
+app_dest() {
+    if [ "$1" = "lazygit" ] && [ "$PLATFORM" = "mac" ] && [ -z "${XDG_CONFIG_HOME:-}" ]; then
+        echo "$HOME/Library/Application Support/lazygit"
+    else
+        echo "$HOME/.config/$1"
+    fi
+}
+
 # apps/<platform>/<name>/config → ~/.config/<name>
 # An app with no config/ is either wholly generated (ghostty, borders, fuzzel
 # render straight to ~/.config) or has nothing to link.
 link_apps() {
-    local dir="$1" app
+    local dir="$1" app name
     [ -d "$DOTFILES_DIR/apps/$dir" ] || return 0
     for app in "$DOTFILES_DIR/apps/$dir"/*/; do
         [ -d "$app/config" ] || continue
-        link "${app%/}/config" "$HOME/.config/$(basename "$app")"
+        name="$(basename "$app")"
+        link "${app%/}/config" "$(app_dest "$name")"
     done
 }
 
