@@ -136,6 +136,13 @@ return {
     opts = {},
   },
   {
+    'zenodea/nextedit.nvim',
+    dependencies = { 'zbirenbaum/copilot.lua' },
+    config = function()
+      require('nextedit').setup { provider = 'copilot-nes' }
+    end,
+  },
+  {
     'kdheepak/lazygit.nvim',
     lazy = true,
     cmd = {
@@ -154,16 +161,55 @@ return {
     keys = {
       { '<leader>lg', '<cmd>LazyGit<cr>', desc = 'LazyGit' },
     },
-  },
-  -- Next edit suggestions — local checkout, not on a registry yet
-  {
-    dir = '~/nextedit.nvim',
-    build = 'cd server && cargo build --release',
     config = function()
-      require('nextedit').setup {
-        provider = 'mercury',
-        model = 'mercury-2',
-      }
+      -- Pressing `e` in lazygit calls back into this nvim (see os.edit in
+      -- apps/general/lazygit/config/config.yml) rather than nesting a second
+      -- nvim inside the terminal buffer. Two things make a plain `--remote`
+      -- unreliable, which is why it routes through here instead:
+      --
+      --   * lazygit.nvim's on_exit closes the float and then forces focus back
+      --     to the pre-lazygit window, so an edit issued too early either
+      --     lands in the terminal buffer or gets undone. Wait it out.
+      --   * acp.nvim marks its chat/input/sidebar/details windows winfixbuf
+      --     (so do neo-tree and friends), and `:edit` against one of those is
+      --     a hard error. Pick a window that actually accepts a buffer.
+      vim.api.nvim_create_user_command('LazygitEdit', function(opts)
+        local line = tonumber(opts.fargs[1]) or 0
+        -- lazygit shell-quotes the path, and --remote-send delivers that
+        -- quoting as literal keystrokes, so peel it back off.
+        local file = table.concat(vim.list_slice(opts.fargs, 2), ' '):gsub('^[\'"](.*)[\'"]$', '%1')
+
+        local function usable(w)
+          return vim.api.nvim_win_get_config(w).relative == '' and not vim.wo[w].winfixbuf and vim.bo[vim.api.nvim_win_get_buf(w)].buftype == ''
+        end
+
+        local tries = 0
+        local function open()
+          -- Bounded: lazygit.nvim leaves lazygit_opened set if lazygit exits
+          -- non-zero, and a file the user asked for beats waiting forever.
+          if vim.g.lazygit_opened == 1 and tries < 50 then
+            tries = tries + 1
+            return vim.defer_fn(open, 20)
+          end
+          if not usable(vim.api.nvim_get_current_win()) then
+            local target = vim.iter(vim.api.nvim_tabpage_list_wins(0)):find(usable)
+            -- No code window in this tab (an acp workspace on its own, say):
+            -- make one rather than failing or hijacking a panel.
+            if target then
+              vim.api.nvim_set_current_win(target)
+            else
+              vim.cmd 'topleft vsplit'
+            end
+          end
+          vim.cmd.edit(vim.fn.fnameescape(file))
+          if line > 0 then
+            pcall(vim.api.nvim_win_set_cursor, 0, { line, 0 })
+            vim.cmd 'normal! zz'
+          end
+        end
+
+        open()
+      end, { nargs = '+', desc = 'Open a file handed over by lazygit' })
     end,
   },
 }

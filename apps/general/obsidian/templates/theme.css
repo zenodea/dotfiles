@@ -85,3 +85,15 @@ body {
   --scrollbar-thumb-bg: rgba(${FG_RGB}, 0.15);
   --scrollbar-active-thumb-bg: rgba(${FG_RGB}, 0.3);
 }
+
+/* Translucent window (macOS) — the same glass as Ghostty and Zed: BG at
+   OPACITY over the system blur. In translucent mode Obsidian clears every
+   workspace container itself and paints the whole window with this one
+   variable, so overriding it is the entire job. Its default is black at
+   0.6, which is the tint mismatch this replaces. The active tab would
+   otherwise still paint opaque SURFACE over the glass; Zed uses BG_ALT at
+   0.2 there. */
+body.is-translucent {
+  --workspace-background-translucent: rgba(${BG_RGB}, ${OPACITY});
+  --tab-background-active: rgba(${BG_ALT_RGB}, 0.2);
+}

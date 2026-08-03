@@ -1,0 +1,18 @@
+# lazygit — mostly defaults; see `lazygit --config` for the full set.
+
+# `e` on a file opens it in the nvim that launched lazygit instead of nesting a
+# second nvim inside the terminal buffer. This is the built-in `nvim-remote`
+# preset with one change: it uses --remote-tab, which strands the file in a new
+# tab away from an acp.nvim workspace, so instead the path is handed to
+# :LazygitEdit (defined in the lazygit.nvim spec in nvim's plugins/coding.lua)
+# which reuses a code window in the current tab.
+#
+# Each still falls back to a plain nvim when $NVIM is unset, i.e. when lazygit
+# is run from a normal shell rather than from inside nvim.
+os:
+  edit: '[ -z "$NVIM" ] && nvim -- {{filename}} || (nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote-send "<C-\><C-N>:LazygitEdit 0 {{filename}}<CR>")'
+  editAtLine: '[ -z "$NVIM" ] && nvim +{{line}} -- {{filename}} || (nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote-send "<C-\><C-N>:LazygitEdit {{line}} {{filename}}<CR>")'
+  openDirInEditor: '[ -z "$NVIM" ] && nvim -- {{dir}} || (nvim --server "$NVIM" --remote-send "q" && nvim --server "$NVIM" --remote-send "<C-\><C-N>:LazygitEdit 0 {{dir}}<CR>")'
+  # Blocking by design — lazygit waits on this one (e.g. rewording a commit),
+  # so it has to stay in the foreground rather than hand off and return.
+  editAtLineAndWait: 'nvim +{{line}} -- {{filename}}'

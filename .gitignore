@@ -4,6 +4,8 @@ nvim.log
 # Machine-local: which appearance a manual theme pick is holding against.
 .auto-pin
 apps/linux/vifm/config/vifminfo.json
+# lazygit writes its runtime state next to config.yml, i.e. into the repo.
+apps/general/lazygit/config/state.yml
 
 # Zed's local prompt store — binary, rewritten on every session
 apps/general/zed/config/prompts/

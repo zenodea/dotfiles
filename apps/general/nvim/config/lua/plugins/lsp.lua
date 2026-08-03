@@ -25,24 +25,14 @@ return {
             silent = true,
           }),
         },
-        -- top-level plugin options, not `settings` — nesting them made the
-        -- monorepo root detection below a no-op
-        root_dir = function(fname)
-          local util = require 'lspconfig.util'
-          return util.root_pattern(
-            'package.json',
-            'tsconfig.json',
-            'jsconfig.json',
-            '.git',
-            'lerna.json',
-            'nx.json',
-            'turbo.json',
-            'pnpm-workspace.yaml',
-            'yarn.lock',
-            'pnpm-lock.yaml'
-          )(fname)
-        end,
-        single_file_support = false,
+        -- Root detection is upstream's (typescript-tools/utils.lua get_root_dir):
+        -- nearest tsconfig.json, else jsconfig.json/package.json/.git, and it
+        -- refuses to root inside node_modules. That is the per-package root a
+        -- monorepo wants. Do NOT reintroduce a root_dir here in the old
+        -- `function(fname) return path end` form — since v0.11 support the
+        -- plugin uses vim.lsp.config, where root_dir is `function(bufnr, on_dir)`
+        -- and must *call* on_dir. The old signature silently never starts the
+        -- client: no error, no attach, no completion.
         settings = {
           tsserver_max_memory = 8192,
           complete_function_calls = true,
@@ -301,6 +291,18 @@ return {
         dockerls = {},
         docker_compose_language_service = {},
 
+        gopls = {
+          settings = {
+            gopls = {
+              gofumpt = true,
+              staticcheck = true,
+              usePlaceholders = true,
+              analyses = {
+                unusedparams = true,
+              },
+            },
+          },
+        },
         rust_analyzer = {},
         pyright = {},
         tailwindcss = {},

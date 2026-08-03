@@ -28,21 +28,23 @@ for v in json.load(open(sys.argv[1])).get('vaults', {}).values():
 }
 
 # Point the vault's appearance.json at our theme; prints "changed" if it moved.
+# Translucency is macOS-only (Electron vibrancy): theme.css counts on the
+# is-translucent class never appearing on Linux, so keep it off there.
 select_theme() {
-    python3 - "$1/.obsidian/appearance.json" "#$ACCENT" <<'PY'
+    python3 - "$1/.obsidian/appearance.json" "#$ACCENT" "$PLATFORM" <<'PY'
 import json, os, sys
 path, accent = sys.argv[1], sys.argv[2]
+translucent = sys.argv[3] == "mac"
 d = {}
 if os.path.exists(path):
     with open(path) as f:
         d = json.load(f)
-before = (d.get("cssTheme"), d.get("theme"), d.get("accentColor"))
-d["cssTheme"] = "Dotfiles"
-d["theme"] = "obsidian"
-d["accentColor"] = accent
+want = ("Dotfiles", "obsidian", accent, translucent)
+before = (d.get("cssTheme"), d.get("theme"), d.get("accentColor"), d.get("translucency"))
+d["cssTheme"], d["theme"], d["accentColor"], d["translucency"] = want
 with open(path, "w") as f:
     json.dump(d, f, indent=2)
-print("changed" if before != ("Dotfiles", "obsidian", accent) else "unchanged")
+print("changed" if before != want else "unchanged")
 PY
 }
 

@@ -1,7 +1,8 @@
 theme = ${GHOSTTY_THEME}
 background-opacity = ${OPACITY}
 background=#${BG}
-background-blur = true
+background-blur = 80
 window-padding-y = 6,0
+custom-shader = shaders/cursor_warp.glsl
 confirm-close-surface = false
 keybind = shift+enter=text:\x1b\r
