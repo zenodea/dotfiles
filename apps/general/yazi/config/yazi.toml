@@ -1,2 +1,29 @@
+[mgr]
+sort_by = "natural"
+linemode = "size"
+
 [opener]
-edit = [{ run = 'nvim "$@"', block = true }]
+edit = [{ run = 'nvim "$@"', block = true, desc = "nvim" }]
+
+# yazi 26.x matches open rules with `url = "glob"` — `name` fails to parse.
+[open]
+prepend_rules = [
+    { mime = "text/*", use = "edit" },
+    { mime = "inode/empty", use = "edit" },
+    { mime = "application/json", use = "edit" },
+    { mime = "application/toml", use = "edit" },
+    { mime = "application/yaml", use = "edit" },
+    { mime = "application/x-yaml", use = "edit" },
+    { mime = "application/xml", use = "edit" },
+    { mime = "application/javascript", use = "edit" },
+    { mime = "application/x-sh", use = "edit" },
+    { mime = "application/x-shellscript", use = "edit" },
+    { mime = "application/x-perl", use = "edit" },
+    { mime = "application/x-ruby", use = "edit" },
+    { url = "*.md", use = "edit" },
+    { url = "*.lock", use = "edit" },
+    { url = "*.conf", use = "edit" },
+    { url = "*.ini", use = "edit" },
+    { url = "*.env", use = "edit" },
+    { url = "*.gitignore", use = "edit" },
+]
