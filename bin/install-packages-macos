@@ -58,6 +58,14 @@ FORMULAE=(
     vifm
     yazi
 
+    # yazi extras: video thumbnails, PDF previews, file search, fuzzy jump,
+    # frecency jump
+    ffmpeg
+    poppler
+    fd
+    fzf
+    zoxide
+
     # Terminal multiplexer
     tmux
 

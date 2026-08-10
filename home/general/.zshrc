@@ -132,3 +132,21 @@ if command -v dotfiles > /dev/null 2>&1; then
     }
     compdef _dotfiles_cli dotfiles
 fi
+
+
+# yazi — quit with q and the shell cd's to where you browsed
+y() {
+    local tmp cwd
+    tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+        builtin cd -- "$cwd"
+    fi
+    rm -f -- "$tmp"
+}
+
+# zoxide — frecency-based cd (z / zi)
+command -v zoxide > /dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+# Added by Antigravity CLI installer
+export PATH="/Users/zenodea/.local/bin:$PATH"
