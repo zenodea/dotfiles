@@ -31,6 +31,7 @@ opt.scrolloff = 10
 
 -- Behavior
 opt.mouse = 'a'
+opt.mousescroll = 'ver:1,hor:6'
 opt.showmode = false
 opt.undofile = true
 opt.updatetime = 250
