@@ -22,7 +22,9 @@ keymap('v', 'K', ":m '<-2<CR>gv=gv")
 -- Join lines and center
 keymap('n', 'J', 'mzJ`z')
 
--- Half page jumping with centering
+-- Half page jumping with centering. Kept instant (not neoscroll-animated):
+-- the ghostty cursor-trail shader needs a discrete cursor jump to fire, and
+-- the zz recenter gives it on-screen distance to smear.
 keymap('n', '<C-d>', '<C-d>zz')
 keymap('n', '<C-u>', '<C-u>zz')
 

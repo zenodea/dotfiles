@@ -245,6 +245,43 @@ return {
     end,
   },
 
+  -- Smooth scrolling. <C-d>/<C-u> stay instant (see config/keymaps.lua) so
+  -- the ghostty cursor-trail shader keeps firing on them.
+  {
+    'karb94/neoscroll.nvim',
+    cond = function()
+      return not vim.g.neovide -- neovide animates natively
+    end,
+    opts = {
+      mappings = { 'zt', 'zz', 'zb' },
+      easing = 'quadratic',
+      duration_multiplier = 0.45,
+    },
+    config = function(_, opts)
+      local neoscroll = require 'neoscroll'
+      neoscroll.setup(opts)
+
+      -- Scroll(x): |x| < 1 scrolls that fraction of the window, otherwise x
+      -- lines; the sign picks the direction.
+      function Scroll(x, scroll_opts)
+        scroll_opts = vim.tbl_extend('keep', scroll_opts or {}, { move_cursor = true, duration = 100 })
+        if math.abs(x) < 1 then
+          x = x * vim.api.nvim_win_get_height(0)
+        end
+        neoscroll.scroll(x, scroll_opts)
+      end
+
+      vim.api.nvim_create_user_command('Scroll', function(cmd)
+        local x = tonumber(cmd.args)
+        if not x then
+          vim.notify('Scroll: expected a number, got ' .. cmd.args, vim.log.levels.ERROR)
+          return
+        end
+        Scroll(x)
+      end, { nargs = 1, desc = 'Smooth-scroll n lines (or a window fraction if |n| < 1)' })
+    end,
+  },
+
   -- Tmux navigator
   {
     'christoomey/vim-tmux-navigator',
