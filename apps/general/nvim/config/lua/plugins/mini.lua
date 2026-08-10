@@ -1,3 +1,5 @@
+-- All mini.* setup lives here — lazy.nvim keeps only one config per plugin.
+--
 -- The palette lives in lua/dotfiles/theme.lua, which switch-theme regenerates
 -- on every switch. Watching that file is what lets a running nvim follow along:
 -- nvim exposes no reload hook to poke from outside, and the alternative —
@@ -52,6 +54,10 @@ return {
     lazy = false,
     priority = 1000,
     config = function()
+      require('mini.ai').setup { n_lines = 500 }
+      require('mini.surround').setup()
+      require('mini.comment').setup()
+
       apply()
       watch()
     end,

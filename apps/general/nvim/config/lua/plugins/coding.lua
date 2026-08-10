@@ -64,15 +64,7 @@ return {
     opts = { signs = true },
   },
 
-  -- Mini.nvim collection
-  {
-    'nvim-mini/mini.nvim',
-    config = function()
-      require('mini.ai').setup { n_lines = 500 }
-      require('mini.surround').setup()
-      require('mini.comment').setup()
-    end,
-  },
+  -- mini.nvim lives in plugins/mini.lua (lazy.nvim keeps only one config per plugin)
 
   -- Gitsigns
   {
