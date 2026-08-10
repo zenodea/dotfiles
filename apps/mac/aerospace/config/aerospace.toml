@@ -3,7 +3,7 @@
 
 after-startup-command = []
 
-start-at-login = false
+start-at-login = true
 
 # See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
@@ -28,21 +28,45 @@ exec-on-workspace-change = [
     'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
-automatically-unhide-macos-hidden-apps = false
+# Cmd-H'd windows otherwise leave invisible holes in the layout.
+automatically-unhide-macos-hidden-apps = true
+
+# Mouse follows keyboard focus.
+on-focus-changed = ['move-mouse window-lazy-center']
 
 # qwerty|dvorak|colemak
 [key-mapping]
     preset = 'qwerty'
 
 # Gaps between windows (inner-*) and monitor edges (outer-*).
-# outer.top clears the sketchybar bar (height 33 + y_offset 2).
+# outer.top clears the sketchybar bar (height 33 + y_offset 2 = 35px).
+# The built-in display needs only 8 because macOS always reserves the notch
+# strip there; the menu bar is auto-hidden, so external monitors reserve
+# nothing and need the full bar height cleared or windows tile over the bar.
 [gaps]
     inner.horizontal = 6
     inner.vertical =   6
     outer.left =       6
     outer.bottom =     6
-    outer.top =        8
+    outer.top =        [{ monitor.'built-in' = 8 }, 42]
     outer.right =      6
+
+# Pin workspaces to monitors so alt-N always lands on the same screen and
+# workspaces stop migrating when monitors reconnect. Patterns are
+# case-insensitive substrings of the monitor names, currently:
+#   'Built-in Retina Display', 'DELL S2725QC', 'LG ULTRAGEAR'
+# Uncomment and adjust to taste:
+#[workspace-to-monitor-force-assignment]
+#    1 = 'dell'
+#    2 = 'dell'
+#    3 = 'dell'
+#    4 = 'dell'
+#    5 = 'ultragear'
+#    6 = 'ultragear'
+#    7 = 'ultragear'
+#    8 = 'built-in'
+#    9 = 'built-in'
+#    0 = 'built-in'
 
 # 'main' binding mode — must always be present.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -63,6 +87,9 @@ automatically-unhide-macos-hidden-apps = false
 
     alt-minus = 'resize smart -50'
     alt-equal = 'resize smart +50'
+
+    alt-f = 'fullscreen'
+    alt-shift-f = 'layout floating tiling'
 
     # Launchers go through `open`: on macOS `ghostty -e` won't start the
     # emulator from the CLI and the `+new-window` IPC is GTK-only.
@@ -97,6 +124,9 @@ automatically-unhide-macos-hidden-apps = false
 
     alt-tab = 'workspace-back-and-forth'
     alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+    alt-period = 'focus-monitor --wrap-around next'
+    alt-shift-period = 'move-node-to-monitor --wrap-around --focus-follows-window next'
 
     alt-shift-semicolon = 'mode service'
 
