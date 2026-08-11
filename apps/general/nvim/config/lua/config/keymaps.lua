@@ -59,3 +59,14 @@ end, { desc = 'Reveal current file in Neo-tree', silent = true })
 keymap('n', '<leader>k', '<cmd>lnext<CR>zz', { desc = 'Next location list item' })
 keymap('n', '<leader>j', '<cmd>lprev<CR>zz', { desc = 'Previous location list item' })
 
+-- Maximize the current window; press again to restore the split layout
+local restore_layout = nil
+keymap('n', '<C-w>m', function()
+  if restore_layout then
+    vim.cmd(restore_layout)
+    restore_layout = nil
+  elseif vim.fn.winnr '$' > 1 then
+    restore_layout = vim.fn.winrestcmd()
+    vim.cmd 'wincmd _ | wincmd |'
+  end
+end, { desc = '[M]aximize window (toggle)' })
