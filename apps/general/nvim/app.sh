@@ -3,5 +3,5 @@
 # instance re-themes itself. Nothing to poke from out here, hence no reload().
 
 render() {
-    generate theme.lua config/lua/dotfiles/theme.lua
+  generate theme.lua config/lua/dotfiles/theme.lua
 }

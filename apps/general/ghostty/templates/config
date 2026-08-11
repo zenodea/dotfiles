@@ -1,12 +1,14 @@
 theme = ${GHOSTTY_THEME}
-font-family = Comic Code Ligatures
-font-size = 15
-adjust-cell-height = 30%
-adjust-cell-width = 5%
+font-family = ${FONT_MONO_FAMILY}
+font-size = ${FONT_SIZE}
+adjust-cell-height = ${FONT_CELL_HEIGHT}
+adjust-cell-width = ${FONT_CELL_WIDTH}
+text-blending = linear-corrected
 background-opacity = ${OPACITY}
 background=#${BG}
 background-blur = 80
 window-padding-y = 6,0
+window-padding-balance = true
 custom-shader = shaders/cursor_warp.glsl
 confirm-close-surface = false
 keybind = shift+enter=text:\x1b\r

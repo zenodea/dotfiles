@@ -270,10 +270,10 @@
   },
   "ui_font_size": 16,
   "buffer_font_size": 16,
-  "buffer_font_line_height": { "custom": 1.6 },
-  "buffer_font_family": "Comic Code Ligatures",
+  "buffer_font_line_height": { "custom": ${FONT_LINE_HEIGHT} },
+  "buffer_font_family": "${FONT_MONO_FAMILY}",
   "buffer_font_fallbacks": ["Symbols Nerd Font Mono"],
-  "ui_font_family": "BlexMono Nerd Font Mono",
+  "ui_font_family": "${FONT_TEXT_FAMILY}",
   "autosave": "on_focus_change",
   "theme": "${ZED_BASE}",
   "experimental.theme_overrides": {

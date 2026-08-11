@@ -48,6 +48,31 @@ A switch regenerates every app's config from its templates and reloads it live.
 Themed: hyprland · waybar · fuzzel · rofi · vifm · sketchybar · borders ·
 Alfred · Raycast · ghostty · nvim · zed · Firefox · Obsidian · wallpaper
 
+## Font switching
+
+```sh
+dotfiles --font <name>      # switch the font pairing, live (tab-completes)
+dotfiles --font             # available fonts
+```
+
+Fonts are orthogonal to themes: `.current-font` holds the active one, and every
+theme switch re-applies it. A preset in `fonts/<name>.sh` is a *pairing* — a
+mono family plus a proportional companion:
+
+```sh
+FONT_MONO_FAMILY="Berkeley Mono"        # ghostty, zed buffer, code everywhere
+FONT_TEXT_FAMILY="IBM Plex Sans Text"   # zed UI, Obsidian notes, sketchybar labels
+FONT_SIZE="14"                          # optional, terminal pt size
+FONT_CELL_HEIGHT="10%"                  # optional, ghostty line-height tweak
+FONT_CELL_WIDTH="0%"                    # optional, ghostty cell-width tweak
+```
+
+The mono half reaches ghostty (and everything in a terminal), zed's buffer,
+Obsidian code blocks and Firefox's default `monospace`; the text half reaches
+zed's UI, Obsidian notes/interface, sketchybar labels and Firefox chrome +
+default `sans-serif`. Sketchybar icons stay on SF Pro — they're SF Symbols
+glyphs, which only exist in Apple's SF fonts.
+
 ## Light / dark
 
 ```sh
