@@ -25,14 +25,16 @@ return {
             silent = true,
           }),
         },
-        -- Root detection is upstream's (typescript-tools/utils.lua get_root_dir):
-        -- nearest tsconfig.json, else jsconfig.json/package.json/.git, and it
-        -- refuses to root inside node_modules. That is the per-package root a
-        -- monorepo wants. Do NOT reintroduce a root_dir here in the old
-        -- `function(fname) return path end` form — since v0.11 support the
-        -- plugin uses vim.lsp.config, where root_dir is `function(bufnr, on_dir)`
-        -- and must *call* on_dir. The old signature silently never starts the
-        -- client: no error, no attach, no completion.
+        root_dir = function(bufnr, on_dir)
+          local util = require 'typescript-tools.utils'
+          if not util.bufname_valid(vim.api.nvim_buf_get_name(bufnr)) then
+            return
+          end
+          local root = util.get_root_dir(bufnr)
+          if root then
+            on_dir(root)
+          end
+        end,
         settings = {
           tsserver_max_memory = 8192,
           complete_function_calls = true,
