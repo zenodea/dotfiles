@@ -24,8 +24,9 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 # other way to learn the workspace changed — AeroSpace doesn't poll or notify,
 # so without this hook the indicator stays frozen on whatever it read at launch.
 exec-on-workspace-change = [
-    '/bin/bash', '-c',
-    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
+  '/bin/bash',
+  '-c',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
 
 # Cmd-H'd windows otherwise leave invisible holes in the layout.
@@ -36,20 +37,27 @@ on-focus-changed = ['move-mouse window-lazy-center']
 
 # qwerty|dvorak|colemak
 [key-mapping]
-    preset = 'qwerty'
+preset = 'qwerty'
 
 # Gaps between windows (inner-*) and monitor edges (outer-*).
-# outer.top clears the sketchybar bar (height 33 + y_offset 2 = 35px).
-# The built-in display needs only 8 because macOS always reserves the notch
-# strip there; the menu bar is auto-hidden, so external monitors reserve
-# nothing and need the full bar height cleared or windows tile over the bar.
+#
+# outer.top must clear sketchybar (height 33 + y_offset 2 = 35px) wherever the
+# bar actually occupies tiling space. Whether it does depends on the display
+# and on menu bar auto-hide, so it's set per monitor below — patterns are
+# case-insensitive substrings of the monitor names (`aerospace list-monitors`),
+# the bare number at the end is the fallback for anything unlisted.
+# Tune per monitor: too small = windows cover the bar, too big = dead strip.
 [gaps]
-    inner.horizontal = 6
-    inner.vertical =   6
-    outer.left =       6
-    outer.bottom =     6
-    outer.top =        [{ monitor.'built-in' = 8 }, 42]
-    outer.right =      6
+inner.horizontal = 6
+inner.vertical = 6
+outer.left = 6
+outer.bottom = 6
+outer.top = [
+  { monitor.'built-in' = 8 }, # notch strip already reserves space; raise to ~42 if the bar gets covered
+  { monitor.'msi' = 38 },     # MSI MP275
+  42,                         # any other monitor
+]
+outer.right = 6
 
 # Pin workspaces to monitors so alt-N always lands on the same screen and
 # workspaces stop migrating when monitors reconnect. Patterns are
@@ -72,79 +80,79 @@ on-focus-changed = ['move-mouse window-lazy-center']
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.main.binding]
 
-    alt-slash = 'layout tiles horizontal vertical'
-    alt-comma = 'layout accordion horizontal vertical'
+alt-slash = 'layout tiles horizontal vertical'
+alt-comma = 'layout accordion horizontal vertical'
 
-    alt-h = 'focus left'
-    alt-j = 'focus down'
-    alt-k = 'focus up'
-    alt-l = 'focus right'
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
 
-    alt-shift-h = 'move left'
-    alt-shift-j = 'move down'
-    alt-shift-k = 'move up'
-    alt-shift-l = 'move right'
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
 
-    alt-minus = 'resize smart -50'
-    alt-equal = 'resize smart +50'
+alt-minus = 'resize smart -50'
+alt-equal = 'resize smart +50'
 
-    alt-f = 'fullscreen'
-    alt-shift-f = 'layout floating tiling'
+alt-f = 'fullscreen'
+alt-shift-f = 'layout floating tiling'
 
-    # Launchers go through `open`: on macOS `ghostty -e` won't start the
-    # emulator from the CLI and the `+new-window` IPC is GTK-only.
-    #
-    # No -n, so Ghostty answers the reopen event in the running instance.
-    alt-enter = 'exec-and-forget open -a Ghostty.app'
-    # -n is required here: `open` drops --args unless it launches a process,
-    # so the cost of passing a command is a second app instance.
-    alt-e = 'exec-and-forget open -na Ghostty.app --args -e yazi'
+# Launchers go through `open`: on macOS `ghostty -e` won't start the
+# emulator from the CLI and the `+new-window` IPC is GTK-only.
+#
+# No -n, so Ghostty answers the reopen event in the running instance.
+alt-enter = 'exec-and-forget open -a Ghostty.app'
+# -n is required here: `open` drops --args unless it launches a process,
+# so the cost of passing a command is a second app instance.
+alt-e = 'exec-and-forget open -na Ghostty.app --args -e yazi'
 
-    alt-1 = 'workspace 1'
-    alt-2 = 'workspace 2'
-    alt-3 = 'workspace 3'
-    alt-4 = 'workspace 4'
-    alt-5 = 'workspace 5'
-    alt-6 = 'workspace 6'
-    alt-7 = 'workspace 7'
-    alt-8 = 'workspace 8'
-    alt-9 = 'workspace 9'
-    alt-0 = 'workspace 0'
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+alt-4 = 'workspace 4'
+alt-5 = 'workspace 5'
+alt-6 = 'workspace 6'
+alt-7 = 'workspace 7'
+alt-8 = 'workspace 8'
+alt-9 = 'workspace 9'
+alt-0 = 'workspace 0'
 
-    alt-shift-1 = 'move-node-to-workspace 1'
-    alt-shift-2 = 'move-node-to-workspace 2'
-    alt-shift-3 = 'move-node-to-workspace 3'
-    alt-shift-4 = 'move-node-to-workspace 4'
-    alt-shift-5 = 'move-node-to-workspace 5'
-    alt-shift-6 = 'move-node-to-workspace 6'
-    alt-shift-7 = 'move-node-to-workspace 7'
-    alt-shift-8 = 'move-node-to-workspace 8'
-    alt-shift-9 = 'move-node-to-workspace 9'
-    alt-shift-0 = 'move-node-to-workspace 0'
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+alt-shift-4 = 'move-node-to-workspace 4'
+alt-shift-5 = 'move-node-to-workspace 5'
+alt-shift-6 = 'move-node-to-workspace 6'
+alt-shift-7 = 'move-node-to-workspace 7'
+alt-shift-8 = 'move-node-to-workspace 8'
+alt-shift-9 = 'move-node-to-workspace 9'
+alt-shift-0 = 'move-node-to-workspace 0'
 
-    alt-tab = 'workspace-back-and-forth'
-    alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+alt-tab = 'workspace-back-and-forth'
+alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
-    alt-period = 'focus-monitor --wrap-around next'
-    alt-shift-period = 'move-node-to-monitor --wrap-around --focus-follows-window next'
+alt-period = 'focus-monitor --wrap-around next'
+alt-shift-period = 'move-node-to-monitor --wrap-around --focus-follows-window next'
 
-    alt-shift-semicolon = 'mode service'
+alt-shift-semicolon = 'mode service'
 
 # 'service' binding mode.
 [mode.service.binding]
-    esc = ['reload-config', 'mode main']
-    r = ['flatten-workspace-tree', 'mode main']       # reset layout
-    f = ['layout floating tiling', 'mode main']       # float/tile toggle
-    backspace = ['close-all-windows-but-current', 'mode main']
+esc = ['reload-config', 'mode main']
+r = ['flatten-workspace-tree', 'mode main']                # reset layout
+f = ['layout floating tiling', 'mode main']                # float/tile toggle
+backspace = ['close-all-windows-but-current', 'mode main']
 
-    # sticky is not yet supported: github.com/nikitabobko/AeroSpace/issues/2
-    #s = ['layout sticky tiling', 'mode main']
+# sticky is not yet supported: github.com/nikitabobko/AeroSpace/issues/2
+#s = ['layout sticky tiling', 'mode main']
 
-    alt-shift-h = ['join-with left', 'mode main']
-    alt-shift-j = ['join-with down', 'mode main']
-    alt-shift-k = ['join-with up', 'mode main']
-    alt-shift-l = ['join-with right', 'mode main']
+alt-shift-h = ['join-with left', 'mode main']
+alt-shift-j = ['join-with down', 'mode main']
+alt-shift-k = ['join-with up', 'mode main']
+alt-shift-l = ['join-with right', 'mode main']
 
-    down = 'volume down'
-    up = 'volume up'
-    shift-down = ['volume set 0', 'mode main']
+down = 'volume down'
+up = 'volume up'
+shift-down = ['volume set 0', 'mode main']
