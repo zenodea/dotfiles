@@ -305,9 +305,20 @@ return {
         },
         rust_analyzer = {},
         pyright = {},
+        -- lint/format/organize-imports next to pyright; hover stays pyright's
+        ruff = {
+          on_attach = function(client)
+            client.server_capabilities.hoverProvider = false
+          end,
+        },
         tailwindcss = {},
         cssls = {},
         clangd = {},
+        zls = {},
+        html = {},
+        emmet_language_server = {},
+        bashls = {},
+        taplo = {},
       }
 
       -- mason-lspconfig v2 dropped `handlers`, so servers are registered with
@@ -329,6 +340,9 @@ return {
         -- nvim-dap is lazy-loaded, and mason-tool-installer.setup replaces its
         -- list rather than appending, so the adapter is requested here
         'js-debug-adapter',
+        'debugpy',
+        'shfmt',
+        'shellcheck',
       })
 
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -397,6 +411,7 @@ return {
         graphql = { 'prettierd', 'prettier', stop_after_first = true },
         terraform = { 'terraform_fmt' },
         hcl = { 'terraform_fmt' },
+        sh = { 'shfmt' },
         ['terraform-vars'] = { 'terraform_fmt' },
         -- prisma has no standalone formatter; prismals handles it and
         -- lsp_format = 'fallback' above picks that up

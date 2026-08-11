@@ -18,6 +18,28 @@ local function apply()
   require('mini.base16').setup { palette = theme.palette, use_cterm = true }
   vim.cmd 'hi Normal guibg=NONE | hi NormalNC guibg=NONE | hi SignColumn guibg=NONE | hi EndOfBuffer guibg=NONE'
 
+  -- italic comments (Comic Code ships a true italic)
+  local comment = vim.api.nvim_get_hl(0, { name = 'Comment' })
+  comment.italic = true
+  vim.api.nvim_set_hl(0, 'Comment', comment)
+
+  -- Zenbones-style minimal rendering, approximated through base16: flatten
+  -- the noisy groups to plain fg (identifiers share base08 with error
+  -- diagnostics, so the palette alone can't do this). Strings keep their
+  -- color and take zenbones' italic.
+  if vim.startswith(theme.name or '', 'zenbones') then
+    local fg = theme.palette.base05
+    for _, group in ipairs { 'Identifier', 'Function', 'Type', 'Delimiter', '@variable', '@function', '@type', '@constructor', '@namespace', '@tag' } do
+      vim.api.nvim_set_hl(0, group, { fg = fg })
+    end
+    for _, group in ipairs { 'Statement', 'Keyword', '@keyword' } do
+      vim.api.nvim_set_hl(0, group, { fg = fg, bold = true })
+    end
+    for _, group in ipairs { 'String', '@string' } do
+      vim.api.nvim_set_hl(0, group, { fg = theme.palette.base0B, italic = true })
+    end
+  end
+
   -- Plugins that paint their own highlights hang off ColorScheme, and setting a
   -- palette in place doesn't fire it.
   vim.api.nvim_exec_autocmds('ColorScheme', { pattern = vim.g.colors_name or '' })

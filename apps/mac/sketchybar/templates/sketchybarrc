@@ -25,6 +25,7 @@ launchctl disable "gui/$(id -u)/com.apple.OSDUIHelper" > /dev/null 2>&1 &
 # Setting up the general bar appearance of the bar
 bar=(
   height=33
+  display=all
   color=$BAR_COLOR
   shadow=on
   position=top
