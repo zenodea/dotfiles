@@ -17,11 +17,16 @@ local function apply()
 
   require('mini.base16').setup { palette = theme.palette, use_cterm = true }
   vim.cmd 'hi Normal guibg=NONE | hi NormalNC guibg=NONE | hi SignColumn guibg=NONE | hi EndOfBuffer guibg=NONE'
+  -- floats (notify/noice popups, which-key, etc.) sit on the terminal bg too;
+  -- their rounded borders keep them readable without a fill
+  vim.cmd 'hi NormalFloat guibg=NONE | hi FloatBorder guibg=NONE | hi FloatTitle guibg=NONE | hi NotifyBackground guibg=NONE'
 
-  -- italic comments (Comic Code ships a true italic)
-  local comment = vim.api.nvim_get_hl(0, { name = 'Comment' })
-  comment.italic = true
-  vim.api.nvim_set_hl(0, 'Comment', comment)
+  -- italic comments and strings
+  for _, group in ipairs { 'Comment', 'String', '@string' } do
+    local hl = vim.api.nvim_get_hl(0, { name = group, link = false })
+    hl.italic = true
+    vim.api.nvim_set_hl(0, group, hl)
+  end
 
   -- Zenbones-style minimal rendering, approximated through base16: flatten
   -- the noisy groups to plain fg (identifiers share base08 with error

@@ -94,7 +94,7 @@ return {
         theme = 'auto',
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
-        globalstatus = false,
+        globalstatus = true,
       },
       sections = {
         lualine_a = { 'mode' },
@@ -117,6 +117,50 @@ return {
         lualine_z = { 'location' },
       },
     },
+    config = function(_, opts)
+      -- Transparent bg with fg-only accents from the dotfiles palette, so the
+      -- statusline reads as one panel with the tmux bar below it.
+      local function palette_theme()
+        local ok, theme = pcall(require, 'dotfiles.theme')
+        if not ok then
+          return 'auto'
+        end
+        local p = theme.palette
+        local function mode(accent)
+          return {
+            a = { fg = accent, bg = 'NONE', gui = 'bold' },
+            b = { fg = p.base05, bg = 'NONE' },
+            c = { fg = p.base03, bg = 'NONE' },
+          }
+        end
+        return {
+          normal = mode(p.base0D),
+          insert = mode(p.base0B),
+          visual = mode(p.base0E),
+          replace = mode(p.base08),
+          command = mode(p.base0A),
+          inactive = mode(p.base03),
+        }
+      end
+
+      -- flat like the tmux bar: separation by spacing, not glyphs
+      opts.options.component_separators = ''
+      opts.options.section_separators = ''
+
+      local function setup()
+        opts.options.theme = palette_theme()
+        require('lualine').setup(opts)
+        -- unset statusline attrs fall back to StatusLine, which mini.base16
+        -- paints solid — clear it or the transparency never shows
+        vim.cmd 'hi StatusLine guibg=NONE ctermbg=NONE | hi StatusLineNC guibg=NONE ctermbg=NONE'
+      end
+      setup()
+
+      -- mini.lua fires ColorScheme after a live theme switch (and reloads
+      -- dotfiles.theme first), so rebuilding here keeps both bars in sync.
+      local group = vim.api.nvim_create_augroup('dotfiles-lualine-theme', { clear = true })
+      vim.api.nvim_create_autocmd('ColorScheme', { group = group, callback = setup })
+    end,
   },
 
   -- Nice Command Line and Notifications
