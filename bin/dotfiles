@@ -38,6 +38,10 @@ Light / dark:
   --auto [on|off]      Follow the system's light/dark setting (default: status)
   --sync-appearance    Apply the right variant for right now (what the timer runs)
 
+Font:
+  --font <name>, -f    Switch font (regenerates configs, live-reloads apps)
+  --font               List available fonts
+
 Wallpaper:
   --wallpaper <name|random>, -w
                        Set wallpaper only (no theme change)
@@ -109,6 +113,44 @@ cmd_wallpaper() {
 
     set_wallpaper "$wp"
     echo "Note: the next theme switch resets the wallpaper to the theme's own."
+}
+
+# --- font --------------------------------------------------------------------
+
+cmd_font() {
+    local arg="$1"
+
+    if [[ -z "$arg" ]]; then
+        local current name
+        current="$(current_font)"
+        echo "Available fonts:"
+        while IFS= read -r name; do
+            if [[ "$name" == "$current" ]]; then
+                echo "  $name (active)"
+            else
+                echo "  $name"
+            fi
+        done < <(font_names)
+        return 0
+    fi
+
+    if ! font_exists "$arg"; then
+        echo "Error: font '$arg' not found (fonts/$arg.sh)" >&2
+        echo "" >&2
+        echo "Available fonts:" >&2
+        font_names | sed 's/^/  /' >&2
+        return 1
+    fi
+
+    echo "$arg" > "$DOTFILES/.current-font"
+
+    local theme
+    theme="$(current_theme)"
+    if [[ -z "$theme" ]]; then
+        echo "font: $arg (no active theme; applies on the next theme switch)"
+        return 0
+    fi
+    exec "$DOTFILES/bin/switch-theme" "$theme"
 }
 
 # --- theme picking ---------------------------------------------------------
@@ -490,6 +532,9 @@ case "${1:-}" in
     --random|-r)
         cmd_random
         ;;
+    --font|-f)
+        cmd_font "${2:-}"
+        ;;
     --wallpaper|-w)
         cmd_wallpaper "${2:-}"
         ;;
@@ -511,6 +556,9 @@ case "${1:-}" in
         ;;
     --wallpapers-plain)
         wallpaper_names
+        ;;
+    --fonts-plain)
+        font_names
         ;;
     --help|-h|"")
         usage

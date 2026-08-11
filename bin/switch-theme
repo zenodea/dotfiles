@@ -158,13 +158,30 @@ print(round(h * 360), round(s * 100), round(l * 100))")"
 fi
 export ACCENT_H ACCENT_S ACCENT_L
 
+# --- font --------------------------------------------------------------------
+
+# Orthogonal to the theme: fonts/<name>.sh + .current-font, switched by
+# `dotfiles --font`, picked up by every render. Sizing knobs are optional in
+# the preset — the defaults below keep the ghostty config valid either way.
+FONT_FIELDS=(FONT_MONO_FAMILY FONT_TEXT_FAMILY FONT_SIZE FONT_CELL_HEIGHT FONT_CELL_WIDTH FONT_LINE_HEIGHT)
+
+# shellcheck source=/dev/null
+set -a
+source "$DOTFILES/fonts/$(current_font).sh"
+set +a
+export FONT_TEXT_FAMILY="${FONT_TEXT_FAMILY:-Helvetica Neue}"
+export FONT_SIZE="${FONT_SIZE:-14}"
+export FONT_CELL_HEIGHT="${FONT_CELL_HEIGHT:-0%}"
+export FONT_CELL_WIDTH="${FONT_CELL_WIDTH:-0%}"
+export FONT_LINE_HEIGHT="${FONT_LINE_HEIGHT:-1.4}" # zed buffer, as a multiplier
+
 # --- template rendering ----------------------------------------------------
 
 # Substitute only theme variables, so a literal $variable in a config file
 # (waybar scripts, hyprland dispatchers) survives untouched.
 VARS=""
 for _v in "${PALETTE[@]}"; do VARS+="\${$_v}\${${_v}_RGB}"; done
-for _v in "${THEME_FIELDS[@]}" "${DERIVED[@]}"; do VARS+="\${$_v}"; done
+for _v in "${THEME_FIELDS[@]}" "${FONT_FIELDS[@]}" "${DERIVED[@]}"; do VARS+="\${$_v}"; done
 
 # envsubst ships with gettext, which stock macOS lacks — fall back to perl
 if command -v envsubst &> /dev/null; then

@@ -7,7 +7,8 @@ source "$HOME/.config/sketchybar/styles.sh" # Shared item styling (popup rows)
 ITEM_DIR="$HOME/.config/sketchybar/items"     # Directory where the items are configured
 PLUGIN_DIR="$HOME/.config/sketchybar/plugins" # Directory where all the plugin scripts are stored
 
-FONT="SF Pro" # Needs to have Regular, Bold, Semibold, Heavy and Black variants
+FONT="SF Pro"                   # icons only — SF Symbols glyphs need an SF font
+TEXT_FONT="${FONT_TEXT_FAMILY}" # labels follow the dotfiles font pairing
 PADDINGS=3    # All paddings use this value (icon, label, background)
 
 # Suppress the macOS on-screen volume overlay — the bar already shows volume.
@@ -50,7 +51,9 @@ defaults=(
   icon.color=$ICON_COLOR
   icon.padding_left=$PADDINGS
   icon.padding_right=$PADDINGS
-  label.font="$FONT:Semibold:13.0"
+  # Regular, not SemiBold: pairing families (Plex Text, Avenir Next) don't all
+  # ship a face literally named "SemiBold", and a miss falls back to Helvetica
+  label.font="$TEXT_FONT:Regular:13.0"
   label.color=$LABEL_COLOR
   label.padding_left=$PADDINGS
   label.padding_right=$PADDINGS
