@@ -1,4 +1,8 @@
 theme = ${GHOSTTY_THEME}
+font-family = Comic Code Ligatures
+font-size = 15
+adjust-cell-height = 30%
+adjust-cell-width = 5%
 background-opacity = ${OPACITY}
 background=#${BG}
 background-blur = 80
