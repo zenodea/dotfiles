@@ -71,7 +71,6 @@ ZSH_THEME="gnzh"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git)
 
-source ~/go/bin
 source $ZSH/oh-my-zsh.sh
 export PATH=$HOME/.local/lib/node_modules/.bin:$PATH
 
