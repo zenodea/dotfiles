@@ -1,7 +1,7 @@
 return {
   -- Quick ask agent a question.
   {
-    dir = '~/assistant/quickask.nvim',
+    'zenodea/quickask.nvim',
     name = 'quickask.nvim',
     event = 'VeryLazy',
     opts = {
