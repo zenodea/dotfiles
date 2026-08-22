@@ -1,0 +1,94 @@
+* {
+    surface: #${SURFACE};
+    brd:     #${BORDER};
+    fg:      #${FG};
+    fg2:     #${FG_BRIGHT};
+    accent:  #${ACCENT};
+
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+window {
+    background-color: rgba(${BG_RGB}, 0.78);
+    border:           2px solid;
+    border-color:     @accent;
+    padding:          0px;
+    width:            560px;
+    location:         center;
+}
+
+mainbox {
+    background-color: transparent;
+    spacing:          0px;
+    children:         [ inputbar, listview ];
+}
+
+inputbar {
+    background-color: rgba(${SURFACE_RGB}, 0.65);
+    padding:          12px 16px;
+    border:           0px 0px 2px 0px;
+    border-color:     @brd;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @accent;
+    padding-right:    10px;
+    font:             "JetBrainsMono Nerd Font Bold 15";
+    vertical-align:   0.5;
+}
+
+entry {
+    background-color:  transparent;
+    text-color:        @fg2;
+    placeholder-color: @brd;
+    placeholder:       "Filter...";
+    font:              "JetBrainsMono Nerd Font 15";
+    vertical-align:    0.5;
+    margin:            0px 10px;
+}
+
+listview {
+    background-color: transparent;
+    columns:          3;
+    lines:            2;
+    layout:           vertical;
+    fixed-height:     true;
+    scrollbar:        false;
+    spacing:          0px;
+    padding:          10px;
+}
+
+element {
+    background-color: transparent;
+    orientation:      vertical;
+    padding:          18px 10px;
+    spacing:          12px;
+    children:         [ element-icon, element-text ];
+}
+
+element selected.normal {
+    background-color: rgba(${ACCENT_RGB}, 0.14);
+    border:           1px;
+    border-color:     rgba(${ACCENT_RGB}, 0.55);
+}
+
+element-icon {
+    background-color: transparent;
+    size:             2.6em;
+    horizontal-align: 0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       rgba(${FG_RGB}, 0.75);
+    horizontal-align: 0.5;
+    vertical-align:   0.5;
+    font:             "JetBrainsMono Nerd Font 11";
+}
+
+element-text selected.normal {
+    text-color: @accent;
+}

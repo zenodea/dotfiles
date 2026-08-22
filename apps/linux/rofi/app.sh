@@ -5,4 +5,6 @@ render() {
     generate theme.rasi        config/themes/current.rasi
     generate power-menu.rasi   config/themes/power-menu.rasi
     generate theme-picker.rasi config/themes/theme-picker.rasi
+    generate preview-picker.rasi config/themes/preview-picker.rasi
+    generate dotfiles-menu.rasi config/themes/dotfiles-menu.rasi
 }

@@ -21,6 +21,9 @@ find_profile() {
   local base=""
   if [[ -f "$HOME/.mozilla/firefox/profiles.ini" ]]; then
     base="$HOME/.mozilla/firefox"
+  elif [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/mozilla/firefox/profiles.ini" ]]; then
+    # Firefox on Linux moved new installs to XDG paths
+    base="${XDG_CONFIG_HOME:-$HOME/.config}/mozilla/firefox"
   elif [[ -f "$HOME/Library/Application Support/Firefox/profiles.ini" ]]; then
     base="$HOME/Library/Application Support/Firefox"
   else

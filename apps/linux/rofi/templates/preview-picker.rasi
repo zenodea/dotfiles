@@ -9,19 +9,27 @@ window {
     border:           2px solid;
     border-color:     #${ACCENT};
     padding:          12px;
-    width:            240px;
+    width:            860px;
+    location:         center;
 }
 
 mainbox {
     background-color: transparent;
-    children:         [ listview ];
+    orientation:      horizontal;
+    spacing:          16px;
+    children:         [ listview, icon-current-entry ];
 }
 
 listview {
     background-color: transparent;
-    lines:            5;
+    lines:            8;
     scrollbar:        false;
     spacing:          3px;
+}
+
+icon-current-entry {
+    expand:           true;
+    size:             420px;
 }
 
 element {
