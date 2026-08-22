@@ -1,6 +1,30 @@
 @theme "~/.config/rofi/themes/current.rasi"
 
 configuration {
-  // other config options
-}
+  /* Vim-style directional navigation on Ctrl+hjkl, applied to every rofi menu
+     (drun included), so plain letters always go to the filter. The defaults
+     occupying those chords (remove-char-back on Ctrl+h, remove-to-eol on
+     Ctrl+k, mode-complete on Ctrl+l) are freed first or rofi refuses the
+     duplicate bindings. */
+  /* Tab / Shift+Tab cycle between modes (Apps, Run, Windows); Tab's default
+     job (element-next) is freed first. Add "calc" to modes if rofi-calc gets
+     installed. */
+  modes:               "drun,run,window";
+  kb-element-next:     "";
+  kb-element-prev:     "";
+  kb-mode-next:        "Shift+Right,Control+Tab,Tab";
+  kb-mode-previous:    "Shift+Left,Control+ISO_Left_Tab,ISO_Left_Tab";
 
+  kb-remove-char-back: "BackSpace,Shift+BackSpace";
+  kb-remove-to-eol:    "";
+  kb-mode-complete:    "";
+  kb-row-left:         "Control+Page_Up,Control+h";
+  kb-row-right:        "Control+Page_Down,Control+l";
+  kb-row-down:         "Down,Control+n,Control+j";
+  kb-row-up:           "Up,Control+p,Control+k";
+  kb-accept-entry:     "Control+m,Return,KP_Enter";
+  kb-cancel:           "Escape,Control+g,Control+bracketleft";
+  hover-select:        true;
+  me-select-entry:     "MousePrimary";
+  me-accept-entry:     "MouseDPrimary";
+}

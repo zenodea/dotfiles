@@ -19,7 +19,7 @@ mainbox {
 
 listview {
     background-color: transparent;
-    lines:            6;
+    lines:            5;
     scrollbar:        false;
     spacing:          3px;
 }

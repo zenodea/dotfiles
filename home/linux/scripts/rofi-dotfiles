@@ -1,0 +1,192 @@
+#!/bin/bash
+
+# Rofi front-end for the dotfiles CLI: theme, font, wallpaper, auto light/dark.
+# The pickers show a live preview on the right (rofi's icon-current-entry):
+# palette swatches for themes, rendered sample text for fonts, thumbnails for
+# wallpapers. Previews are ImageMagick-generated and cached in ~/.cache; a
+# background pre-warm starts at launch and rows stream into rofi as they're
+# ready, so the menus open instantly even on a cold cache.
+
+# scripts → linux → home → repo root
+DOTFILES_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../.." && pwd)"
+DOTFILES="$DOTFILES_DIR/bin/dotfiles"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/rofi-dotfiles"
+mkdir -p "$CACHE"
+
+CURRENT_THEME="$(cat "$DOTFILES_DIR/.current-theme" 2> /dev/null)"
+CURRENT_FONT="$(cat "$DOTFILES_DIR/.current-font" 2> /dev/null)"
+ACCENT_COLOR="$(
+    # shellcheck source=/dev/null
+    source "$DOTFILES_DIR/themes/$CURRENT_THEME.sh" 2> /dev/null
+    printf '%s' "$ACCENT"
+)"
+
+# Navigation (Ctrl+hjkl, hover-select, mouse) comes from the global config.rasi
+# so plain letters always type into the filter.
+MENU_ARGS=(
+    -p ""
+)
+
+rofi_preview_list() {
+    rofi -dmenu -format i -show-icons "${MENU_ARGS[@]}" \
+        -theme "$HOME/.config/rofi/themes/preview-picker.rasi"
+}
+
+stale() { [[ ! -f "$2" || "$1" -nt "$2" ]]; }
+
+# --- preview generation ------------------------------------------------------
+# Each generator is a cache hit (a stat) on warm runs and writes via mv so the
+# background pre-warm and a picker can generate the same file without racing.
+
+# 4x2 grid of the theme's own palette on its background color.
+theme_swatch() {
+    local src="$DOTFILES_DIR/themes/$1.sh" out="$CACHE/theme-$1.png"
+    if stale "$src" "$out"; then
+        (
+            # shellcheck source=/dev/null
+            source "$src"
+            magick montage -size 100x100 \
+                xc:"#$ACCENT" xc:"#$RED" xc:"#$ORANGE" xc:"#$YELLOW" \
+                xc:"#$GREEN" xc:"#$BLUE" xc:"#$PURPLE" xc:"#$FG" \
+                -tile 4x2 -geometry +10+10 -background "#$BG" png:"$out.$$" &&
+                mv "$out.$$" "$out"
+        ) 2> /dev/null
+    fi
+    [[ -f "$out" ]] && printf '%s' "$out"
+}
+
+# Sample text rendered in the font itself, on the active theme's colors.
+font_preview() {
+    local src="$DOTFILES_DIR/fonts/$1.sh" out="$CACHE/font-$1-$CURRENT_THEME.png"
+    if stale "$src" "$out"; then
+        (
+            # shellcheck source=/dev/null
+            source "$DOTFILES_DIR/themes/$CURRENT_THEME.sh"
+            # shellcheck source=/dev/null
+            source "$src"
+            magick -background "#$BG" -fill "#$FG" \
+                -font "$(fc-match -f '%{file}' "$FONT_MONO_FAMILY")" \
+                -pointsize 26 -gravity northwest \
+                label:"$FONT_MONO_FAMILY"$'\n\n'"ABCDEFGHIJKLMNOPQRSTUVWXYZ"$'\n'"abcdefghijklmnopqrstuvwxyz"$'\n'"0123456789 0O 1lI| \$@&%#*"$'\n'"{}[]()<> -> => != === ~ \`'\"" \
+                -bordercolor "#$BG" -border 24 png:"$out.$$" &&
+                mv "$out.$$" "$out"
+        ) 2> /dev/null
+    fi
+    [[ -f "$out" ]] && printf '%s' "$out"
+}
+
+# Nerd-font glyph rendered as an icon for the main-menu grid, in the accent
+# color of the active theme. The font is matched by charset so whichever
+# installed font actually contains the glyph gets used.
+glyph_icon() {
+    local out="$CACHE/icon-$1-$CURRENT_THEME.png" cp
+    if [[ ! -f "$out" ]]; then
+        cp="$(printf '%x' "'$2")"
+        magick -background none -fill "#$ACCENT_COLOR" \
+            -font "$(fc-match -f '%{file}' ":charset=$cp")" \
+            -pointsize 72 label:"$2" png:"$out.$$" 2> /dev/null &&
+            mv "$out.$$" "$out"
+    fi
+    [[ -f "$out" ]] && printf '%s' "$out"
+}
+
+wallpaper_thumb() {
+    local wp="$DOTFILES_DIR/wallpapers/$1" out="$CACHE/wall-${1%.*}.png"
+    if stale "$wp" "$out"; then
+        magick "$wp[0]" -auto-orient -thumbnail 560x -strip png:"$out.$$" 2> /dev/null &&
+            mv "$out.$$" "$out"
+    fi
+    [[ -f "$out" ]] && printf '%s' "$out"
+}
+
+# Fill the cache in the background while the user is still in the main menu,
+# most-likely-picker first. Idempotent, so racing an open picker is fine.
+prewarm() {
+    local name
+    while IFS= read -r name; do theme_swatch "$name" > /dev/null; done \
+        < <("$DOTFILES" --themes-plain)
+    while IFS= read -r name; do font_preview "$name" > /dev/null; done \
+        < <("$DOTFILES" --fonts-plain)
+    while IFS= read -r name; do wallpaper_thumb "$name" > /dev/null; done \
+        < <("$DOTFILES" --wallpapers-plain)
+}
+
+# --- pickers -----------------------------------------------------------------
+# Rows stream into rofi as their previews finish (rofi reads stdin async), so
+# the picker opens immediately. Selection comes back by index so markers and
+# icon paths never reach the CLI.
+
+pick_theme() {
+    mapfile -t names < <("$DOTFILES" --themes-plain)
+    local name marker idx
+    idx=$(for name in "${names[@]}"; do
+        marker="   "
+        [[ "$name" == "$CURRENT_THEME" ]] && marker="●  "
+        printf '%s%s\0icon\x1f%s\n' "$marker" "$name" "$(theme_swatch "$name")"
+    done | rofi_preview_list)
+    [[ -n "$idx" ]] && "$DOTFILES" --theme "${names[$idx]}"
+}
+
+pick_font() {
+    mapfile -t names < <("$DOTFILES" --fonts-plain)
+    local name marker idx
+    idx=$(for name in "${names[@]}"; do
+        marker="   "
+        [[ "$name" == "$CURRENT_FONT" ]] && marker="●  "
+        printf '%s%s\0icon\x1f%s\n' "$marker" "$name" "$(font_preview "$name")"
+    done | rofi_preview_list)
+    [[ -n "$idx" ]] && "$DOTFILES" --font "${names[$idx]}"
+}
+
+pick_wallpaper() {
+    mapfile -t names < <("$DOTFILES" --wallpapers-plain)
+    names=(random "${names[@]}")
+    local name idx
+    idx=$( {
+        printf '󰒝  random\n'
+        for name in "${names[@]:1}"; do
+            printf '   %s\0icon\x1f%s\n' "$name" "$(wallpaper_thumb "$name")"
+        done
+    } | rofi_preview_list)
+    [[ -n "$idx" ]] && "$DOTFILES" --wallpaper "${names[$idx]}"
+}
+
+toggle_auto() {
+    if [[ -f "$DOTFILES_DIR/.auto-theme" ]]; then
+        "$DOTFILES" --auto off
+    else
+        "$DOTFILES" --auto on
+    fi
+}
+
+# --- main menu ---------------------------------------------------------------
+
+(
+    renice -n 19 -p $BASHPID > /dev/null 2>&1
+    prewarm
+) > /dev/null 2>&1 &
+disown
+
+AUTO_LABEL="Auto: off"
+[[ -f "$DOTFILES_DIR/.auto-theme" ]] && AUTO_LABEL="Auto: on"
+
+MENU_KEYS=(theme random font wallpaper auto update)
+MENU_LABELS=("Theme" "Random" "Font" "Wallpaper" "$AUTO_LABEL" "Update")
+MENU_GLYPHS=(󰔯 󰒝 󰛖 󰸉 󰔎 󰚰)
+
+idx=$(for i in "${!MENU_KEYS[@]}"; do
+    printf '%s\0icon\x1f%s\n' "${MENU_LABELS[$i]}" \
+        "$(glyph_icon "${MENU_KEYS[$i]}" "${MENU_GLYPHS[$i]}")"
+done | rofi -dmenu -format i -show-icons "${MENU_ARGS[@]}" -p "󰒓" \
+    -theme "$HOME/.config/rofi/themes/dotfiles-menu.rasi")
+
+[[ -z "$idx" ]] && exit 0
+
+case "${MENU_KEYS[$idx]}" in
+    theme)     pick_theme ;;
+    random)    "$DOTFILES" --random ;;
+    font)      pick_font ;;
+    wallpaper) pick_wallpaper ;;
+    auto)      toggle_auto ;;
+    update)    "$DOTFILES" --update ;;
+esac
