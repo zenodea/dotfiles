@@ -12,10 +12,13 @@
 }
 
 /* The whole bar — single unified background */
+/* margins in config + this border mirror hyprland gaps_out / border_size / rounding */
 #waybar {
-  background-color: rgba(${BG_RGB}, 0.6);
+  background-color: rgba(${BG_RGB}, ${OPACITY});
+  border: 1px solid #${ACCENT};
+  border-radius: 0;
   color: #${FG};
-  font-family: JetBrainsMono Nerd Font;
+  font-family: "${FONT_MONO_FAMILY}", "JetBrainsMono Nerd Font";
   font-size: 15px;
 }
 
@@ -38,6 +41,7 @@
 #backlight,
 #mic,
 #power-profiles-daemon,
+#mpris,
 #sound {
   padding-left: 10px;
   padding-right: 10px;
@@ -60,6 +64,14 @@
 
 #tray {
   margin-right: 10px;
+}
+
+#battery.warning:not(.charging) {
+  color: #${YELLOW};
+}
+
+#battery.critical:not(.charging) {
+  color: #${RED};
 }
 
 #window {

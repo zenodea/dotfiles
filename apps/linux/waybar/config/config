@@ -1,11 +1,16 @@
 {
   "layer": "top",
-  "height": 28,
+  "height": 35,
+  "margin-top": 4,
+  "margin-bottom": 4,
+  "margin-left": 4,
+  "margin-right": 4,
   "modules-left": [
     "hyprland/workspaces"
   ],
   "modules-center": [
-    "clock"  // Add clock module to the center
+    "clock",
+    "mpris"
   ],
 "clock": {
   "interval": 30,
@@ -22,6 +27,7 @@
     "network",
     "custom/net-graph",
     "battery",
+    "tray",
     "custom/power"
   ],
   "hyprland/window": {
@@ -36,12 +42,12 @@
     "spacing": 8
   },
     "pulseaudio": {
-    "format": "{icon} {volume}%",
-    "format-bluetooth": "{icon} {volume}%",
-    "format-muted": "",
+    "format": "<span size=\"large\">{icon}</span>  {volume}%",
+    "format-bluetooth": "<span size=\"large\">{icon}</span>  {volume}%",
+    "format-muted": "<span size=\"large\"></span>",
     "format-icons": {
-      "alsa_output.pci-0000_00_1f.3.analog-stereo": "",
-      "alsa_output.pci-0000_00_1f.3.analog-stereo-muted": "",
+      "alsa_output.pci-0000_00_1f.3.analog-stereo": "",
+      "alsa_output.pci-0000_00_1f.3.analog-stereo-muted": "",
       "headphones": "",
       "handsfree": "",
       "headset": "",
@@ -58,9 +64,9 @@
     "on-click": "pavucontrol"
   },
     "bluetooth": {
-    "format": "",
-    "format-connected": "",
-    "format-connected-battery": " ",
+    "format": "<span size=\"large\"></span>",
+    "format-connected": "<span size=\"large\"></span>",
+    "format-connected-battery": "<span size=\"large\"></span> ",
     "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
     "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
@@ -68,7 +74,7 @@
     "on-click": "blueman-manager",
   },
     "power-profiles-daemon": {
-    "format": "{icon}",
+    "format": "<span size=\"large\">{icon}</span>",
     "tooltip-format": "Power profile: {profile}",
     "tooltip": true,
     "format-icons": {
@@ -80,13 +86,13 @@
   },
   "network": {
     "interval": 1,
-    "format-wifi": " ", //({essid} {signalStrength}%)
-    "format-ethernet": " ",
+    "format-wifi": "<span size=\"large\"></span> ", //({essid} {signalStrength}%)
+    "format-ethernet": "<span size=\"large\"></span> ",
     "tooltip-format-ethernet": "󰈀 ",
     "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
     "tooltip-format": "󰤯  {ifname} via {gwaddr}",
-    "format-linked": "󰀦 {ifname} (No IP)",
-    "format-disconnected": "󰀦 Disconnected", //Disconnected ⚠
+    "format-linked": "<span size=\"large\">󰀦</span> {ifname} (No IP)",
+    "format-disconnected": "<span size=\"large\">󰀦</span> Disconnected", //Disconnected ⚠
     "on-click": "ghostty -e nmtui",
   },
   "custom/net-graph": {
@@ -97,11 +103,15 @@
   },
   "backlight": {
     // "device": "acpi_video1",
-    "format": "{icon} {percent:>2}%",
+    "format": "<span size=\"large\">{icon}</span> {percent:>2}%",
     "format-icons": ["", "", "", "", "", "", "", "", ""],
   },
   "battery": {
     "interval": 60,
+    "states": {
+      "warning": 20,
+      "critical": 10
+    },
     "format-time": "{H}:{m}",
     "format-icons": [
       "󰁺",
@@ -115,9 +125,27 @@
       "󰂂",
       "󰁹"
     ],
-    "format-discharging": "{icon} {capacity}%",
-    "format-charging": "󰂄 {capacity}%",
-    "format": ""
+    "format": "<span size=\"large\">{icon}</span> {capacity}%",
+    "format-charging": "<span size=\"large\">󰂄</span> {capacity}%",
+    "format-plugged": "<span size=\"large\">󰚥</span> {capacity}%",
+    "format-full": "<span size=\"large\">󰚥</span> {capacity}%",
+    "tooltip-format": "{timeTo}",
+    "tooltip-format-full": "Full",
+    "tooltip-format-plugged": "Plugged in"
+  },
+  "mpris": {
+    "format": "~ {status_icon} {dynamic}",
+    "format-paused": "~ {status_icon} <i>{dynamic}</i>",
+    "dynamic-order": ["title", "artist"],
+    "dynamic-len": 40,
+    "status-icons": {
+      "playing": "",
+      "paused": "",
+      "stopped": ""
+    },
+    "on-click": "playerctl play-pause",
+    "on-scroll-up": "playerctl next",
+    "on-scroll-down": "playerctl previous"
   },
   "hyprland/workspaces": {
     "format": "{icon}",
@@ -156,7 +184,7 @@
     "tooltip": true
   },
   "custom/power": {
-    "format": "{icon}",
+    "format": "<span size=\"large\">{icon}</span>",
     "format-icons": "  ", //  
     "exec-on-event": "true",
     "on-click": "$HOME/scripts/rofi-power",

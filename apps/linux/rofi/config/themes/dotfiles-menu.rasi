@@ -1,16 +1,16 @@
 * {
-    surface: #343f44;
-    brd:     #475258;
-    fg:      #d3c6aa;
-    fg2:     #e9e8d4;
-    accent:  #83c092;
+    surface: #161b22;
+    brd:     #30363d;
+    fg:      #c9d1d9;
+    fg2:     #f0f6fc;
+    accent:  #58a6ff;
 
     background-color: transparent;
     text-color:       @fg;
 }
 
 window {
-    background-color: rgba(45, 53, 59, 0.78);
+    background-color: rgba(13, 17, 23, 0.78);
     border:           2px solid;
     border-color:     @accent;
     padding:          0px;
@@ -25,7 +25,7 @@ mainbox {
 }
 
 inputbar {
-    background-color: rgba(52, 63, 68, 0.65);
+    background-color: rgba(22, 27, 34, 0.65);
     padding:          12px 16px;
     border:           0px 0px 2px 0px;
     border-color:     @brd;
@@ -70,9 +70,9 @@ element {
 }
 
 element selected.normal {
-    background-color: rgba(131, 192, 146, 0.14);
+    background-color: rgba(88, 166, 255, 0.14);
     border:           1px;
-    border-color:     rgba(131, 192, 146, 0.55);
+    border-color:     rgba(88, 166, 255, 0.55);
 }
 
 element-icon {
@@ -83,7 +83,7 @@ element-icon {
 
 element-text {
     background-color: transparent;
-    text-color:       rgba(211, 198, 170, 0.75);
+    text-color:       rgba(201, 209, 217, 0.75);
     horizontal-align: 0.5;
     vertical-align:   0.5;
     font:             "JetBrainsMono Nerd Font 11";
