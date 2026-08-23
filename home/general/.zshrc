@@ -146,6 +146,3 @@ y() {
 
 # zoxide — frecency-based cd (z / zi)
 command -v zoxide > /dev/null 2>&1 && eval "$(zoxide init zsh)"
-
-# Added by Antigravity CLI installer
-export PATH="/Users/zenodea/.local/bin:$PATH"

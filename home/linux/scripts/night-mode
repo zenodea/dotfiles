@@ -1,0 +1,15 @@
+#!/bin/bash
+# Toggle hyprsunset between a warm night temperature and identity (off).
+
+NIGHT_TEMP=4000
+
+pgrep -x hyprsunset > /dev/null || { hyprsunset & sleep 0.3; }
+
+current=$(hyprctl hyprsunset temperature 2>/dev/null)
+if [ "$current" = "$NIGHT_TEMP" ]; then
+    hyprctl hyprsunset identity > /dev/null
+    notify-send -t 1500 "Night mode" "Off" 2>/dev/null
+else
+    hyprctl hyprsunset temperature "$NIGHT_TEMP" > /dev/null
+    notify-send -t 1500 "Night mode" "On (${NIGHT_TEMP}K)" 2>/dev/null
+fi
