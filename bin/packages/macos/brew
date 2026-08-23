@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-packages-macos — install every package the macOS setup needs, then
+# brew — install every package the macOS setup needs, then
 # register sketchybar and borders as login services so the bar and the window
 # borders come up on their own.
 set -e

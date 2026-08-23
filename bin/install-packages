@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# install-packages — pick the package script for this OS and run it.
+# Scripts live in bin/packages/<os>/<distro>; run one directly to override.
+set -e
+
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/packages"
+
+case "$(uname -s)" in
+    Darwin) exec "$dir/macos/brew" "$@" ;;
+    Linux)
+        . /etc/os-release
+        for id in $ID $ID_LIKE; do
+            case "$id" in
+                arch)   exec "$dir/linux/arch" "$@" ;;
+                fedora) exec "$dir/linux/fedora" "$@" ;;
+                debian) exec "$dir/linux/debian" "$@" ;;
+            esac
+        done
+        echo "error: no package script for '$ID' (see bin/packages/linux/)" >&2
+        exit 1 ;;
+    *) echo "error: unsupported OS: $(uname -s)" >&2; exit 1 ;;
+esac

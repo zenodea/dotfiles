@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# fedora — install every package the Linux setup needs (Fedora, via dnf + COPR)
+set -e
+
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+
+# ── Extra repos ──────────────────────────────────────────────────────────────
+
+echo "==> Enabling COPRs and third-party repos..."
+sudo dnf install -y dnf-plugins-core
+
+# Fedora ships hyprland/hyprlock/hypridle, but hyprsunset and swww live here.
+sudo dnf copr enable -y solopasha/hyprland
+sudo dnf copr enable -y scottames/ghostty
+sudo dnf copr enable -y lihaohong/yazi
+sudo dnf copr enable -y atim/lazygit
+
+# RPM Fusion — steam, full ffmpeg
+sudo dnf install -y \
+    "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
+    "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+
+# Mullvad
+sudo dnf config-manager addrepo --overwrite \
+    --from-repofile=https://repository.mullvad.net/rpm/stable/mullvad.repo
+
+# ── Packages ─────────────────────────────────────────────────────────────────
+
+PACKAGES=(
+    # Hyprland stack
+    hyprland
+    xdg-desktop-portal-hyprland
+    xdg-desktop-portal-gtk
+    xdg-utils
+
+    # Idle / lock / blue light (wallpaper daemon awww is built below)
+    hypridle
+    hyprlock
+    hyprsunset
+
+    # Status bar + what its modules call
+    waybar
+    playerctl
+    blueman
+    NetworkManager
+    NetworkManager-tui
+    power-profiles-daemon
+    libnotify
+
+    # Launchers
+    fuzzel
+    rofi-wayland
+
+    # Terminal
+    ghostty
+
+    # File managers
+    vifm
+    yazi
+
+    # yazi extras: video thumbnails, PDF previews, file search, fuzzy jump,
+    # frecency jump
+    ffmpeg
+    poppler-utils
+    fd-find
+    fzf
+    zoxide
+
+    # Terminal multiplexer
+    tmux
+
+    # Audio (Pipewire)
+    pipewire
+    pipewire-pulseaudio
+    wireplumber
+    pavucontrol
+
+    # Brightness
+    brightnessctl
+
+    # Screenshot / clipboard
+    grim
+    slurp
+    wl-clipboard
+
+    # Bluetooth
+    bluez
+
+    # VPN
+    mullvad-vpn
+
+    # Browser
+    firefox
+
+    # Editors (zed is installed via upstream script below)
+    neovim
+
+    # Editor tooling (mason/treesitter builds, jq for json formatting)
+    gcc
+    gcc-c++
+    make
+    nodejs
+    npm
+    golang
+    unzip
+    jq
+
+    # Git tooling
+    git
+    lazygit
+    gh
+
+    # Shell
+    zsh
+
+    # Theme engine (envsubst for template rendering, gsettings for GTK scheme)
+    gettext-envsubst
+    glib2
+
+    # Fonts (Nerd Font symbols installed below)
+    google-noto-sans-fonts
+    google-noto-color-emoji-fonts
+    fontconfig
+
+    # Misc
+    pyenv
+    steam
+    cargo
+    flatpak
+)
+
+echo "==> Installing packages..."
+sudo dnf install -y "${PACKAGES[@]}"
+
+# ── Not packaged ─────────────────────────────────────────────────────────────
+
+install_awww
+install_nerd_symbols
+install_bibata
+install_oh_my_zsh
+install_zed
+install_flatpaks
+
+enable_services
+
+echo "Done. Run ./install.sh next to link your dotfiles and render the theme."

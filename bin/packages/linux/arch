@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install_packages.sh — install all packages needed for the Linux (Arch) setup
+# arch — install every package the Linux setup needs (Arch, via pacman + yay)
 set -e
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -24,18 +24,28 @@ PACMAN_PACKAGES=(
     hyprland
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
+    xdg-utils
 
-    # Idle / lock / wallpaper
+    # Idle / lock / wallpaper / blue light
     hypridle
     hyprlock
-    swww
+    hyprsunset
+    awww
 
-    # Status bar
+    # Status bar + what its modules call
     waybar
+    playerctl
+    blueman
+    networkmanager
+    power-profiles-daemon
+    libnotify
 
     # Launchers
     fuzzel
-    rofi-wayland
+    rofi
+
+    # Terminal
+    ghostty
 
     # File managers
     vifm
@@ -70,21 +80,36 @@ PACMAN_PACKAGES=(
     bluez
     bluez-utils
 
-    # Power profiles
-    power-profiles-daemon
+    # VPN
+    mullvad-vpn
 
     # Browser
     firefox
 
     # Editors
     neovim
+    zed
+    obsidian
+
+    # Editor tooling (mason/treesitter builds, jq for json formatting)
+    base-devel
+    nodejs
+    npm
+    go
+    unzip
+    jq
 
     # Git tooling
     git
     lazygit
+    github-cli
 
     # Shell
     zsh
+
+    # Theme engine (envsubst for template rendering, gsettings for GTK scheme)
+    gettext
+    glib2
 
     # Fonts (Nerd Font symbols for waybar icons)
     ttf-nerd-fonts-symbols
@@ -95,8 +120,7 @@ PACMAN_PACKAGES=(
     pyenv
     steam
     discord
-    obsidian
-    mullad-vpn
+    spotify-launcher
 )
 
 
@@ -106,10 +130,6 @@ sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"
 # ── AUR packages ─────────────────────────────────────────────────────────────
 
 AUR_PACKAGES=(
-    ghostty              # terminal
-    zed                  # editor
-    spotify-launcher     # spotify
-    rofi-power-menu      # power menu plugin for rofi
     bibata-cursor-theme  # cursor theme
     oh-my-zsh-git        # zsh framework
 )
@@ -121,6 +141,8 @@ yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
 
 echo "==> Enabling services..."
 sudo systemctl enable --now bluetooth
+sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now power-profiles-daemon
+sudo systemctl enable --now mullvad-daemon
 
-echo "Done. You may want to run create_symlinks.sh next to link your dotfiles."
+echo "Done. Run ./install.sh next to link your dotfiles and render the theme."

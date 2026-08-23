@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# debian — install every package the Linux setup needs (Debian, via apt)
+#
+# Hyprland, hyprlock, hypridle and hyprsunset are only in testing/sid — stable
+# (trixie) doesn't have them. Run this on testing or sid.
+set -e
+
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+
+sudo apt-get update
+sudo apt-get install -y curl ca-certificates gnupg lsb-release
+
+if ! apt-cache policy hyprland 2> /dev/null | grep -q 'Candidate: [0-9]'; then
+    echo "error: hyprland isn't available from your apt sources." >&2
+    echo "       It's only packaged in Debian testing/sid — switch suites first." >&2
+    exit 1
+fi
+
+# ── Extra repos ──────────────────────────────────────────────────────────────
+
+echo "==> Adding third-party repos..."
+
+# Mullvad
+sudo curl -fsSLo /usr/share/keyrings/mullvad-keyring.asc \
+    https://repository.mullvad.net/deb/mullvad-keyring.asc
+codename=$(lsb_release -cs)
+case "$codename" in sid|forky|testing|unstable) codename=trixie ;; esac
+echo "deb [signed-by=/usr/share/keyrings/mullvad-keyring.asc arch=$(dpkg --print-architecture)] https://repository.mullvad.net/deb/stable $codename main" \
+    | sudo tee /etc/apt/sources.list.d/mullvad.list > /dev/null
+
+# Steam needs i386 + contrib/non-free
+sudo dpkg --add-architecture i386
+sudo apt-get update
+
+# ── Packages ─────────────────────────────────────────────────────────────────
+
+PACKAGES=(
+    # Hyprland stack
+    hyprland
+    xdg-desktop-portal-hyprland
+    xdg-desktop-portal-gtk
+    xdg-utils
+
+    # Idle / lock / blue light (wallpaper daemon awww is built below)
+    hypridle
+    hyprlock
+    hyprsunset
+
+    # Status bar + what its modules call
+    waybar
+    playerctl
+    blueman
+    network-manager
+    power-profiles-daemon
+    libnotify-bin
+
+    # Launchers
+    fuzzel
+    rofi
+
+    # File managers (yazi is installed from its GitHub release below)
+    vifm
+
+    # yazi extras: video thumbnails, PDF previews, file search, fuzzy jump,
+    # frecency jump
+    ffmpeg
+    poppler-utils
+    fd-find
+    fzf
+    zoxide
+
+    # Terminal multiplexer
+    tmux
+
+    # Audio (Pipewire)
+    pipewire
+    pipewire-pulse
+    wireplumber
+    pavucontrol
+
+    # Brightness
+    brightnessctl
+
+    # Screenshot / clipboard
+    grim
+    slurp
+    wl-clipboard
+
+    # Bluetooth
+    bluez
+
+    # VPN
+    mullvad-vpn
+
+    # Browser
+    firefox-esr
+
+    # Editors (zed is installed via upstream script below)
+    neovim
+
+    # Editor tooling (mason/treesitter builds, jq for json formatting)
+    build-essential
+    nodejs
+    npm
+    golang-go
+    unzip
+    jq
+
+    # Git tooling
+    git
+    lazygit
+    gh
+
+    # Shell
+    zsh
+
+    # Theme engine (envsubst for template rendering, gsettings for GTK scheme)
+    gettext-base
+    libglib2.0-bin
+
+    # Fonts (Nerd Font symbols installed below)
+    fonts-noto-core
+    fonts-noto-color-emoji
+    fontconfig
+
+    # Misc
+    pyenv
+    steam-installer
+    cargo
+    flatpak
+)
+
+echo "==> Installing packages..."
+sudo apt-get install -y "${PACKAGES[@]}"
+
+# Debian installs fd as `fdfind`; yazi and the configs expect `fd`.
+mkdir -p "$HOME/.local/bin"
+[ -e "$HOME/.local/bin/fd" ] || ln -s "$(command -v fdfind)" "$HOME/.local/bin/fd"
+
+# ── Not packaged ─────────────────────────────────────────────────────────────
+
+if ! has yazi; then
+    echo "==> Installing yazi from GitHub release..."
+    tmp=$(mktemp -d)
+    curl -fsSL https://github.com/sxyazi/yazi/releases/latest/download/yazi-x86_64-unknown-linux-gnu.zip \
+        -o "$tmp/yazi.zip"
+    unzip -q "$tmp/yazi.zip" -d "$tmp"
+    install -m755 "$tmp"/yazi-*/yazi "$tmp"/yazi-*/ya "$HOME/.local/bin/"
+    rm -rf "$tmp"
+fi
+
+install_awww
+install_nerd_symbols
+install_bibata
+install_oh_my_zsh
+install_zed
+install_flatpaks
+
+enable_services
+
+echo
+echo "Not packaged for Debian — install by hand:"
+echo "  ghostty  https://ghostty.org/docs/install/build"
+echo
+echo "Done. Run ./install.sh next to link your dotfiles and render the theme."
