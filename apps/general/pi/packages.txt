@@ -1,0 +1,15 @@
+# Pi packages managed by dotfiles. These are merged into ~/.pi/agent/settings.json.
+npm:@gotgenes/pi-permission-system
+npm:@narumitw/pi-plan-mode
+npm:@narumitw/pi-btw
+npm:@juicesharp/rpiv-ask-user-question
+npm:@juicesharp/rpiv-todo
+npm:pi-powerline-footer
+npm:@narumitw/pi-usage
+npm:@narumitw/pi-goal
+npm:@ff-labs/pi-fff
+npm:pi-mcp-adapter@2.32.0
+npm:pi-web-access
+npm:pi-lens
+npm:@plannotator/pi-extension
+npm:@tintinweb/pi-subagents
