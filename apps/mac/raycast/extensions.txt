@@ -1,0 +1,5 @@
+── Your extensions ───────────────────────────────────────────────────────
+raycast/brew
+raycast/github
+thomaslombart/color-picker
+
