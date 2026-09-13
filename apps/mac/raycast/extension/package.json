@@ -1,0 +1,82 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "dotfiles",
+  "title": "Dotfiles",
+  "description": "Control your dotfiles: switch themes and fonts, set wallpapers, toggle auto light/dark, and run maintenance — all backed by the dotfiles CLI.",
+  "icon": "command-icon.png",
+  "author": "zenodea",
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "search-themes",
+      "title": "Search Themes",
+      "subtitle": "Dotfiles",
+      "description": "Browse and switch the active theme.",
+      "mode": "view"
+    },
+    {
+      "name": "search-fonts",
+      "title": "Search Fonts",
+      "subtitle": "Dotfiles",
+      "description": "Browse and switch the active font.",
+      "mode": "view"
+    },
+    {
+      "name": "set-wallpaper",
+      "title": "Set Wallpaper",
+      "subtitle": "Dotfiles",
+      "description": "Pick a wallpaper from a thumbnail grid.",
+      "mode": "view"
+    },
+    {
+      "name": "random-theme",
+      "title": "Random Theme",
+      "subtitle": "Dotfiles",
+      "description": "Switch to a random theme.",
+      "mode": "no-view"
+    },
+    {
+      "name": "toggle-auto",
+      "title": "Toggle Auto Light/Dark",
+      "subtitle": "Dotfiles",
+      "description": "Turn the automatic light/dark theme switching on or off.",
+      "mode": "no-view"
+    },
+    {
+      "name": "maintenance",
+      "title": "Dotfiles Maintenance",
+      "subtitle": "Dotfiles",
+      "description": "Run update, doctor, or save (commit & push).",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "dotfilesBin",
+      "title": "Dotfiles Binary",
+      "description": "Path to the dotfiles CLI. Leave blank to auto-detect (~/.local/bin/dotfiles).",
+      "type": "textfield",
+      "required": false,
+      "default": ""
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.83.0",
+    "@raycast/utils": "^1.17.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.11",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "typecheck": "tsc --noEmit"
+  }
+}
