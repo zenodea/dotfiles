@@ -23,21 +23,10 @@ Rectangle {
     readonly property bool playing: player?.isPlaying ?? false
     readonly property string art: player?.trackArtUrl ?? ""
 
-    property real position: 0
-
     function truncate(s: string, n: int): string {
         if (!s)
             return "";
         return s.length > n ? `${s.slice(0, n - 1)}…` : s;
-    }
-
-    function clockText(seconds: real): string {
-        if (!seconds || seconds < 0)
-            return "0:00";
-        const total = Math.floor(seconds);
-        const m = Math.floor(total / 60);
-        const s = total % 60;
-        return `${m}:${s < 10 ? "0" : ""}${s}`;
     }
 
     implicitWidth: row.implicitWidth + Metrics.itemPadding * 2
@@ -48,14 +37,6 @@ Rectangle {
         id: clock
 
         precision: SystemClock.Minutes
-    }
-
-    Timer {
-        running: root.playing
-        interval: 1000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: root.position = root.player?.position ?? 0
     }
 
     Row {
@@ -205,8 +186,8 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         onEntered: Popouts.show(root, root.screen, {
-                content: panel
-            })
+            content: panel
+        })
         onClicked: root.player?.togglePlaying()
         onWheel: wheel => {
             if (!root.hasPlayer)
@@ -243,102 +224,8 @@ Rectangle {
                 color: Theme.alpha(Theme.fg, 0.15)
             }
 
-            Row {
-                visible: root.hasPlayer
-                spacing: Metrics.popoutPadding
-
-                Image {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.art !== ""
-                    source: root.art
-                    width: 64
-                    height: 64
-                    fillMode: Image.PreserveAspectCrop
-                    sourceSize.width: 128
-                    sourceSize.height: 128
-                    smooth: true
-                    asynchronous: true
-                }
-
-                Column {
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-
-                    PopoutTitle {
-                        text: root.player?.trackTitle ?? ""
-                        width: Math.min(implicitWidth, 240)
-                        elide: Text.ElideRight
-                    }
-
-                    PopoutLabel {
-                        text: root.player?.trackArtist ?? ""
-                        width: Math.min(implicitWidth, 240)
-                        elide: Text.ElideRight
-                    }
-
-                    PopoutLabel {
-                        text: root.player?.trackAlbum ?? ""
-                        width: Math.min(implicitWidth, 240)
-                        elide: Text.ElideRight
-                    }
-
-                    Item {
-                        width: 1
-                        height: 4
-                    }
-
-                    Rectangle {
-                        visible: (root.player?.lengthSupported ?? false) && (root.player?.length ?? 0) > 0
-                        width: 200
-                        height: 3
-                        color: Theme.alpha(Theme.fg, 0.15)
-
-                        Rectangle {
-                            width: parent.width * Math.max(0, Math.min(1, root.position / Math.max(1, root.player?.length ?? 1)))
-                            height: parent.height
-                            color: Theme.accent
-
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: Metrics.shortAnim
-                                }
-                            }
-                        }
-                    }
-
-                    Row {
-                        spacing: Metrics.gap
-
-                        PopoutLabel {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: (root.player?.lengthSupported ?? false) && (root.player?.length ?? 0) > 0
-                            text: `${root.clockText(root.position)} / ${root.clockText(root.player?.length ?? 0)}`
-                        }
-
-                        Item {
-                            width: Metrics.gap
-                            height: 1
-                        }
-
-                        IconButton {
-                            icon: "󰒮"
-                            enabled: root.player?.canGoPrevious ?? false
-                            onClicked: root.player?.previous()
-                        }
-
-                        IconButton {
-                            icon: root.playing ? "󰏤" : "󰐊"
-                            enabled: root.player?.canTogglePlaying ?? false
-                            onClicked: root.player?.togglePlaying()
-                        }
-
-                        IconButton {
-                            icon: "󰒭"
-                            enabled: root.player?.canGoNext ?? false
-                            onClicked: root.player?.next()
-                        }
-                    }
-                }
+            MediaCard {
+                textWidth: 240
             }
         }
     }

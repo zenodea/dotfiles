@@ -26,9 +26,11 @@ PopupWindow {
         trail = [];
     }
 
-    parentWindow: anchorWindow
-    relativeX: Math.max(Metrics.strip, anchorX - implicitWidth / 2)
-    relativeY: Metrics.barHeight
+    anchor {
+        window: root.anchorWindow
+        rect.x: Math.max(Metrics.strip, root.anchorX - root.implicitWidth / 2)
+        rect.y: Metrics.barHeight
+    }
 
     implicitWidth: Math.max(160, column.implicitWidth + Metrics.popoutPadding * 2)
     implicitHeight: column.implicitHeight + Metrics.popoutPadding

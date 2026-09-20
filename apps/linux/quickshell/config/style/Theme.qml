@@ -26,8 +26,20 @@ Singleton {
     property color orange: "#fe8019"
     property color purple: "#d3869b"
 
-    property string fontMono: "monospace"
+    property string monoRequested: "monospace"
     property string fontText: "sans-serif"
+
+    readonly property var monoFallbacks: ["Berkeley Mono", "TX-02", "AtkynsonMono Nerd Font", "Hack", "Adwaita Mono", "Noto Sans Mono"]
+
+    readonly property string fontMono: {
+        const installed = Qt.fontFamilies();
+        if (monoRequested && installed.includes(monoRequested))
+            return monoRequested;
+        for (const family of monoFallbacks)
+            if (installed.includes(family))
+                return family;
+        return "monospace";
+    }
     property int fontSize: 14
 
     readonly property color bgTranslucent: alpha(bg, bgOpacity)
@@ -68,7 +80,7 @@ Singleton {
         root.orange = c.orange;
         root.purple = c.purple;
 
-        root.fontMono = t.font.mono;
+        root.monoRequested = t.font.mono;
         root.fontText = t.font.text;
         root.fontSize = t.font.size;
     }

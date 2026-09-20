@@ -22,9 +22,6 @@ BarButton {
         objects: [Pipewire.defaultAudioSink]
     }
 
-    onVolumeChanged: flash()
-    onMutedChanged: flash()
-
     icon: muted || volume === 0 ? "󰝟" : volume < 0.34 ? "󰕿" : volume < 0.67 ? "󰖀" : "󰕾"
     iconColour: muted ? Theme.muted : Theme.fg
     label: `${Math.round(volume * 100)}%`

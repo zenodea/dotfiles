@@ -26,6 +26,13 @@ Singleton {
 
     readonly property int popoutMinWidth: 120
 
+    readonly property int drawerWidth: 380
+    readonly property int drawerPadding: 16
+    readonly property int launcherHeight: 300
+    readonly property int launcherHeader: 44
+    readonly property int launcherCellWidth: 260
+    readonly property int launcherCellHeight: 52
+
     readonly property var easeOutQuint: [0.23, 1, 0.32, 1, 1, 1]
     readonly property int shortAnim: 150
     readonly property int animDuration: 300

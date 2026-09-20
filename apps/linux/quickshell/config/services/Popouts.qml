@@ -15,14 +15,10 @@ Singleton {
     property real level: -1
     property Component content: null
 
-    property bool flashing: false
-
     property var source: null
 
     function show(item: Item, screen: var, opts: var): void {
         closeTimer.stop();
-        flashTimer.stop();
-        root.flashing = false;
         root.source = item;
         root.screen = screen;
         root.anchorX = item.mapToItem(null, item.width / 2, 0).x;
@@ -35,17 +31,6 @@ Singleton {
 
     function hold(item: Item): void {
         closeTimer.stop();
-        flashTimer.stop();
-        root.flashing = false;
-    }
-
-    function flash(item: Item, screen: var, opts: var): void {
-        if (root.open && !root.flashing)
-            return;
-
-        show(item, screen, opts);
-        root.flashing = true;
-        flashTimer.restart();
     }
 
     function leave(): void {
@@ -54,17 +39,6 @@ Singleton {
 
     function stay(): void {
         closeTimer.stop();
-    }
-
-    Timer {
-        id: flashTimer
-
-        interval: 1600
-        onTriggered: {
-            root.flashing = false;
-            root.open = false;
-            root.source = null;
-        }
     }
 
     Timer {

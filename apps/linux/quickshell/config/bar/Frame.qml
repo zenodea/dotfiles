@@ -5,6 +5,8 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
+import qs.drawer
+import qs.launcher
 import qs.modules
 import qs.popouts
 import qs.services
@@ -27,6 +29,7 @@ PanelWindow {
     color: "transparent"
     WlrLayershell.namespace: "dotfiles-shell"
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.keyboardFocus: Panels.anyOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     anchors {
         top: true
@@ -41,8 +44,34 @@ PanelWindow {
         regions: [
             Region {
                 item: popout.hitArea
+            },
+            Region {
+                item: rightEdge
+            },
+            Region {
+                item: bottomEdge
+            },
+            Region {
+                item: drawer.hitArea
+            },
+            Region {
+                item: launcher.hitArea
             }
         ]
+    }
+
+    Timer {
+        id: rightDwell
+
+        interval: 180
+        onTriggered: Panels.hoverOpenDrawer()
+    }
+
+    Timer {
+        id: bottomDwell
+
+        interval: 180
+        onTriggered: Panels.hoverOpenLauncher()
     }
 
     HoverHandler {
@@ -120,6 +149,30 @@ PanelWindow {
                 height: popout.height
                 color: Theme.bg
             }
+
+            Rectangle {
+                x: drawer.x
+                y: drawer.y
+                width: drawer.width
+                height: drawer.height
+                color: Theme.bg
+            }
+
+            Rectangle {
+                x: launcher.x
+                y: launcher.y
+                width: launcher.width
+                height: launcher.height
+                color: Theme.bg
+            }
+
+            Rectangle {
+                x: levels.x
+                y: levels.y
+                width: levels.width
+                height: levels.height
+                color: Theme.bg
+            }
         }
 
         Workspaces {
@@ -141,7 +194,11 @@ PanelWindow {
             height: Metrics.barHeight
             spacing: 0
 
-            PowerProfile {
+            CapsLock {
+                screen: root.modelData
+            }
+
+            Mic {
                 screen: root.modelData
             }
 
@@ -153,7 +210,7 @@ PanelWindow {
                 screen: root.modelData
             }
 
-            BluetoothStatus {
+            PowerProfile {
                 screen: root.modelData
             }
 
@@ -165,20 +222,15 @@ PanelWindow {
                 screen: root.modelData
             }
 
+            BluetoothStatus {
+                screen: root.modelData
+            }
+
             NetGraph {
                 screen: root.modelData
             }
 
             Battery {
-                screen: root.modelData
-            }
-
-            Tray {
-                screen: root.modelData
-                window: root
-            }
-
-            PowerButton {
                 screen: root.modelData
             }
         }
@@ -188,6 +240,68 @@ PanelWindow {
 
             screen: root.modelData
             maxX: root.innerRight
+        }
+
+        LevelPanel {
+            id: levels
+        }
+
+        Drawer {
+            id: drawer
+
+            screen: root.modelData
+        }
+
+        Launcher {
+            id: launcher
+
+            screen: root.modelData
+        }
+
+        Item {
+            id: keyboard
+
+            anchors.fill: parent
+            focus: Panels.drawer && Panels.launcher === ""
+            Keys.onEscapePressed: Panels.close()
+        }
+
+        Item {
+            id: rightEdge
+
+            x: root.innerRight
+            y: root.innerTop
+            width: Metrics.strip
+            height: root.innerBottom - root.innerTop
+
+            HoverHandler {
+                onHoveredChanged: {
+                    Panels.drawerEdgePointer = hovered;
+                    if (hovered)
+                        rightDwell.restart();
+                    else
+                        rightDwell.stop();
+                }
+            }
+        }
+
+        Item {
+            id: bottomEdge
+
+            x: root.innerLeft
+            y: root.innerBottom
+            width: root.innerRight - root.innerLeft
+            height: Metrics.strip
+
+            HoverHandler {
+                onHoveredChanged: {
+                    Panels.launcherEdgePointer = hovered;
+                    if (hovered)
+                        bottomDwell.restart();
+                    else
+                        bottomDwell.stop();
+                }
+            }
         }
     }
 }

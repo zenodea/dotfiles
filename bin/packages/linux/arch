@@ -48,6 +48,11 @@ PACMAN_PACKAGES=(
     fuzzel
     rofi
 
+    # What the quickshell drawer reaches for
+    cliphist
+    wl-clipboard
+    wf-recorder
+
     # Terminal
     ghostty
 

@@ -2,7 +2,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
 import qs.style
 import qs.services
 
@@ -36,33 +35,6 @@ Rectangle {
 
     readonly property bool hovered: area.containsMouse
     readonly property bool lit: hovered && hoverable
-
-    readonly property bool onFocusedMonitor: screen && Hyprland.monitorFor(screen) === Hyprland.focusedMonitor
-
-    property bool settled: false
-
-    function flash(): void {
-        if (!settled || !onFocusedMonitor)
-            return;
-        Qt.callLater(() => Popouts.flash(root, screen, popoutOpts));
-    }
-
-    Timer {
-        running: true
-        interval: 2000
-        onTriggered: root.settled = true
-    }
-
-    onHoveredChanged: {
-        if (hovered && (title || popoutContent))
-            Popouts.show(root, screen, popoutOpts);
-    }
-
-    onPopoutOptsChanged: {
-        if (hovered && (title || popoutContent))
-            Popouts.show(root, screen, popoutOpts);
-    }
-
     readonly property real naturalWidth: row.implicitWidth + Metrics.itemPadding * 2
 
     implicitWidth: shown ? naturalWidth : 0
