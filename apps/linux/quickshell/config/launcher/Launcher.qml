@@ -166,6 +166,7 @@ Item {
             list.currentIndex = 0;
             list.positionViewAtBeginning();
             input.forceActiveFocus();
+            focusAgain.tries = 0;
             focusAgain.restart();
         }
     }
@@ -173,10 +174,18 @@ Item {
     Timer {
         id: focusAgain
 
-        interval: 60
+        property int tries: 0
+
+        interval: 50
+        repeat: true
         onTriggered: {
-            if (root.shown)
-                input.forceActiveFocus();
+            if (!root.shown || input.activeFocus || tries >= 8) {
+                tries = 0;
+                stop();
+                return;
+            }
+            tries++;
+            input.forceActiveFocus();
         }
     }
 
@@ -202,6 +211,8 @@ Item {
     HoverHandler {
         onHoveredChanged: Panels.launcherPointer = hovered
     }
+
+    Keys.onEscapePressed: Panels.close()
 
     Column {
         y: root.height - Metrics.launcherHeight

@@ -19,7 +19,7 @@ Singleton {
     readonly property int sectionSpacing: 12
     readonly property int gap: 6
 
-    readonly property int popoutPadding: 10
+    readonly property int popoutPadding: 12
 
     readonly property int shadowBlur: 24
     readonly property real shadowOpacity: 0.85

@@ -3,6 +3,9 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import Quickshell
+import Quickshell.Bluetooth
+import Quickshell.Networking
+import Quickshell.Services.Pipewire
 import qs.services
 import qs.style
 import qs.widgets
@@ -11,6 +14,9 @@ Column {
     id: root
 
     readonly property date now: clock.date
+
+    readonly property PwNode micSource: Pipewire.defaultAudioSource
+    readonly property bool micMuted: micSource?.audio?.muted ?? false
 
     readonly property var cells: {
         const year = now.getFullYear();
@@ -25,9 +31,9 @@ Column {
         return out;
     }
 
-    function screenshot(region: bool): void {
+    function screenshot(mode: string): void {
         Panels.close();
-        shotDelay.region = region;
+        shotDelay.mode = mode;
         shotDelay.restart();
     }
 
@@ -39,16 +45,24 @@ Column {
         precision: SystemClock.Minutes
     }
 
+    PwObjectTracker {
+        objects: [Pipewire.defaultAudioSource]
+    }
+
     Timer {
         id: shotDelay
 
-        property bool region: false
+        property string mode: "region"
 
         interval: 250
         onTriggered: {
             const dir = `${Quickshell.env("HOME")}/Pictures/Screenshots`;
             const file = `${dir}/$(date +%Y-%m-%d-%H%M%S).png`;
-            const cmd = region ? `mkdir -p '${dir}' && grim -g "$(slurp)" "${file}"` : `mkdir -p '${dir}' && grim "${file}"`;
+            let cmd = `mkdir -p '${dir}' && grim "${file}"`;
+            if (mode === "region")
+                cmd = `mkdir -p '${dir}' && grim -g "$(slurp)" "${file}"`;
+            else if (mode === "clip")
+                cmd = `grim -g "$(slurp)" - | wl-copy`;
             Quickshell.execDetached(["sh", "-c", cmd]);
         }
     }
@@ -62,7 +76,7 @@ Column {
             spacing: -4
 
             Text {
-                text: Qt.formatDateTime(root.now, "hh:mm")
+                text: Qt.formatDateTime(root.now, "HH:mm")
                 color: Theme.fgBright
                 font.family: Theme.fontMono
                 font.pixelSize: 40
@@ -78,19 +92,14 @@ Column {
                 renderType: Text.NativeRendering
             }
         }
+    }
 
-        Item {
-            width: parent.width - 180
-            height: 1
-        }
+    Card {
+        width: parent.width
+        title: Notifs.count > 0 ? `Notifications (${Notifs.count})` : "Notifications"
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: Qt.formatDateTime(root.now, "AP")
-            color: Theme.alpha(Theme.muted, 0.6)
-            font.family: Theme.fontMono
-            font.pixelSize: 11
-            renderType: Text.NativeRendering
+        Notifications {
+            width: parent.width
         }
     }
 
@@ -244,44 +253,122 @@ Column {
         width: parent.width
         title: "Quick actions"
 
-        Flow {
+        Toggle {
             width: parent.width
+            icon: Networking.wifiEnabled ? "󰖩" : "󰖪"
+            label: "Wi-Fi"
+            checked: Networking.wifiEnabled
+            onToggled: Networking.wifiEnabled = !Networking.wifiEnabled
+        }
+
+        Toggle {
+            width: parent.width
+            visible: !!Bluetooth.defaultAdapter
+            icon: (Bluetooth.defaultAdapter?.enabled ?? false) ? "󰂯" : "󰂲"
+            label: "Bluetooth"
+            checked: Bluetooth.defaultAdapter?.enabled ?? false
+            onToggled: Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+        }
+
+        Toggle {
+            width: parent.width
+            visible: !!root.micSource
+            icon: root.micMuted ? "󰍭" : "󰍬"
+            label: "Microphone"
+            checked: !root.micMuted
+            onToggled: {
+                if (root.micSource?.audio)
+                    root.micSource.audio.muted = !root.micSource.audio.muted;
+            }
+        }
+
+        Toggle {
+            width: parent.width
+            enabled: Idle.available
+            icon: Idle.inhibited ? "󰅶" : "󰾪"
+            label: "Keep awake"
+            checked: Idle.inhibited
+            onToggled: Idle.toggle()
+        }
+
+        Toggle {
+            width: parent.width
+            visible: Vpn.state !== "absent"
+            enabled: Vpn.state !== "down"
+            icon: Vpn.connected ? "󰦝" : "󰦞"
+            label: Vpn.state === "down" ? "Mullvad (daemon down)" : "Mullvad"
+            checked: Vpn.connected
+            onToggled: Vpn.toggle()
+        }
+
+        Toggle {
+            width: parent.width
+            enabled: Night.available
+            icon: Night.on ? "󰖔" : "󰖙"
+            label: "Night mode"
+            checked: Night.on
+            onToggled: Night.toggle()
+        }
+    }
+
+    Card {
+        width: parent.width
+        title: "Capture"
+
+        Grid {
+            id: capture
+
+            width: parent.width
+            columns: 2
             spacing: 6
 
-            PillButton {
-                icon: Idle.inhibited ? "󰅶" : "󰾪"
-                label: Idle.inhibited ? "Awake" : "Idle"
-                active: Idle.inhibited
-                enabled: Idle.available
-                onClicked: Idle.toggle()
-            }
+            readonly property real cell: (width - spacing) / 2
 
             PillButton {
-                icon: "󰖔"
-                label: "Night"
-                onClicked: Quickshell.execDetached(["sh", "-c", `${Quickshell.env("HOME")}/scripts/night-mode`])
-            }
-
-            PillButton {
+                width: capture.cell
+                maxTextWidth: capture.cell - 42
                 icon: "󰹑"
                 label: "Region"
                 enabled: Tools.has("grim") && Tools.has("slurp")
-                onClicked: root.screenshot(true)
+                onClicked: root.screenshot("region")
             }
 
             PillButton {
+                width: capture.cell
+                maxTextWidth: capture.cell - 42
+                icon: "󰆏"
+                label: "Copy region"
+                enabled: Tools.has("grim") && Tools.has("slurp") && Tools.has("wl-copy")
+                onClicked: root.screenshot("clip")
+            }
+
+            PillButton {
+                width: capture.cell
+                maxTextWidth: capture.cell - 42
                 icon: "󰍹"
                 label: "Screen"
                 enabled: Tools.has("grim")
-                onClicked: root.screenshot(false)
+                onClicked: root.screenshot("screen")
             }
 
             PillButton {
+                width: capture.cell
+                maxTextWidth: capture.cell - 42
                 icon: Recorder.recording ? "󰙧" : "󰑊"
-                label: Recorder.recording ? "Stop" : "Record"
+                label: Recorder.recording ? "Stop" : "Record screen"
                 active: Recorder.recording
                 enabled: Tools.has("wf-recorder")
-                onClicked: Recorder.toggle()
+                onClicked: Recorder.toggle(false)
+            }
+
+            PillButton {
+                width: capture.cell
+                maxTextWidth: capture.cell - 42
+                icon: "󰻂"
+                label: "Record region"
+                visible: !Recorder.recording
+                enabled: Tools.has("wf-recorder") && Tools.has("slurp")
+                onClicked: Recorder.toggle(true)
             }
         }
     }

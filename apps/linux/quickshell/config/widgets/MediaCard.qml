@@ -8,8 +8,8 @@ import qs.style
 Item {
     id: root
 
-    property int artSize: 64
-    property int textWidth: 240
+    property int artSize: 76
+    property int textWidth: 280
 
     readonly property MprisPlayer player: {
         const players = Mpris.players.values;
@@ -69,7 +69,7 @@ Item {
                 text: root.player?.trackTitle ?? ""
                 color: Theme.fgBright
                 font.family: Theme.fontMono
-                font.pixelSize: 12
+                font.pixelSize: 13
                 font.bold: true
                 width: Math.min(implicitWidth, root.textWidth)
                 elide: Text.ElideRight
@@ -81,7 +81,7 @@ Item {
                 visible: text !== ""
                 color: Theme.muted
                 font.family: Theme.fontMono
-                font.pixelSize: 11
+                font.pixelSize: 12
                 width: Math.min(implicitWidth, root.textWidth)
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
@@ -92,7 +92,7 @@ Item {
                 visible: text !== ""
                 color: Theme.muted
                 font.family: Theme.fontMono
-                font.pixelSize: 11
+                font.pixelSize: 12
                 width: Math.min(implicitWidth, root.textWidth)
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
@@ -106,7 +106,7 @@ Item {
             Rectangle {
                 visible: root.hasLength
                 width: root.textWidth - 40
-                height: 3
+                height: 4
                 color: Theme.alpha(Theme.fg, 0.15)
 
                 Rectangle {
@@ -146,18 +146,21 @@ Item {
                 }
 
                 IconButton {
+                    size: 18
                     icon: "󰒮"
                     enabled: root.player?.canGoPrevious ?? false
                     onClicked: root.player?.previous()
                 }
 
                 IconButton {
+                    size: 18
                     icon: root.playing ? "󰏤" : "󰐊"
                     enabled: root.player?.canTogglePlaying ?? false
                     onClicked: root.player?.togglePlaying()
                 }
 
                 IconButton {
+                    size: 18
                     icon: "󰒭"
                     enabled: root.player?.canGoNext ?? false
                     onClicked: root.player?.next()

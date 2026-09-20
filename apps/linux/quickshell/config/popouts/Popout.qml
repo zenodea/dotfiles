@@ -95,6 +95,11 @@ Item {
         anchors.centerIn: parent
         sourceComponent: Popouts.content || fallback
 
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("popout content failed for", Popouts.title, "->", sourceComponent);
+        }
+
         opacity: root.shown ? 1 : 0
 
         Behavior on opacity {

@@ -63,7 +63,7 @@ Rectangle {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: Qt.formatDateTime(root.now, "hh:mm")
+                text: Qt.formatDateTime(root.now, "HH:mm")
                 color: area.containsMouse ? Theme.accent : Theme.fgBright
                 font.family: Theme.fontMono
                 font.pixelSize: 15
@@ -75,15 +75,6 @@ Rectangle {
                         duration: Metrics.shortAnim
                     }
                 }
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: Qt.formatDateTime(root.now, "AP")
-                color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 9
-                renderType: Text.NativeRendering
             }
         }
 
@@ -209,11 +200,13 @@ Rectangle {
                 spacing: 1
 
                 PopoutTitle {
+                    font.pixelSize: 14
                     text: Qt.formatDateTime(root.now, "dddd, d MMMM")
                 }
 
                 PopoutLabel {
-                    text: Qt.formatDateTime(root.now, "yyyy-MM-dd · hh:mm AP")
+                    font.pixelSize: 12
+                    text: Qt.formatDateTime(root.now, "yyyy-MM-dd · HH:mm")
                 }
             }
 
@@ -225,7 +218,7 @@ Rectangle {
             }
 
             MediaCard {
-                textWidth: 240
+                textWidth: 280
             }
         }
     }

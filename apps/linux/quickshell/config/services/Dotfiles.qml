@@ -14,10 +14,37 @@ Singleton {
     property var wallpapers: []
     property string currentTheme: ""
     property string currentFont: ""
+    property bool autoTheme: false
+
+    readonly property bool light: currentTheme.endsWith("-light")
+    readonly property string otherVariant: light ? currentTheme.slice(0, -6) : `${currentTheme}-light`
+    readonly property bool paired: themes.some(t => t.name === otherVariant)
 
     function apply(kind: string, name: string): void {
         const flag = kind === "theme" ? "--theme" : kind === "font" ? "--font" : "--wallpaper";
         Quickshell.execDetached(["dotfiles", flag, name]);
+    }
+
+    function toggleAppearance(): void {
+        if (paired)
+            apply("theme", otherVariant);
+    }
+
+    function randomTheme(): void {
+        Quickshell.execDetached(["dotfiles", "--random"]);
+    }
+
+    function randomWallpaper(): void {
+        Quickshell.execDetached(["dotfiles", "--wallpaper", "random"]);
+    }
+
+    function toggleAuto(): void {
+        Quickshell.execDetached(["dotfiles", "--auto", autoTheme ? "off" : "on"]);
+        autoSoon.restart();
+    }
+
+    function checkAuto(): void {
+        autoProbe.running = true;
     }
 
     function wallpaperPath(name: string): string {
@@ -60,11 +87,31 @@ Singleton {
         }
     }
 
+    Process {
+        id: autoProbe
+
+        command: ["sh", "-c", `test -f '${root.repo}/.auto-theme' && echo on || echo off`]
+
+        stdout: StdioCollector {
+            onStreamFinished: root.autoTheme = text.trim() === "on"
+        }
+    }
+
+    Timer {
+        id: autoSoon
+
+        interval: 400
+        onTriggered: root.checkAuto()
+    }
+
     FileView {
         path: root.repo ? `${root.repo}/.current-theme` : ""
         watchChanges: true
         onFileChanged: reload()
-        onLoaded: root.currentTheme = text().trim()
+        onLoaded: {
+            root.currentTheme = text().trim();
+            root.checkAuto();
+        }
     }
 
     FileView {
