@@ -1,21 +1,28 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import Quickshell
-import qs.style
 import qs.services
-import qs.widgets
+import qs.style
 
 Rectangle {
     id: root
 
     property ShellScreen screen: null
 
-    readonly property real naturalWidth: row.implicitWidth + Metrics.itemPadding * 2
+    readonly property int columns: 40
+    readonly property int columnWidth: 2
+    readonly property int columnGap: 1
+    readonly property int graphWidth: columns * (columnWidth + columnGap) - columnGap
+    readonly property int graphHeight: 18
+    readonly property real naturalWidth: graphWidth + Metrics.itemPadding * 2
 
     implicitWidth: NetSpeed.connected ? naturalWidth : 0
     implicitHeight: Metrics.barHeight
     opacity: NetSpeed.connected ? 1 : 0
     visible: implicitWidth > 0
     clip: true
+    color: "transparent"
 
     Behavior on implicitWidth {
         NumberAnimation {
@@ -30,33 +37,67 @@ Rectangle {
             duration: Metrics.shortAnim
         }
     }
-    radius: Metrics.radius
-    color: "transparent"
 
-    Row {
-        id: row
-
+    Item {
         anchors.centerIn: parent
-        spacing: Metrics.gap
+        width: root.graphWidth
+        height: root.graphHeight
 
-        Text {
+        Rectangle {
             anchors.verticalCenter: parent.verticalCenter
-            text: NetSpeed.rx
-            color: Theme.blue
-            font.family: Metrics.iconFont
-            font.pixelSize: 9
-            font.letterSpacing: -3
-            renderType: Text.NativeRendering
+            width: parent.width
+            height: Metrics.borderWidth
+            color: Theme.alpha(Theme.fg, 0.18)
         }
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: NetSpeed.tx
-            color: Theme.red
-            font.family: Metrics.iconFont
-            font.pixelSize: 9
-            font.letterSpacing: -3
-            renderType: Text.NativeRendering
+        Repeater {
+            model: root.columns
+
+            Item {
+                id: column
+
+                required property int index
+
+                readonly property real down: NetSpeed.rx[index] ?? 0
+                readonly property real up: NetSpeed.tx[index] ?? 0
+                readonly property real half: root.graphHeight / 2 - 1
+
+                x: index * (root.columnWidth + root.columnGap)
+                width: root.columnWidth
+                height: root.graphHeight
+
+                Rectangle {
+                    x: 0
+                    y: column.half - height
+                    width: parent.width
+                    height: Math.max(column.down > 0 ? 1 : 0, Math.min(1, column.down) * column.half)
+                    color: Theme.blue
+
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: Metrics.shortAnim
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Metrics.easeOutQuint
+                        }
+                    }
+                }
+
+                Rectangle {
+                    x: 0
+                    y: column.half + Metrics.borderWidth
+                    width: parent.width
+                    height: Math.max(column.up > 0 ? 1 : 0, Math.min(1, column.up) * column.half)
+                    color: Theme.alpha(Theme.red, 0.85)
+
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: Metrics.shortAnim
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Metrics.easeOutQuint
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -66,8 +107,9 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         onEntered: Popouts.show(root, root.screen, {
-            title: `↓ ${NetSpeed.down}   ↑ ${NetSpeed.up}`,
-            detail: NetSpeed.iface
+            title: `↓ ${NetSpeed.down}`,
+            detail: `↑ ${NetSpeed.up} · ${NetSpeed.iface}`,
+            fixedWidth: root.naturalWidth
         })
     }
 }

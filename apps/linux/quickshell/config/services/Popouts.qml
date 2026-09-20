@@ -13,6 +13,7 @@ Singleton {
     property string title: ""
     property string detail: ""
     property real level: -1
+    property real fixedWidth: 0
     property var content: null
 
     property var source: null
@@ -28,6 +29,7 @@ Singleton {
         root.title = opts.title ?? "";
         root.detail = opts.detail ?? "";
         root.level = opts.level ?? -1;
+        root.fixedWidth = opts.fixedWidth ?? 0;
         root.content = opts.content ?? null;
         root.open = true;
     }

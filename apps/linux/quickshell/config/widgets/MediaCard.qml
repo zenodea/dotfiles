@@ -3,18 +3,16 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
+import qs.services
 import qs.style
 
 Item {
     id: root
 
-    property int artSize: 76
-    property int textWidth: 280
+    property int artSize: 96
+    property int textWidth: 340
 
-    readonly property MprisPlayer player: {
-        const players = Mpris.players.values;
-        return players.find(p => p.isPlaying) ?? players[0] ?? null;
-    }
+    readonly property MprisPlayer player: Media.player
 
     readonly property bool playing: player?.isPlaying ?? false
     readonly property string art: player?.trackArtUrl ?? ""
@@ -48,17 +46,33 @@ Item {
 
         spacing: Metrics.popoutPadding
 
-        Image {
+        Rectangle {
             anchors.verticalCenter: parent.verticalCenter
-            visible: root.art !== ""
-            source: root.art
             width: root.artSize
             height: root.artSize
-            fillMode: Image.PreserveAspectCrop
-            sourceSize.width: root.artSize * 2
-            sourceSize.height: root.artSize * 2
-            smooth: true
-            asynchronous: true
+            color: Theme.alpha(Theme.fg, 0.07)
+
+            Text {
+                anchors.centerIn: parent
+                visible: cover.status !== Image.Ready
+                text: "󰝚"
+                color: Theme.alpha(Theme.muted, 0.8)
+                font.family: Metrics.iconFont
+                font.pixelSize: root.artSize / 2.4
+                renderType: Text.NativeRendering
+            }
+
+            Image {
+                id: cover
+
+                anchors.fill: parent
+                source: root.art
+                fillMode: Image.PreserveAspectCrop
+                sourceSize.width: root.artSize * 2
+                sourceSize.height: root.artSize * 2
+                smooth: true
+                asynchronous: true
+            }
         }
 
         Column {
@@ -69,31 +83,29 @@ Item {
                 text: root.player?.trackTitle ?? ""
                 color: Theme.fgBright
                 font.family: Theme.fontMono
-                font.pixelSize: 13
+                font.pixelSize: 15
                 font.bold: true
-                width: Math.min(implicitWidth, root.textWidth)
+                width: root.textWidth
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
             }
 
             Text {
                 text: root.player?.trackArtist ?? ""
-                visible: text !== ""
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 12
-                width: Math.min(implicitWidth, root.textWidth)
+                width: root.textWidth
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
             }
 
             Text {
                 text: root.player?.trackAlbum ?? ""
-                visible: text !== ""
                 color: Theme.muted
                 font.family: Theme.fontMono
                 font.pixelSize: 12
-                width: Math.min(implicitWidth, root.textWidth)
+                width: root.textWidth
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
             }
@@ -104,9 +116,9 @@ Item {
             }
 
             Rectangle {
-                visible: root.hasLength
-                width: root.textWidth - 40
-                height: 4
+                width: root.textWidth - 20
+                height: 5
+                opacity: root.hasLength ? 1 : 0.35
                 color: Theme.alpha(Theme.fg, 0.15)
 
                 Rectangle {
@@ -132,8 +144,7 @@ Item {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    visible: root.hasLength
-                    text: `${root.clockText(root.position)} / ${root.clockText(root.player?.length ?? 0)}`
+                    text: root.hasLength ? `${root.clockText(root.position)} / ${root.clockText(root.player?.length ?? 0)}` : "--:-- / --:--"
                     color: Theme.muted
                     font.family: Theme.fontMono
                     font.pixelSize: 11
@@ -146,21 +157,21 @@ Item {
                 }
 
                 IconButton {
-                    size: 18
+                    size: 22
                     icon: "󰒮"
                     enabled: root.player?.canGoPrevious ?? false
                     onClicked: root.player?.previous()
                 }
 
                 IconButton {
-                    size: 18
+                    size: 22
                     icon: root.playing ? "󰏤" : "󰐊"
                     enabled: root.player?.canTogglePlaying ?? false
                     onClicked: root.player?.togglePlaying()
                 }
 
                 IconButton {
-                    size: 18
+                    size: 22
                     icon: "󰒭"
                     enabled: root.player?.canGoNext ?? false
                     onClicked: root.player?.next()

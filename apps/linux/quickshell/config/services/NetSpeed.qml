@@ -8,8 +8,8 @@ Singleton {
     id: root
 
     property string iface: ""
-    property string rx: ""
-    property string tx: ""
+    property var rx: []
+    property var tx: []
     property string down: ""
     property string up: ""
 

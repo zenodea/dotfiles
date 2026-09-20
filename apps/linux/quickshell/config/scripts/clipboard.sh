@@ -27,9 +27,14 @@ prune() {
 
 case "${1:-list}" in
     watch)
+        kids=()
         wl-paste --type text --watch "$0" add text text/plain &
+        kids+=($!)
         wl-paste --type image/png --watch "$0" add image image/png &
+        kids+=($!)
         wl-paste --type image/jpeg --watch "$0" add image image/jpeg &
+        kids+=($!)
+        trap 'kill "${kids[@]}" 2> /dev/null' EXIT INT TERM
         wait
         ;;
 
@@ -56,10 +61,14 @@ case "${1:-list}" in
         id=$(sha1sum < "$tmp" | cut -c1-16)
         mv -f "$tmp" "$entries/$id"
 
-        drop_from_index "$id"
+        exec 9> "$dir/.lock"
+        flock -w 5 9 || exit 0
+
         new=$(mktemp "$dir/.index.XXXXXX")
-        printf '%s\t%s\t%s\t%s\n' "$id" "$kind" "$mime" "$preview" > "$new"
-        head -n "$((limit - 1))" "$index" >> "$new"
+        {
+            printf '%s\t%s\t%s\t%s\n' "$id" "$kind" "$mime" "$preview"
+            cat "$index"
+        } | awk -F'\t' '!seen[$1]++' | head -n "$limit" > "$new"
         mv -f "$new" "$index"
 
         prune
@@ -82,6 +91,8 @@ case "${1:-list}" in
         ;;
 
     delete)
+        exec 9> "$dir/.lock"
+        flock -w 5 9 || exit 0
         rm -f "$entries/$2"
         drop_from_index "$2"
         ;;

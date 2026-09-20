@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-BARS="▁▂▃▄▅▆▇█"
-SAMPLES=30
+interval=1
+samples=40
 
 fmt_speed() {
     local b=$1
@@ -10,19 +10,17 @@ fmt_speed() {
     else printf '%d B/s' "$b"; fi
 }
 
-spark() {
-    local max=$1 v i s=""
+series() {
+    local max=$1 v out=""
     shift
     for v in "$@"; do
-        i=$((v * 7 / max))
-        ((i > 7)) && i=7
-        s+="${BARS:i:1}"
+        out+=$(awk "BEGIN{printf \"%.3f,\", ($max > 0) ? $v / $max : 0}")
     done
-    printf '%s' "$s"
+    printf '%s' "${out%,}"
 }
 
 declare -a rx_h tx_h
-for ((i = 0; i < SAMPLES; i++)); do
+for ((i = 0; i < samples; i++)); do
     rx_h+=(0)
     tx_h+=(0)
 done
@@ -31,8 +29,8 @@ prev_rx=0 prev_tx=0 first=1
 while true; do
     iface=$(ip route show default 2>/dev/null | awk 'NR==1 {print $5}')
     if [[ -z "$iface" ]]; then
-        printf '{"iface":"","rx":"","tx":"","down":"","up":""}\n'
-        sleep 1
+        printf '{"iface":"","rx":[],"tx":[],"down":"","up":""}\n'
+        sleep "$interval"
         continue
     fi
 
@@ -48,12 +46,12 @@ while true; do
     rx_h=("${rx_h[@]:1}" "$drx")
     tx_h=("${tx_h[@]:1}" "$dtx")
 
-    max=102400 # soft floor: 100 KB/s, so an idle link stays flat
+    max=102400
     for v in "${rx_h[@]}" "${tx_h[@]}"; do ((v > max)) && max=$v; done
 
-    printf '{"iface":"%s","rx":"%s","tx":"%s","down":"%s","up":"%s"}\n' \
-        "$iface" "$(spark "$max" "${rx_h[@]}")" "$(spark "$max" "${tx_h[@]}")" \
+    printf '{"iface":"%s","rx":[%s],"tx":[%s],"down":"%s","up":"%s"}\n' \
+        "$iface" "$(series "$max" "${rx_h[@]}")" "$(series "$max" "${tx_h[@]}")" \
         "$(fmt_speed "$drx")" "$(fmt_speed "$dtx")"
 
-    sleep 1
+    sleep "$interval"
 done

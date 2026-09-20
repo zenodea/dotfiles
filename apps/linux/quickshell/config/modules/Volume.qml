@@ -24,6 +24,7 @@ BarButton {
 
     icon: muted || volume === 0 ? "󰝟" : volume < 0.34 ? "󰕿" : volume < 0.67 ? "󰖀" : "󰕾"
     iconColour: muted ? Theme.muted : Theme.fg
+    labelWidth: 34
     label: `${Math.round(volume * 100)}%`
     labelColour: muted ? Theme.muted : Theme.fg
 

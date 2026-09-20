@@ -1,11 +1,20 @@
 //@ pragma UseQApplication
 
+import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.bar
 import qs.services
 
 ShellRoot {
+    QtObject {
+        Component.onCompleted: {
+            Dotfiles.repo;
+            ClipboardHistory.available;
+            Notifs.count;
+        }
+    }
+
     IpcHandler {
         target: "shell"
 

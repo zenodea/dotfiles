@@ -15,10 +15,10 @@ Item {
     readonly property bool shown: Popouts.open && Popouts.screen === screen
     readonly property alias hitArea: hitArea
 
-    readonly property real targetWidth: Math.max(Metrics.popoutMinWidth, loader.implicitWidth + Metrics.popoutPadding * 2)
+    readonly property real targetWidth: Popouts.fixedWidth > 0 ? Popouts.fixedWidth : Math.max(Metrics.popoutMinWidth, loader.implicitWidth + Metrics.popoutPadding * 2)
 
     width: targetWidth
-    x: Math.max(Metrics.strip, Math.min(maxX - targetWidth, Popouts.anchorX - targetWidth / 2))
+    x: Math.max(0, Math.min(maxX - targetWidth, Popouts.anchorX - targetWidth / 2))
 
     y: Metrics.barHeight
     height: shown ? loader.implicitHeight + Metrics.popoutPadding * 2 : 0
