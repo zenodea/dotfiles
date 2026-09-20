@@ -10,6 +10,7 @@ Singleton {
     property string state: "absent"
     property string relay: ""
     property string location: ""
+    property string city: ""
 
     readonly property bool available: state !== "absent"
     readonly property bool connected: state === "connected"
@@ -28,6 +29,7 @@ Singleton {
                 root.state = d.state;
                 root.relay = d.relay;
                 root.location = d.location;
+                root.city = d.city ?? "";
             }
         }
     }

@@ -19,17 +19,15 @@ Column {
 
         NumberAnimation {
             target: stack
-            property: "x"
-            to: root.width + 60
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
+            property: "opacity"
+            to: 0
+            duration: Metrics.shortAnim
         }
 
         ScriptAction {
             script: {
                 Notifs.dismissAll();
-                stack.x = 0;
+                stack.opacity = 1;
             }
         }
     }

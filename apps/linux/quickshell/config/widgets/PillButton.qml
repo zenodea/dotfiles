@@ -15,7 +15,7 @@ Rectangle {
     implicitWidth: row.implicitWidth + Metrics.itemPadding * 2
     implicitHeight: 30
 
-    color: active ? Theme.alpha(Theme.accent, 0.18) : area.containsMouse && enabled ? Theme.alpha(Theme.fg, 0.09) : Theme.alpha(Theme.fg, 0.05)
+    color: active && enabled ? Theme.alpha(Theme.accent, 0.18) : area.containsMouse && enabled ? Theme.alpha(Theme.fg, 0.09) : Theme.alpha(Theme.fg, 0.05)
 
     Behavior on color {
         ColorAnimation {

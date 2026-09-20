@@ -2,24 +2,31 @@
 
 state_json() {
     if ! command -v mullvad > /dev/null 2>&1; then
-        printf '{"state":"absent","relay":"","location":""}\n'
+        printf '{"state":"absent","relay":"","location":"","city":""}\n'
         return
     fi
 
     local status
-    status=$(mullvad status 2>/dev/null)
+    status=$(mullvad status -v 2> /dev/null)
+    [[ -z "$status" ]] && status=$(mullvad status 2> /dev/null)
 
     if [[ -z "$status" ]]; then
-        printf '{"state":"down","relay":"","location":""}\n'
+        printf '{"state":"down","relay":"","location":"","city":""}\n'
     elif [[ "$status" == Connected* ]]; then
-        local relay location
+        local relay location city
         relay=$(sed -n 's/.*Relay:[[:space:]]*//p' <<< "$status" | head -1)
         location=$(sed -n 's/.*Visible location:[[:space:]]*//p' <<< "$status" | head -1)
-        printf '{"state":"connected","relay":"%s","location":"%s"}\n' "$relay" "$location"
+        [[ -z "$relay" ]] && relay=$(sed -n 's/^Connected to \([^ ]*\).*/\1/p' <<< "$status" | head -1)
+        [[ -z "$location" ]] && location=$(sed -n 's/^Connected to [^ ]* in \(.*\)/\1/p' <<< "$status" | head -1)
+        location=${location%%. *}
+        location=${location%.}
+        city=$location
+        [[ "$city" == *,* ]] && city=${city##*, }
+        printf '{"state":"connected","relay":"%s","location":"%s","city":"%s"}\n' "$relay" "$location" "$city"
     elif [[ "$status" == Connecting* ]]; then
-        printf '{"state":"connecting","relay":"","location":""}\n'
+        printf '{"state":"connecting","relay":"","location":"","city":""}\n'
     else
-        printf '{"state":"disconnected","relay":"","location":""}\n'
+        printf '{"state":"disconnected","relay":"","location":"","city":""}\n'
     fi
 }
 
