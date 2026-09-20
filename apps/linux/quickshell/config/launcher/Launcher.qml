@@ -16,6 +16,11 @@ Item {
     readonly property alias hitArea: hitArea
     property string lastMode: "apps"
     readonly property bool session: mode === "session"
+
+    onSessionChanged: {
+        if (session)
+            Updates.refresh();
+    }
     readonly property string mode: Panels.launcher || lastMode
     property string query: ""
 
@@ -613,6 +618,8 @@ Item {
             verticalAlignment: Text.AlignVCenter
             text: {
                 const parts = [`up ${root.elapsed(SysInfo.uptime)}`];
+                if (Updates.summary)
+                    parts.push(Updates.summary);
                 if (UPower.displayDevice?.isLaptopBattery ?? false)
                     parts.push(`battery ${Math.round((UPower.displayDevice.percentage <= 1 ? UPower.displayDevice.percentage * 100 : UPower.displayDevice.percentage))}%`);
                 if (Notifs.all.length > 0)
