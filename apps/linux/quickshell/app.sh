@@ -1,3 +1,3 @@
 render() {
-    generate theme.json config/theme.json
+    generate theme.json "${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/quickshell-theme.json"
 }

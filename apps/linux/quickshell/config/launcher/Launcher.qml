@@ -91,17 +91,19 @@ Item {
                     }));
 
         if (mode === "fonts")
-            return Dotfiles.fonts.filter(matches).map(f => ({
+            return Dotfiles.fonts.filter(f => matches(f.name) || matches(f.mono)).map(f => ({
                         kind: "font",
-                        name: f,
-                        sub: "",
-                        current: f === Dotfiles.currentFont
+                        name: f.name,
+                        sub: f.installed ? f.mono : `${f.mono} · not installed`,
+                        font: f,
+                        current: f.name === Dotfiles.currentFont
                     }));
 
         if (mode === "wallpapers")
-            return Dotfiles.wallpapers.filter(w => /\.(png|jpe?g|webp|avif|bmp|gif)$/i.test(w)).filter(matches).map(w => ({
+            return Dotfiles.wallpapers.filter(w => matches(w.name)).map(w => ({
                         kind: "wallpaper",
-                        name: w,
+                        name: w.name,
+                        thumb: w.thumb,
                         sub: ""
                     }));
 
@@ -126,9 +128,10 @@ Item {
             Dotfiles.apply("theme", item.name);
         else if (item.kind === "font")
             Dotfiles.apply("font", item.name);
-        else if (item.kind === "wallpaper")
+        else if (item.kind === "wallpaper") {
             Dotfiles.apply("wallpaper", item.name);
-        else if (item.kind === "session")
+            Notices.show("Wallpaper", item.name, "󰸉");
+        } else if (item.kind === "session")
             Quickshell.execDetached(item.command);
 
         Panels.close();
@@ -192,6 +195,8 @@ Item {
     onModeChanged: {
         if (Panels.launcher !== "")
             lastMode = Panels.launcher;
+        if (mode === "wallpapers")
+            Dotfiles.refreshWallpapers();
         query = "";
         input.text = "";
         list.currentIndex = 0;
@@ -348,7 +353,7 @@ Item {
 
             width: parent.width
             height: Metrics.launcherHeight - Metrics.launcherHeader - Metrics.borderWidth
-            cellWidth: root.session ? 170 : Metrics.launcherCellWidth
+            cellWidth: root.session ? 170 : root.mode === "fonts" ? 320 : Metrics.launcherCellWidth
             cellHeight: root.session ? height : Metrics.launcherCellHeight
             leftMargin: root.session ? Math.max(0, (width - root.results.length * cellWidth) / 2) : 0
             flow: GridView.FlowTopToBottom
@@ -436,7 +441,7 @@ Item {
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: cell.modelData.kind === "wallpaper"
-                        source: cell.modelData.kind === "wallpaper" ? Dotfiles.wallpaperPath(cell.modelData.name) : ""
+                        source: cell.modelData.kind === "wallpaper" ? cell.modelData.thumb : ""
                         width: 56
                         height: 32
                         fillMode: Image.PreserveAspectCrop
@@ -478,6 +483,23 @@ Item {
                         font.family: Metrics.iconFont
                         font.pixelSize: 15
                         renderType: Text.NativeRendering
+                    }
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: cell.modelData.kind === "font"
+                        width: 34
+                        height: 30
+                        color: Theme.alpha(Theme.fg, 0.07)
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Aa"
+                            color: cell.modelData.font?.installed ? Theme.fgBright : Theme.alpha(Theme.muted, 0.7)
+                            font.family: cell.modelData.font?.installed ? cell.modelData.font.mono : Theme.fontMono
+                            font.pixelSize: 15
+                            renderType: Text.NativeRendering
+                        }
                     }
 
                     Column {

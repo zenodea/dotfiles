@@ -13,7 +13,7 @@ Item {
     readonly property bool shown: Panels.drawer && Panels.screen?.name === screen?.name
     readonly property alias hitArea: hitArea
 
-    x: parent.width - width
+    x: 0
     y: Metrics.barHeight
     width: shown ? Metrics.drawerWidth : 0
     height: parent.height - Metrics.barHeight - Metrics.strip
@@ -32,7 +32,7 @@ Item {
     Item {
         id: hitArea
 
-        x: root.width - width
+        x: 0
         width: root.shown ? Metrics.drawerWidth : 0
         height: root.height
     }
@@ -42,7 +42,7 @@ Item {
     }
 
     Column {
-        x: root.width - Metrics.drawerWidth
+        x: 0
         width: Metrics.drawerWidth
         height: root.height
 

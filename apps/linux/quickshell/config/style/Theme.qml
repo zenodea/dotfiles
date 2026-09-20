@@ -86,9 +86,19 @@ Singleton {
     }
 
     FileView {
-        path: `${Quickshell.env("HOME")}/.config/quickshell/theme.json`
+        id: file
+
+        path: `${Quickshell.env("XDG_STATE_HOME") || `${Quickshell.env("HOME")}/.local/state`}/dotfiles/quickshell-theme.json`
         watchChanges: true
         onFileChanged: reload()
         onLoaded: root.load(text())
+        onLoadFailed: retry.restart()
+    }
+
+    Timer {
+        id: retry
+
+        interval: 2000
+        onTriggered: file.reload()
     }
 }

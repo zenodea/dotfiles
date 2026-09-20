@@ -15,6 +15,7 @@ Singleton {
     property string currentTheme: ""
     property string currentFont: ""
     property bool autoTheme: false
+    property bool settled: false
 
     readonly property bool light: currentTheme.endsWith("-light")
     readonly property string otherVariant: light ? currentTheme.slice(0, -6) : `${currentTheme}-light`
@@ -51,6 +52,13 @@ Singleton {
         return root.repo ? `file://${root.repo}/wallpapers/${name}` : "";
     }
 
+    function refreshWallpapers(): void {
+        if (!walls.running) {
+            root.wallpapers = [];
+            walls.running = true;
+        }
+    }
+
     Process {
         running: true
         command: ["sh", "-c", `cd -P '${Quickshell.shellDir}' && cd ../../../.. && pwd`]
@@ -71,19 +79,30 @@ Singleton {
 
     Process {
         running: true
-        command: ["dotfiles", "--fonts-plain"]
+        command: ["bash", `${Quickshell.shellDir}/scripts/fonts.sh`]
 
         stdout: StdioCollector {
-            onStreamFinished: root.fonts = text.trim().split("\n").filter(l => l)
+            onStreamFinished: root.fonts = JSON.parse(text)
         }
     }
 
     Process {
-        running: true
-        command: ["dotfiles", "--wallpapers-plain"]
+        id: walls
 
-        stdout: StdioCollector {
-            onStreamFinished: root.wallpapers = text.trim().split("\n").filter(l => l)
+        command: ["bash", `${Quickshell.shellDir}/scripts/wallpapers.sh`]
+
+        stdout: SplitParser {
+            onRead: line => {
+                const tab = line.indexOf("\t");
+                if (tab < 0)
+                    return;
+                root.wallpapers = [...root.wallpapers,
+                    {
+                        name: line.slice(0, tab),
+                        thumb: `file://${line.slice(tab + 1)}`
+                    }
+                ];
+            }
         }
     }
 
@@ -98,6 +117,12 @@ Singleton {
     }
 
     Timer {
+        running: true
+        interval: 2500
+        onTriggered: root.settled = true
+    }
+
+    Timer {
         id: autoSoon
 
         interval: 400
@@ -109,7 +134,10 @@ Singleton {
         watchChanges: true
         onFileChanged: reload()
         onLoaded: {
-            root.currentTheme = text().trim();
+            const name = text().trim();
+            if (root.settled && name !== root.currentTheme)
+                Notices.show("Theme", name, "󰏘");
+            root.currentTheme = name;
             root.checkAuto();
         }
     }
@@ -118,6 +146,11 @@ Singleton {
         path: root.repo ? `${root.repo}/.current-font` : ""
         watchChanges: true
         onFileChanged: reload()
-        onLoaded: root.currentFont = text().trim()
+        onLoaded: {
+            const name = text().trim();
+            if (root.settled && name !== root.currentFont)
+                Notices.show("Font", name, "󰛖");
+            root.currentFont = name;
+        }
     }
 }

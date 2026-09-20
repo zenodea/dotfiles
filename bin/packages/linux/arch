@@ -50,6 +50,7 @@ PACMAN_PACKAGES=(
 
     # What the quickshell drawer reaches for
     wf-recorder
+    libvips
 
     # Terminal
     ghostty

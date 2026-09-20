@@ -17,6 +17,8 @@ Rectangle {
     property bool shown: true
 
     property real level: -1
+    property real labelWidth: 0
+    property real iconWidth: Metrics.iconSize + 4
 
     property ShellScreen screen: null
     property string title: ""
@@ -35,6 +37,17 @@ Rectangle {
 
     readonly property bool hovered: area.containsMouse
     readonly property bool lit: hovered && hoverable
+
+    onHoveredChanged: {
+        if (hovered && (title || popoutContent))
+            Popouts.show(root, screen, popoutOpts);
+    }
+
+    onPopoutOptsChanged: {
+        if (hovered && (title || popoutContent))
+            Popouts.show(root, screen, popoutOpts);
+    }
+
     readonly property real naturalWidth: row.implicitWidth + Metrics.itemPadding * 2
 
     implicitWidth: shown ? naturalWidth : 0
@@ -87,6 +100,8 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.icon !== ""
+            width: root.iconWidth > 0 ? root.iconWidth : implicitWidth
+            horizontalAlignment: Text.AlignHCenter
             text: root.icon
             color: root.lit ? Theme.accent : root.iconColour
             font.family: Metrics.iconFont
@@ -103,6 +118,8 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.label !== ""
+            width: root.labelWidth > 0 ? root.labelWidth : implicitWidth
+            horizontalAlignment: root.labelWidth > 0 ? Text.AlignRight : Text.AlignLeft
             text: root.label
             color: root.lit ? Theme.accent : root.labelColour
             font.family: Theme.fontMono

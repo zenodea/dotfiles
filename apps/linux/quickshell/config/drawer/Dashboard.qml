@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 import Quickshell.Networking
 import Quickshell.Services.Pipewire
 import qs.services
@@ -63,7 +64,27 @@ Column {
                 cmd = `mkdir -p '${dir}' && grim -g "$(slurp)" "${file}"`;
             else if (mode === "clip")
                 cmd = `grim -g "$(slurp)" - | wl-copy`;
-            Quickshell.execDetached(["sh", "-c", cmd]);
+            else if (mode === "clipScreen")
+                cmd = "grim - | wl-copy";
+
+            shot.toClipboard = mode === "clip" || mode === "clipScreen";
+            shot.command = ["sh", "-c", cmd];
+            shot.running = true;
+        }
+    }
+
+    Process {
+        id: shot
+
+        property bool toClipboard: false
+
+        onExited: code => {
+            if (code !== 0)
+                return;
+            if (toClipboard)
+                Notices.show("Screenshot", "Copied to clipboard", "󰆏");
+            else
+                Notices.show("Screenshot", "Saved to Pictures/Screenshots", "󰹑");
         }
     }
 
@@ -354,6 +375,15 @@ Column {
             PillButton {
                 width: capture.cell
                 maxTextWidth: capture.cell - 42
+                icon: "󰆏"
+                label: "Copy screen"
+                enabled: Tools.has("grim") && Tools.has("wl-copy")
+                onClicked: root.screenshot("clipScreen")
+            }
+
+            PillButton {
+                width: capture.cell
+                maxTextWidth: capture.cell - 42
                 icon: Recorder.recording ? "󰙧" : "󰑊"
                 label: Recorder.recording ? "Stop" : "Record screen"
                 active: Recorder.recording
@@ -366,8 +396,7 @@ Column {
                 maxTextWidth: capture.cell - 42
                 icon: "󰻂"
                 label: "Record region"
-                visible: !Recorder.recording
-                enabled: Tools.has("wf-recorder") && Tools.has("slurp")
+                enabled: Tools.has("wf-recorder") && Tools.has("slurp") && !Recorder.recording
                 onClicked: Recorder.toggle(true)
             }
         }

@@ -21,6 +21,7 @@ Singleton {
 
     function copy(id: string): void {
         Quickshell.execDetached(["bash", root.script, "copy", id]);
+        Notices.show("Clipboard", "Copied", "󰅍");
     }
 
     function path(id: string): string {

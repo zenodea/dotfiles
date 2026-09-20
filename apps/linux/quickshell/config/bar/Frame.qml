@@ -46,7 +46,7 @@ PanelWindow {
                 item: popout.hitArea
             },
             Region {
-                item: rightEdge
+                item: leftEdge
             },
             Region {
                 item: bottomEdge
@@ -64,7 +64,7 @@ PanelWindow {
     }
 
     Timer {
-        id: rightDwell
+        id: leftDwell
 
         interval: 180
         onTriggered: Panels.hoverOpenDrawer()
@@ -250,7 +250,7 @@ PanelWindow {
             id: popout
 
             screen: root.modelData
-            maxX: root.innerRight
+            maxX: root.width
         }
 
         LevelPanel {
@@ -282,9 +282,8 @@ PanelWindow {
         }
 
         Item {
-            id: rightEdge
+            id: leftEdge
 
-            x: root.innerRight
             y: root.innerTop
             width: Metrics.strip
             height: root.innerBottom - root.innerTop
@@ -293,9 +292,9 @@ PanelWindow {
                 onHoveredChanged: {
                     Panels.drawerEdgePointer = hovered;
                     if (hovered)
-                        rightDwell.restart();
+                        leftDwell.restart();
                     else
-                        rightDwell.stop();
+                        leftDwell.stop();
                 }
             }
         }

@@ -14,10 +14,7 @@ Rectangle {
 
     readonly property date now: clock.date
 
-    readonly property MprisPlayer player: {
-        const players = Mpris.players.values;
-        return players.find(p => p.isPlaying) ?? players[0] ?? null;
-    }
+    readonly property MprisPlayer player: Media.player
 
     readonly property bool hasPlayer: !!player
     readonly property bool playing: player?.isPlaying ?? false
@@ -194,18 +191,18 @@ Rectangle {
         id: panel
 
         Column {
-            spacing: 8
+            spacing: 12
 
             Column {
-                spacing: 1
+                spacing: 2
 
                 PopoutTitle {
-                    font.pixelSize: 14
+                    font.pixelSize: 16
                     text: Qt.formatDateTime(root.now, "dddd, d MMMM")
                 }
 
                 PopoutLabel {
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     text: Qt.formatDateTime(root.now, "yyyy-MM-dd · HH:mm")
                 }
             }
@@ -218,7 +215,79 @@ Rectangle {
             }
 
             MediaCard {
-                textWidth: 280
+                textWidth: 340
+            }
+
+            Rectangle {
+                visible: Media.many
+                width: parent.width
+                height: Metrics.borderWidth
+                color: Theme.alpha(Theme.fg, 0.15)
+            }
+
+            Row {
+                id: sources
+
+                visible: Media.many
+                width: parent.width
+                spacing: 1
+
+                readonly property real cell: Media.players.length > 0 ? (width - (Media.players.length - 1)) / Media.players.length : width
+
+                Repeater {
+                    model: Media.players
+
+                    Rectangle {
+                        id: source
+
+                        required property var modelData
+
+                        readonly property bool current: Media.key(modelData) === Media.key(Media.player)
+
+                        width: sources.cell
+                        height: 34
+                        color: current ? Theme.alpha(Theme.accent, 0.18) : sourceHover.hovered ? Theme.alpha(Theme.fg, 0.08) : Theme.alpha(Theme.fg, 0.04)
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Metrics.shortAnim
+                            }
+                        }
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 8
+
+                            Image {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: source.toString() !== ""
+                                source: Media.icon(source.modelData)
+                                width: 18
+                                height: 18
+                                sourceSize.width: 36
+                                sourceSize.height: 36
+                                asynchronous: true
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: Media.label(source.modelData)
+                                color: source.current ? Theme.accent : Theme.fg
+                                font.family: Theme.fontMono
+                                font.pixelSize: 12
+                                renderType: Text.NativeRendering
+                            }
+                        }
+
+                        HoverHandler {
+                            id: sourceHover
+                        }
+
+                        TapHandler {
+                            onTapped: Media.select(source.modelData)
+                        }
+                    }
+                }
             }
         }
     }
