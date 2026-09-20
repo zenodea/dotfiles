@@ -10,6 +10,7 @@ Singleton {
     readonly property int radius: 0
     readonly property int frameRadius: 10
     readonly property int seamOverlap: 2
+    readonly property int workspaceTab: 4
 
     readonly property int barHeight: 36
     readonly property int strip: 8
@@ -44,6 +45,7 @@ Singleton {
 
     readonly property var emphasized: [0.38, 1.21, 0.22, 1, 1, 1]
     readonly property int morphDuration: 450
+    readonly property int escapeDuration: 420
 
     readonly property string iconFont: {
         const installed = Qt.fontFamilies();

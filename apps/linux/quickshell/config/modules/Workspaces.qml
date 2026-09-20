@@ -10,10 +10,13 @@ Item {
 
     required property ShellScreen screen
 
-    readonly property var icons: ["⼀", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+    readonly property var icons: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(screen)
     readonly property int activeId: monitor?.activeWorkspace?.id ?? 1
     readonly property int itemWidth: 30
+
+    readonly property real tabX: (activeId - 1) * itemWidth
+    readonly property real tabWidth: itemWidth
 
     function occupied(id: int): bool {
         const ws = Hyprland.workspaces.values.find(w => w.id === id);
@@ -22,24 +25,6 @@ Item {
 
     implicitWidth: row.implicitWidth
     implicitHeight: Metrics.barHeight
-
-    Rectangle {
-        id: marker
-
-        x: (root.activeId - 1) * root.itemWidth
-        y: parent.height - Metrics.borderWidth * 3
-        width: root.itemWidth
-        height: Metrics.borderWidth * 2
-        color: Theme.accent
-
-        Behavior on x {
-            NumberAnimation {
-                duration: Metrics.animDuration
-                easing.type: Easing.Bezier
-                easing.bezierCurve: Metrics.easeOutQuint
-            }
-        }
-    }
 
     Row {
         id: row
@@ -60,22 +45,17 @@ Item {
 
                 width: root.itemWidth
                 height: Metrics.barHeight
-                radius: Metrics.radius
-                color: isActive ? Theme.alpha(Theme.accent, 0.15) : "transparent"
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: Metrics.shortAnim
-                    }
-                }
+                color: "transparent"
 
                 Text {
                     anchors.centerIn: parent
+                    anchors.verticalCenterOffset: -1
                     text: root.icons[ws.index]
-                    color: ws.isActive || area.containsMouse ? Theme.accent : ws.isOccupied ? Theme.fg : Theme.alpha(Theme.muted, 0.55)
+                    color: ws.isActive || area.containsMouse ? Theme.accent : ws.isOccupied ? Theme.fgBright : Theme.alpha(Theme.muted, 0.45)
                     font.family: Theme.fontMono
-                    font.pixelSize: 14
-                    renderType: Text.NativeRendering
+                    font.pixelSize: 15
+                    font.weight: ws.isActive ? Font.DemiBold : Font.Normal
+                    renderType: Text.QtRendering
 
                     Behavior on color {
                         ColorAnimation {

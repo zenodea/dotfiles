@@ -18,7 +18,37 @@ PanelWindow {
     required property ShellScreen modelData
 
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
-    readonly property bool hasFullscreen: monitor?.activeWorkspace?.toplevels?.values?.some(t => (t.lastIpcObject?.fullscreen ?? 0) > 1) ?? false
+    readonly property bool hasFullscreen: monitor?.activeWorkspace?.lastIpcObject?.hasfullscreen ?? false
+
+    property real hide: hasFullscreen ? 1 : 0
+
+    readonly property real escapeScale: height / 2 / Math.max(1, height / 2 - (Metrics.barHeight + Metrics.innerShadow)) * 1.02
+
+    onHasFullscreenChanged: {
+        if (hasFullscreen) {
+            Panels.close();
+            Popouts.leave();
+        }
+    }
+
+    Component.onCompleted: Hyprland.refreshWorkspaces()
+
+    Connections {
+        function onRawEvent(event: var): void {
+            if (["fullscreen", "workspace", "workspacev2", "focusedmon", "openwindow", "closewindow", "movewindowv2"].includes(event.name))
+                Hyprland.refreshWorkspaces();
+        }
+
+        target: Hyprland
+    }
+
+    Behavior on hide {
+        NumberAnimation {
+            duration: root.hasFullscreen ? Metrics.animDuration : Metrics.escapeDuration
+            easing.type: root.hasFullscreen ? Easing.Bezier : Easing.InOutCubic
+            easing.bezierCurve: Metrics.easeOutQuint
+        }
+    }
 
     readonly property real innerLeft: Metrics.strip
     readonly property real innerRight: width - Metrics.strip
@@ -28,6 +58,7 @@ PanelWindow {
     screen: modelData
     color: "transparent"
     WlrLayershell.namespace: "dotfiles-shell"
+    WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
     WlrLayershell.keyboardFocus: Panels.anyOpen && Panels.screen?.name === modelData?.name ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
@@ -39,7 +70,7 @@ PanelWindow {
     }
 
     mask: Region {
-        item: bar
+        item: root.hide > 0.5 ? null : bar
 
         regions: [
             Region {
@@ -88,15 +119,13 @@ PanelWindow {
 
     Item {
         anchors.fill: parent
-        opacity: root.hasFullscreen ? 0 : 1
-        visible: opacity > 0
+        visible: root.hide < 1
 
-        Behavior on opacity {
-            NumberAnimation {
-                duration: Metrics.animDuration
-                easing.type: Easing.Bezier
-                easing.bezierCurve: Metrics.easeOutQuint
-            }
+        transform: Scale {
+            origin.x: root.width / 2
+            origin.y: root.height / 2
+            xScale: 1 + (root.escapeScale - 1) * root.hide
+            yScale: 1 + (root.escapeScale - 1) * root.hide
         }
 
         Shade {
@@ -148,6 +177,37 @@ PanelWindow {
                         duration: Metrics.animDuration
                     }
                 }
+            }
+
+            Rectangle {
+                id: workspaceTab
+
+                x: workspaces.x + workspaces.tabX
+                y: root.innerTop - Metrics.seamOverlap
+                width: workspaces.tabWidth
+                height: Metrics.workspaceTab + Metrics.seamOverlap
+                color: Theme.bg
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: Metrics.animDuration
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: Metrics.easeOutQuint
+                    }
+                }
+            }
+
+            Fillet {
+                size: Metrics.workspaceTab
+                x: workspaceTab.x - Metrics.workspaceTab
+                y: root.innerTop
+                rotation: 90
+            }
+
+            Fillet {
+                size: Metrics.workspaceTab
+                x: workspaceTab.x + workspaceTab.width
+                y: root.innerTop
             }
 
             Rectangle {
@@ -307,6 +367,8 @@ PanelWindow {
         }
 
         Workspaces {
+            id: workspaces
+
             anchors.left: parent.left
             anchors.leftMargin: root.innerLeft
             height: Metrics.barHeight
