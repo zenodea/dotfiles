@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell
+import Quickshell.Services.UPower
 import qs.services
 import qs.style
 import qs.widgets
@@ -45,29 +46,63 @@ Item {
         {
             name: "Lock",
             icon: "󰌾",
+            sub: "Keep everything running",
+            tone: "calm",
             command: ["hyprlock"]
         },
         {
             name: "Suspend",
             icon: "󰤄",
+            sub: "Sleep to memory",
+            tone: "calm",
             command: ["systemctl", "suspend"]
+        },
+        {
+            name: "Hibernate",
+            icon: "󰋊",
+            sub: "Sleep to disk",
+            tone: "calm",
+            command: ["systemctl", "hibernate"]
         },
         {
             name: "Logout",
             icon: "󰍃",
+            sub: "End this session",
+            tone: "warn",
             command: ["hyprctl", "dispatch", "exit"]
         },
         {
             name: "Reboot",
             icon: "󰑓",
+            sub: "Restart now",
+            tone: "warn",
             command: ["systemctl", "reboot"]
         },
         {
             name: "Shutdown",
             icon: "󰐥",
+            sub: "Power off",
+            tone: "danger",
             command: ["systemctl", "poweroff"]
         }
     ]
+
+    function tone(kind: string): color {
+        if (kind === "danger")
+            return Theme.red;
+        if (kind === "warn")
+            return Theme.yellow;
+        return Theme.fg;
+    }
+
+    function elapsed(seconds: int): string {
+        const d = Math.floor(seconds / 86400);
+        const h = Math.floor(seconds % 86400 / 3600);
+        const m = Math.floor(seconds % 3600 / 60);
+        if (d > 0)
+            return `${d}d ${h}h`;
+        return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
 
     readonly property var results: {
         const q = query.trim().toLowerCase();
@@ -112,7 +147,8 @@ Item {
                         kind: "session",
                         name: s.name,
                         icon: s.icon,
-                        sub: "",
+                        sub: s.sub,
+                        tone: s.tone,
                         command: s.command
                     }));
 
@@ -352,7 +388,7 @@ Item {
             id: list
 
             width: parent.width
-            height: Metrics.launcherHeight - Metrics.launcherHeader - Metrics.borderWidth
+            height: Metrics.launcherHeight - Metrics.launcherHeader - Metrics.borderWidth - (root.session ? Metrics.launcherFooter : 0)
             cellWidth: root.session ? 170 : root.mode === "fonts" ? 320 : Metrics.launcherCellWidth
             cellHeight: root.session ? height : Metrics.launcherCellHeight
             leftMargin: root.session ? Math.max(0, (width - root.results.length * cellWidth) / 2) : 0
@@ -373,7 +409,7 @@ Item {
 
                 width: list.cellWidth
                 height: list.cellHeight
-                color: selected ? Theme.alpha(Theme.accent, 0.15) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.07) : "transparent"
+                color: root.session ? "transparent" : selected ? Theme.alpha(Theme.accent, 0.15) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.07) : "transparent"
 
                 Behavior on color {
                     ColorAnimation {
@@ -388,33 +424,59 @@ Item {
                     visible: (cell.modelData.current ?? false) && !root.session
                 }
 
-                Column {
-                    anchors.centerIn: parent
+                Rectangle {
+                    id: tile
+
                     visible: root.session
-                    spacing: 10
+                    x: 7
+                    y: 7
+                    width: parent.width - 14
+                    height: parent.height - 14
+                    color: cell.selected ? Theme.alpha(Theme.accent, 0.16) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.1) : Theme.alpha(Theme.fg, 0.045)
 
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: cell.modelData.icon ?? ""
-                        color: cell.selected ? Theme.accent : Theme.fg
-                        font.family: Metrics.iconFont
-                        font.pixelSize: 40
-                        renderType: Text.NativeRendering
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: Metrics.shortAnim
-                            }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Metrics.shortAnim
                         }
                     }
 
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: cell.modelData.name
-                        color: cell.selected ? Theme.accent : Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 12
-                        renderType: Text.NativeRendering
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 7
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: cell.modelData.icon ?? ""
+                            color: cell.selected ? Theme.accent : root.tone(cell.modelData.tone ?? "")
+                            font.family: Metrics.iconFont
+                            font.pixelSize: 34
+                            renderType: Text.NativeRendering
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Metrics.shortAnim
+                                }
+                            }
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: cell.modelData.name
+                            color: cell.selected ? Theme.accent : Theme.fgBright
+                            font.family: Theme.fontMono
+                            font.pixelSize: 12
+                            font.bold: true
+                            renderType: Text.NativeRendering
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: cell.modelData.sub ?? ""
+                            color: Theme.muted
+                            font.family: Theme.fontMono
+                            font.pixelSize: 10
+                            renderType: Text.NativeRendering
+                        }
                     }
                 }
 
@@ -541,6 +603,26 @@ Item {
                     }
                 }
             }
+        }
+
+        Text {
+            visible: root.session
+            width: parent.width
+            height: Metrics.launcherFooter
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            text: {
+                const parts = [`up ${root.elapsed(SysInfo.uptime)}`];
+                if (UPower.displayDevice?.isLaptopBattery ?? false)
+                    parts.push(`battery ${Math.round((UPower.displayDevice.percentage <= 1 ? UPower.displayDevice.percentage * 100 : UPower.displayDevice.percentage))}%`);
+                if (Notifs.all.length > 0)
+                    parts.push(`${Notifs.all.length} notification${Notifs.all.length === 1 ? "" : "s"} waiting`);
+                return parts.join("  ·  ");
+            }
+            color: Theme.muted
+            font.family: Theme.fontMono
+            font.pixelSize: 10
+            renderType: Text.NativeRendering
         }
     }
 }

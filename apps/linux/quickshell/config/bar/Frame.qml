@@ -99,6 +99,33 @@ PanelWindow {
             }
         }
 
+        Shade {
+            x: root.innerLeft
+            y: root.innerTop
+            span: root.innerRight - root.innerLeft
+        }
+
+        Shade {
+            x: root.innerRight
+            y: root.innerTop
+            span: root.innerBottom - root.innerTop
+            rotation: 90
+        }
+
+        Shade {
+            x: root.innerRight
+            y: root.innerBottom
+            span: root.innerRight - root.innerLeft
+            rotation: 180
+        }
+
+        Shade {
+            x: root.innerLeft
+            y: root.innerBottom
+            span: root.innerBottom - root.innerTop
+            rotation: 270
+        }
+
         Item {
             anchors.fill: parent
 
@@ -145,12 +172,37 @@ PanelWindow {
                 color: Theme.bg
             }
 
+            Fillet {
+                x: root.innerLeft
+                y: root.innerTop
+            }
+
+            Fillet {
+                x: root.innerRight - Metrics.frameRadius
+                y: root.innerTop
+                rotation: 90
+            }
+
+            Fillet {
+                x: root.innerRight - Metrics.frameRadius
+                y: root.innerBottom - Metrics.frameRadius
+                rotation: 180
+            }
+
+            Fillet {
+                x: root.innerLeft
+                y: root.innerBottom - Metrics.frameRadius
+                rotation: 270
+            }
+
             Rectangle {
                 x: popout.x
-                y: popout.y
+                y: popout.y - Metrics.seamOverlap
                 width: popout.width
-                height: popout.height
+                height: popout.height + Metrics.seamOverlap
                 color: Theme.bg
+                bottomLeftRadius: popout.x > 0 ? Metrics.frameRadius : 0
+                bottomRightRadius: popout.x + popout.width < parent.width ? Metrics.frameRadius : 0
             }
 
             Rectangle {
@@ -171,18 +223,86 @@ PanelWindow {
 
             Rectangle {
                 x: levels.x
-                y: levels.y
+                y: levels.y - Metrics.seamOverlap
                 width: levels.width
-                height: levels.height
+                height: levels.height + Metrics.seamOverlap
                 color: Theme.bg
+                bottomLeftRadius: Metrics.frameRadius
             }
 
             Rectangle {
                 x: toast.x
-                y: toast.y
+                y: toast.y - Metrics.seamOverlap
                 width: toast.width
-                height: toast.height
+                height: toast.height + Metrics.seamOverlap
                 color: Theme.bg
+                bottomRightRadius: Metrics.frameRadius
+            }
+
+            Fillet {
+                visible: popout.height > 0 && popout.x > 0
+                x: popout.x - Metrics.frameRadius
+                y: popout.y
+                rotation: 90
+            }
+
+            Fillet {
+                visible: popout.height > 0 && popout.x + popout.width < parent.width
+                x: popout.x + popout.width
+                y: popout.y
+            }
+
+            Fillet {
+                visible: drawer.width > 0
+                x: drawer.width
+                y: root.innerTop
+            }
+
+            Fillet {
+                visible: drawer.width > 0
+                x: drawer.width
+                y: root.innerBottom - Metrics.frameRadius
+                rotation: 270
+            }
+
+            Fillet {
+                visible: launcher.height > 0
+                x: root.innerLeft
+                y: launcher.y - Metrics.frameRadius
+                rotation: 270
+            }
+
+            Fillet {
+                visible: launcher.height > 0
+                x: root.innerRight - Metrics.frameRadius
+                y: launcher.y - Metrics.frameRadius
+                rotation: 180
+            }
+
+            Fillet {
+                visible: toast.width > 0
+                x: toast.width
+                y: toast.y
+            }
+
+            Fillet {
+                visible: toast.width > 0
+                x: root.innerLeft
+                y: toast.y + toast.height
+            }
+
+            Fillet {
+                visible: levels.width > 0
+                x: levels.x - Metrics.frameRadius
+                y: levels.y
+                rotation: 90
+            }
+
+            Fillet {
+                visible: levels.width > 0
+                x: root.innerRight - Metrics.frameRadius
+                y: levels.y + levels.height
+                rotation: 90
             }
         }
 

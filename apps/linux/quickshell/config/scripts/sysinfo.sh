@@ -37,8 +37,10 @@ while true; do
     read -r disk_used disk_total < <(df -kP / | awk 'NR==2 {print $3, $2}')
     disk=$(awk "BEGIN{printf \"%.3f\", $disk_used / $disk_total}")
 
-    printf '{"cpu":%s,"mem":%s,"memUsedMb":%d,"memTotalMb":%d,"temp":%d,"disk":%s}\n' \
-        "$cpu" "$mem" "$((mem_used / 1024))" "$((mem_total / 1024))" "$temp" "$disk"
+    up=$(awk '{printf "%d", $1}' /proc/uptime)
+
+    printf '{"cpu":%s,"mem":%s,"memUsedMb":%d,"memTotalMb":%d,"temp":%d,"disk":%s,"uptime":%d}\n' \
+        "$cpu" "$mem" "$((mem_used / 1024))" "$((mem_total / 1024))" "$temp" "$disk" "$up"
 
     sleep "$interval"
 done

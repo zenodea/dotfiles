@@ -8,6 +8,8 @@ Singleton {
 
     readonly property int borderWidth: 1
     readonly property int radius: 0
+    readonly property int frameRadius: 10
+    readonly property int seamOverlap: 2
 
     readonly property int barHeight: 36
     readonly property int strip: 8
@@ -21,8 +23,10 @@ Singleton {
 
     readonly property int popoutPadding: 12
 
-    readonly property int shadowBlur: 24
-    readonly property real shadowOpacity: 0.85
+    readonly property int shadowBlur: 32
+    readonly property real shadowOpacity: 0.9
+    readonly property int innerShadow: 36
+    readonly property real innerShadowOpacity: 0.2
 
     readonly property int popoutMinWidth: 120
 
@@ -30,6 +34,7 @@ Singleton {
     readonly property int drawerPadding: 16
     readonly property int launcherHeight: 300
     readonly property int launcherHeader: 44
+    readonly property int launcherFooter: 26
     readonly property int launcherCellWidth: 260
     readonly property int launcherCellHeight: 52
 

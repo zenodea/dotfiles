@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Services.UPower
+import qs.services
 import qs.style
 import qs.widgets
 
@@ -57,6 +58,7 @@ BarButton {
             }
 
             PopoutLevel {
+                width: limits.width
                 level: root.percent / 100
             }
 
@@ -75,6 +77,59 @@ BarButton {
                 visible: (root.device?.healthSupported ?? false)
                 label: "Health"
                 value: `${Math.round(root.device?.healthPercentage ?? 0)}%`
+            }
+
+            Item {
+                width: 1
+                height: 8
+            }
+
+            Rectangle {
+                width: limits.width
+                height: Metrics.borderWidth
+                color: Theme.alpha(Theme.fg, 0.15)
+            }
+
+            Item {
+                width: 1
+                height: 8
+            }
+
+            Text {
+                text: Charge.capped ? `CHARGE LIMIT · ${Charge.limit}%` : "CHARGE LIMIT"
+                color: Theme.muted
+                font.family: Theme.fontMono
+                font.pixelSize: 10
+                font.letterSpacing: 1
+                renderType: Text.NativeRendering
+            }
+
+            Item {
+                width: 1
+                height: 4
+            }
+
+            Row {
+                id: limits
+
+                width: 232
+                spacing: 1
+
+                readonly property real cell: (width - (Charge.presets.length - 1)) / Charge.presets.length
+
+                Repeater {
+                    model: Charge.presets
+
+                    PillButton {
+                        required property int modelData
+
+                        width: limits.cell
+                        label: modelData >= 100 ? "Full" : `${modelData}%`
+                        active: Charge.limit === modelData
+                        enabled: Charge.usable
+                        onClicked: Charge.set(modelData)
+                    }
+                }
             }
         }
     }

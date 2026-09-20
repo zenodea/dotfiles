@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import Quickshell.Networking
 import qs.style
 import qs.widgets
@@ -66,12 +65,6 @@ BarButton {
                 label: "Link"
                 value: `${root.device?.linkSpeed ?? 0} Mb/s`
             }
-
-            PopoutLabel {
-                text: "Click for nmtui"
-            }
         }
     }
-
-    onClicked: Quickshell.execDetached(["ghostty", "-e", "nmtui"])
 }

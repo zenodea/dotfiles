@@ -13,6 +13,8 @@ BarButton {
     icon: Vpn.connected ? "󰦝" : "󰦞"
     iconColour: Vpn.connected ? Theme.green : Vpn.state === "connecting" ? Theme.yellow : down ? Theme.alpha(Theme.muted, 0.6) : Theme.muted
 
+    label: Vpn.connected ? Vpn.city || Vpn.location : ""
+
     title: Vpn.connected ? "Mullvad" : down ? "Mullvad daemon down" : Vpn.state === "connecting" ? "Connecting…" : "Mullvad disconnected"
 
     popoutContent: Component {

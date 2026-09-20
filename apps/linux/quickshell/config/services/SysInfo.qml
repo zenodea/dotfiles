@@ -13,6 +13,7 @@ Singleton {
     property int memTotalMb: 0
     property int temp: 0
     property real disk: 0
+    property int uptime: 0
 
     Process {
         running: true
@@ -27,6 +28,7 @@ Singleton {
                 root.memTotalMb = d.memTotalMb;
                 root.temp = d.temp;
                 root.disk = d.disk;
+                root.uptime = d.uptime ?? 0;
             }
         }
     }
