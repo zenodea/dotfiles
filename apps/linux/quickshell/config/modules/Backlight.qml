@@ -9,14 +9,6 @@ BarButton {
 
     readonly property var ramp: ["󰃞", "󰃟", "󰃠"]
 
-    Connections {
-        function onPercentChanged(): void {
-            root.flash();
-        }
-
-        target: Brightness
-    }
-
     shown: Brightness.available
     icon: ramp[Math.min(ramp.length - 1, Math.floor(Brightness.percent / 100 * ramp.length))]
     label: `${Brightness.percent}%`

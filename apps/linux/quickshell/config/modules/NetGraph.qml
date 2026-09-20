@@ -66,8 +66,8 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         onEntered: Popouts.show(root, root.screen, {
-                title: `↓ ${NetSpeed.down}   ↑ ${NetSpeed.up}`,
-                detail: NetSpeed.iface
-            })
+            title: `↓ ${NetSpeed.down}   ↑ ${NetSpeed.up}`,
+            detail: NetSpeed.iface
+        })
     }
 }
