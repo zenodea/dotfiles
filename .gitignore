@@ -20,6 +20,7 @@ apps/general/nvim/config/lua/dotfiles/theme.lua
 apps/general/zed/config/settings.json
 apps/linux/hypr/config/hyprland.conf
 apps/linux/hypr/config/hyprlock.conf
+apps/linux/quickshell/config/theme.json
 apps/linux/rofi/config/themes/current.rasi
 apps/linux/rofi/config/themes/power-menu.rasi
 apps/linux/rofi/config/themes/theme-picker.rasi
