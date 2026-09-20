@@ -8,6 +8,7 @@ Rectangle {
     property string label: ""
     property bool active: false
     property bool enabled: true
+    property real maxTextWidth: 0
 
     signal clicked
 
@@ -41,6 +42,8 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.label !== ""
+            width: root.maxTextWidth > 0 ? Math.min(implicitWidth, root.maxTextWidth) : implicitWidth
+            elide: Text.ElideRight
             text: root.label
             color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.active ? Theme.accent : Theme.fg
             font.family: Theme.fontMono

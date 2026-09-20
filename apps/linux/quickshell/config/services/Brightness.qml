@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.services
 
 Singleton {
     id: root
@@ -12,6 +13,7 @@ Singleton {
     property int max: 0
 
     readonly property bool available: device !== "" && max > 0
+    readonly property bool writable: Tools.has("brightnessctl")
     readonly property int percent: available ? Math.round(value / max * 100) : 0
 
     function set(pct: int): void {

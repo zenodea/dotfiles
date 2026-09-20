@@ -15,7 +15,7 @@ Singleton {
 
     Process {
         running: true
-        command: ["sh", "-c", "for t in cliphist wl-copy wf-recorder swappy grim slurp brightnessctl hypridle; do command -v $t > /dev/null && echo $t; done"]
+        command: ["sh", "-c", "for t in wl-copy wf-recorder swappy grim slurp brightnessctl hypridle; do command -v $t > /dev/null && echo $t; done"]
 
         stdout: StdioCollector {
             onStreamFinished: {

@@ -6,13 +6,15 @@ Item {
 
     property real value: 0
     property color fill: Theme.accent
+    property bool enabled: true
 
     signal moved(real value)
 
     implicitHeight: 18
 
     function apply(x: real): void {
-        root.moved(Math.max(0, Math.min(1, x / width)));
+        if (root.enabled)
+            root.moved(Math.max(0, Math.min(1, x / width)));
     }
 
     Rectangle {
@@ -24,7 +26,7 @@ Item {
         Rectangle {
             width: parent.width * Math.max(0, Math.min(1, root.value))
             height: parent.height
-            color: root.fill
+            color: root.enabled ? root.fill : Theme.muted
 
             Behavior on width {
                 NumberAnimation {

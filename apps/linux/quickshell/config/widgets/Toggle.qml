@@ -1,0 +1,124 @@
+import QtQuick
+import qs.style
+
+Item {
+    id: root
+
+    property string icon: ""
+    property string label: ""
+    property bool checked: false
+
+    signal toggled
+
+    property real progress: checked ? 1 : 0
+
+    implicitHeight: 34
+
+    Behavior on progress {
+        NumberAnimation {
+            duration: Metrics.animDuration
+            easing.type: Easing.Bezier
+            easing.bezierCurve: Metrics.emphasized
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.leftMargin: -6
+        anchors.rightMargin: -6
+        color: area.containsMouse && root.enabled ? Theme.alpha(Theme.fg, 0.05) : "transparent"
+
+        Behavior on color {
+            ColorAnimation {
+                duration: Metrics.shortAnim
+            }
+        }
+    }
+
+    Text {
+        id: glyph
+
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.icon
+        color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.checked ? Theme.accent : Theme.muted
+        font.family: Metrics.iconFont
+        font.pixelSize: 15
+        renderType: Text.NativeRendering
+
+        Behavior on color {
+            ColorAnimation {
+                duration: Metrics.animDuration
+            }
+        }
+    }
+
+    Text {
+        anchors.left: glyph.right
+        anchors.leftMargin: 10
+        anchors.right: track.left
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.label
+        color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.checked ? Theme.fgBright : Theme.fg
+        font.family: Theme.fontMono
+        font.pixelSize: 11
+        elide: Text.ElideRight
+        renderType: Text.NativeRendering
+
+        Behavior on color {
+            ColorAnimation {
+                duration: Metrics.animDuration
+            }
+        }
+    }
+
+    Rectangle {
+        id: track
+
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        width: 42
+        height: 20
+        clip: true
+        color: !root.enabled ? Theme.alpha(Theme.fg, 0.08) : root.checked ? Theme.alpha(Theme.accent, 0.28) : Theme.alpha(Theme.fg, 0.12)
+
+        Behavior on color {
+            ColorAnimation {
+                duration: Metrics.animDuration
+            }
+        }
+
+        Rectangle {
+            id: knob
+
+            y: 3
+            x: 3 + (track.width - 6 - width) * root.progress
+            width: area.pressed && root.enabled ? 20 : 14
+            height: 14
+            color: !root.enabled ? Theme.alpha(Theme.muted, 0.5) : root.checked ? Theme.accent : Theme.muted
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: Metrics.shortAnim
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Metrics.easeOutQuint
+                }
+            }
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: Metrics.animDuration
+                }
+            }
+        }
+    }
+
+    MouseArea {
+        id: area
+
+        anchors.fill: parent
+        hoverEnabled: true
+        onClicked: root.toggled()
+    }
+}

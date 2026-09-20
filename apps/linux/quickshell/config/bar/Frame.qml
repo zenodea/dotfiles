@@ -29,7 +29,7 @@ PanelWindow {
     color: "transparent"
     WlrLayershell.namespace: "dotfiles-shell"
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.keyboardFocus: Panels.anyOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: Panels.anyOpen && Panels.screen?.name === modelData?.name ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     anchors {
         top: true
@@ -56,6 +56,9 @@ PanelWindow {
             },
             Region {
                 item: launcher.hitArea
+            },
+            Region {
+                item: toast.hitArea
             }
         ]
     }
@@ -173,6 +176,14 @@ PanelWindow {
                 height: levels.height
                 color: Theme.bg
             }
+
+            Rectangle {
+                x: toast.x
+                y: toast.y
+                width: toast.width
+                height: toast.height
+                color: Theme.bg
+            }
         }
 
         Workspaces {
@@ -210,7 +221,7 @@ PanelWindow {
                 screen: root.modelData
             }
 
-            PowerProfile {
+            Performance {
                 screen: root.modelData
             }
 
@@ -244,6 +255,10 @@ PanelWindow {
 
         LevelPanel {
             id: levels
+        }
+
+        NotificationToast {
+            id: toast
         }
 
         Drawer {

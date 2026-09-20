@@ -13,11 +13,14 @@ Singleton {
     property string title: ""
     property string detail: ""
     property real level: -1
-    property Component content: null
+    property var content: null
 
     property var source: null
 
     function show(item: Item, screen: var, opts: var): void {
+        if (Panels.anyOpen)
+            return;
+
         closeTimer.stop();
         root.source = item;
         root.screen = screen;
@@ -39,6 +42,18 @@ Singleton {
 
     function stay(): void {
         closeTimer.stop();
+    }
+
+    Connections {
+        function onAnyOpenChanged(): void {
+            if (Panels.anyOpen) {
+                closeTimer.stop();
+                root.open = false;
+                root.source = null;
+            }
+        }
+
+        target: Panels
     }
 
     Timer {
