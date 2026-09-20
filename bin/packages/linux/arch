@@ -33,6 +33,10 @@ PACMAN_PACKAGES=(
     awww
 
     # Status bar + what its modules call
+    # quickshell runs the bar in apps/linux/quickshell; waybar is still here
+    # while the two are being compared. Only Arch packages quickshell — the
+    # Debian and Fedora scripts would have to build it from source.
+    quickshell
     waybar
     playerctl
     blueman

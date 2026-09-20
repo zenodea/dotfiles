@@ -1,0 +1,26 @@
+{
+  "name": "${THEME_NAME}",
+  "appearance": "${THEME_APPEARANCE}",
+  "opacity": ${OPACITY},
+  "font": {
+    "mono": "${FONT_MONO_FAMILY}",
+    "text": "${FONT_TEXT_FAMILY}",
+    "size": ${FONT_SIZE}
+  },
+  "colours": {
+    "bg": "#${BG}",
+    "surface": "#${SURFACE}",
+    "bgAlt": "#${BG_ALT}",
+    "border": "#${BORDER}",
+    "muted": "#${MUTED}",
+    "fg": "#${FG}",
+    "fgBright": "#${FG_BRIGHT}",
+    "accent": "#${ACCENT}",
+    "blue": "#${BLUE}",
+    "red": "#${RED}",
+    "green": "#${GREEN}",
+    "yellow": "#${YELLOW}",
+    "orange": "#${ORANGE}",
+    "purple": "#${PURPLE}"
+  }
+}
