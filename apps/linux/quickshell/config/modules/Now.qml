@@ -46,10 +46,8 @@ Rectangle {
             y: area.containsMouse ? -1 : 0
 
             Behavior on y {
-                NumberAnimation {
+                Morph {
                     duration: Metrics.shortAnim
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.emphasized
                 }
             }
         }
@@ -82,11 +80,7 @@ Rectangle {
             color: Theme.alpha(Theme.fg, 0.25)
 
             Behavior on height {
-                NumberAnimation {
-                    duration: Metrics.animDuration
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.easeOutQuint
-                }
+                Ease {}
             }
         }
 
@@ -103,11 +97,7 @@ Rectangle {
             clip: true
 
             Behavior on width {
-                NumberAnimation {
-                    duration: Metrics.animDuration
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.easeOutQuint
-                }
+                Ease {}
             }
 
             Behavior on opacity {
@@ -134,9 +124,7 @@ Rectangle {
                         fillMode: Image.PreserveAspectCrop
                         sourceSize.width: 32
                         sourceSize.height: 32
-                        smooth: true
                         asynchronous: true
-                        cache: true
                     }
 
                     Text {

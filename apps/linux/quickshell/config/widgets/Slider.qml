@@ -29,10 +29,8 @@ Item {
             color: root.enabled ? root.fill : Theme.muted
 
             Behavior on width {
-                NumberAnimation {
+                Ease {
                     duration: Metrics.shortAnim
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.easeOutQuint
                 }
             }
         }

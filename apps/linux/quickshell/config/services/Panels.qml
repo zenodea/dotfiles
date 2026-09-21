@@ -11,20 +11,26 @@ Singleton {
     property bool drawer: false
     property string drawerTab: "dashboard"
     property string launcher: ""
+    property bool controls: false
 
     property bool drawerByHover: false
     property bool launcherByHover: false
+    property bool controlsByHover: false
 
     property bool drawerPointer: false
     property bool drawerEdgePointer: false
     property bool launcherPointer: false
     property bool launcherEdgePointer: false
+    property bool controlsPointer: false
+    property bool controlsEdgePointer: false
 
     property bool drawerHoverBlocked: false
     property bool launcherHoverBlocked: false
+    property bool controlsHoverBlocked: false
 
     onDrawerPointerChanged: judgeDrawer()
     onLauncherPointerChanged: judgeLauncher()
+    onControlsPointerChanged: judgeControls()
 
     onDrawerEdgePointerChanged: {
         if (!drawerEdgePointer)
@@ -38,7 +44,13 @@ Singleton {
         judgeLauncher();
     }
 
-    readonly property bool anyOpen: drawer || launcher !== ""
+    onControlsEdgePointerChanged: {
+        if (!controlsEdgePointer)
+            controlsHoverBlocked = false;
+        judgeControls();
+    }
+
+    readonly property bool anyOpen: drawer || controls || launcher !== ""
 
     function focusedScreen(): var {
         const monitor = Hyprland.focusedMonitor;
@@ -56,13 +68,28 @@ Singleton {
         drawerTab = wanted;
         drawerByHover = false;
         launcher = "";
+        controls = false;
         drawer = true;
+    }
+
+    function toggleControls(): void {
+        if (controls) {
+            controls = false;
+            return;
+        }
+        controlsClose.stop();
+        screen = focusedScreen();
+        controlsByHover = false;
+        launcher = "";
+        drawer = false;
+        controls = true;
     }
 
     function openLauncher(mode: string): void {
         launcherClose.stop();
         screen = focusedScreen();
         drawer = false;
+        controls = false;
         launcherByHover = false;
         launcher = mode || "apps";
     }
@@ -81,9 +108,16 @@ Singleton {
             launcherClose.restart();
     }
 
+    function judgeControls(): void {
+        if (controlsPointer || controlsEdgePointer)
+            controlsClose.stop();
+        else if (controls && controlsByHover)
+            controlsClose.restart();
+    }
+
     function hoverOpenDrawer(): void {
         drawerClose.stop();
-        if (drawer || launcher !== "" || drawerHoverBlocked)
+        if (anyOpen || drawerHoverBlocked)
             return;
         screen = focusedScreen();
         drawerByHover = true;
@@ -93,7 +127,7 @@ Singleton {
 
     function hoverOpenLauncher(): void {
         launcherClose.stop();
-        if (launcher !== "" || drawer || launcherHoverBlocked)
+        if (anyOpen || launcherHoverBlocked)
             return;
         screen = focusedScreen();
         launcherByHover = true;
@@ -101,11 +135,24 @@ Singleton {
         launcher = "themes";
     }
 
+    function hoverOpenControls(): void {
+        controlsClose.stop();
+        if (anyOpen || controlsHoverBlocked)
+            return;
+        screen = focusedScreen();
+        controlsByHover = true;
+        controls = true;
+    }
+
     function close(): void {
         drawerClose.stop();
         launcherClose.stop();
+        controlsClose.stop();
         drawerHoverBlocked = drawerPointer || drawerEdgePointer;
         launcherHoverBlocked = launcherPointer || launcherEdgePointer;
+        controlsHoverBlocked = controlsPointer || controlsEdgePointer;
+        controls = false;
+        controlsByHover = false;
         drawer = false;
         drawerByHover = false;
         launcher = "";
@@ -119,6 +166,16 @@ Singleton {
         onTriggered: {
             root.drawer = false;
             root.drawerByHover = false;
+        }
+    }
+
+    Timer {
+        id: controlsClose
+
+        interval: 350
+        onTriggered: {
+            root.controls = false;
+            root.controlsByHover = false;
         }
     }
 

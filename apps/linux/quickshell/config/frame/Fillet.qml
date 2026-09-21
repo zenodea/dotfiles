@@ -6,7 +6,6 @@ Shape {
     id: root
 
     property real size: Metrics.frameRadius
-    property color colour: Theme.bg
 
     width: size
     height: size
@@ -14,7 +13,7 @@ Shape {
 
     ShapePath {
         strokeWidth: -1
-        fillColor: root.colour
+        fillColor: Theme.bg
         startX: 0
         startY: 0
 

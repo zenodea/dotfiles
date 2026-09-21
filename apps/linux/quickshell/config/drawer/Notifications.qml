@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Quickshell
 import Quickshell.Services.Notifications
 import qs.services
 import qs.style
@@ -63,19 +62,13 @@ Column {
     }
 
     Item {
-        id: holder
-
         width: parent.width
         height: stack.implicitHeight
         visible: height > 0
         clip: true
 
         Behavior on height {
-            NumberAnimation {
-                duration: Metrics.animDuration
-                easing.type: Easing.Bezier
-                easing.bezierCurve: Metrics.easeOutQuint
-            }
+            Ease {}
         }
 
         Column {
@@ -187,6 +180,8 @@ Column {
 
                     TapHandler {
                         onTapped: {
+                            if (slideOut.running)
+                                return;
                             const actions = entry.modelData.actions;
                             if (actions.length > 0) {
                                 actions[0].invoke();

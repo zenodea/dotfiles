@@ -34,10 +34,6 @@ Singleton {
         root.open = true;
     }
 
-    function hold(item: Item): void {
-        closeTimer.stop();
-    }
-
     function leave(): void {
         closeTimer.restart();
     }

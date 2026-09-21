@@ -6,11 +6,9 @@ Shape {
     id: root
 
     property real span: 0
-    property real depth: Metrics.innerShadow
-    property real strength: Metrics.innerShadowOpacity
 
     width: span
-    height: depth
+    height: Metrics.innerShadow
     transformOrigin: Item.TopLeft
     preferredRendererType: Shape.CurveRenderer
 
@@ -21,16 +19,16 @@ Shape {
             x1: 0
             y1: 0
             x2: 0
-            y2: root.depth
+            y2: Metrics.innerShadow
 
             GradientStop {
                 position: 0
-                color: Qt.rgba(0, 0, 0, root.strength)
+                color: Qt.rgba(0, 0, 0, Metrics.innerShadowOpacity)
             }
 
             GradientStop {
                 position: 0.35
-                color: Qt.rgba(0, 0, 0, root.strength * 0.3)
+                color: Qt.rgba(0, 0, 0, Metrics.innerShadowOpacity * 0.3)
             }
 
             GradientStop {
@@ -48,13 +46,13 @@ Shape {
         }
 
         PathLine {
-            x: root.span - root.depth
-            y: root.depth
+            x: root.span - Metrics.innerShadow
+            y: Metrics.innerShadow
         }
 
         PathLine {
-            x: root.depth
-            y: root.depth
+            x: Metrics.innerShadow
+            y: Metrics.innerShadow
         }
 
         PathLine {

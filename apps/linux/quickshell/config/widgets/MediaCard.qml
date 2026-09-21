@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Quickshell
 import Quickshell.Services.Mpris
 import qs.services
 import qs.style
@@ -70,7 +69,6 @@ Item {
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: root.artSize * 2
                 sourceSize.height: root.artSize * 2
-                smooth: true
                 asynchronous: true
             }
         }

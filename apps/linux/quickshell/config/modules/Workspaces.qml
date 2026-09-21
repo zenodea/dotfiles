@@ -29,8 +29,6 @@ Item {
     Row {
         id: row
 
-        spacing: 0
-
         Repeater {
             model: 10
 

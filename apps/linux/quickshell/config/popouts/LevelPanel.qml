@@ -9,18 +9,14 @@ Item {
 
     x: parent.width - width
     y: Metrics.barHeight
-    width: Osd.shown ? target : 0
+    width: Osd.shown && !Panels.controls ? target : 0
     height: 56
 
     visible: width > 0
     clip: true
 
     Behavior on width {
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     Item {

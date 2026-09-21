@@ -1,15 +1,12 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Quickshell
 import qs.services
 import qs.style
 import qs.widgets
 
 Column {
     id: root
-
-    property string query: ""
 
     function copy(entry: var): void {
         ClipboardHistory.copy(entry.id);
@@ -20,12 +17,8 @@ Column {
         ClipboardHistory.forget(entry.id);
     }
 
-    function wipe(): void {
-        ClipboardHistory.wipe();
-    }
-
     readonly property var shown: {
-        const q = query.trim().toLowerCase();
+        const q = search.text.trim().toLowerCase();
         const all = ClipboardHistory.entries;
         if (!q)
             return all;
@@ -64,7 +57,7 @@ Column {
             font.family: Theme.fontMono
             font.pixelSize: 11
             clip: true
-            onTextChanged: root.query = text
+            Keys.onEscapePressed: Panels.close()
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
@@ -93,10 +86,11 @@ Column {
             id: entry
 
             required property var modelData
-            required property int index
+
+            readonly property bool image: modelData.kind === "image"
 
             width: root.width
-            height: entry.modelData.kind === "image" ? 56 : 42
+            height: entry.image ? 56 : 42
             color: rowHover.hovered ? Theme.alpha(Theme.accent, 0.12) : Theme.alpha(Theme.fg, 0.04)
 
             Behavior on color {
@@ -111,12 +105,12 @@ Column {
                 anchors.left: parent.left
                 anchors.leftMargin: 9
                 anchors.verticalCenter: parent.verticalCenter
-                width: entry.modelData.kind === "image" ? 62 : 16
-                height: entry.modelData.kind === "image" ? 40 : 16
+                width: entry.image ? 62 : 16
+                height: entry.image ? 40 : 16
 
                 Text {
                     anchors.centerIn: parent
-                    visible: entry.modelData.kind !== "image"
+                    visible: !entry.image
                     text: "󰅍"
                     color: rowHover.hovered ? Theme.accent : Theme.muted
                     font.family: Metrics.iconFont
@@ -126,14 +120,12 @@ Column {
 
                 Image {
                     anchors.fill: parent
-                    visible: entry.modelData.kind === "image"
-                    source: entry.modelData.kind === "image" ? ClipboardHistory.path(entry.modelData.id) : ""
+                    visible: entry.image
+                    source: entry.image ? ClipboardHistory.path(entry.modelData.id) : ""
                     fillMode: Image.PreserveAspectCrop
                     sourceSize.width: 124
                     sourceSize.height: 80
                     asynchronous: true
-                    cache: true
-                    smooth: true
                 }
             }
 
@@ -143,7 +135,7 @@ Column {
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
-                text: entry.modelData.kind === "image" ? `image · ${entry.modelData.preview}` : entry.modelData.preview
+                text: entry.image ? `image · ${entry.modelData.preview}` : entry.modelData.preview
                 color: Theme.fg
                 font.family: Theme.fontMono
                 font.pixelSize: 11
@@ -158,8 +150,6 @@ Column {
             }
 
             MouseArea {
-                id: area
-
                 anchors.fill: parent
                 hoverEnabled: true
                 onClicked: root.copy(entry.modelData)
@@ -167,13 +157,8 @@ Column {
         }
     }
 
-    Item {
-        width: 1
-        height: 2
-        visible: ClipboardHistory.available && ClipboardHistory.entries.length > 0
-    }
-
     Row {
+        topPadding: 8
         spacing: 6
         visible: ClipboardHistory.available && ClipboardHistory.entries.length > 0
 
@@ -186,7 +171,7 @@ Column {
         PillButton {
             icon: "󰩹"
             label: "Wipe"
-            onClicked: root.wipe()
+            onClicked: ClipboardHistory.wipe()
         }
     }
 }

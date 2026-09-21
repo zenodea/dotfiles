@@ -25,11 +25,7 @@ Rectangle {
     color: "transparent"
 
     Behavior on implicitWidth {
-        NumberAnimation {
-            duration: Metrics.animDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.easeOutQuint
-        }
+        Ease {}
     }
 
     Behavior on opacity {
@@ -67,33 +63,27 @@ Rectangle {
                 height: root.graphHeight
 
                 Rectangle {
-                    x: 0
                     y: column.half - height
                     width: parent.width
                     height: Math.max(column.down > 0 ? 1 : 0, Math.min(1, column.down) * column.half)
                     color: Theme.blue
 
                     Behavior on height {
-                        NumberAnimation {
+                        Ease {
                             duration: Metrics.shortAnim
-                            easing.type: Easing.Bezier
-                            easing.bezierCurve: Metrics.easeOutQuint
                         }
                     }
                 }
 
                 Rectangle {
-                    x: 0
                     y: column.half + Metrics.borderWidth
                     width: parent.width
                     height: Math.max(column.up > 0 ? 1 : 0, Math.min(1, column.up) * column.half)
                     color: Theme.alpha(Theme.red, 0.85)
 
                     Behavior on height {
-                        NumberAnimation {
+                        Ease {
                             duration: Metrics.shortAnim
-                            easing.type: Easing.Bezier
-                            easing.bezierCurve: Metrics.easeOutQuint
                         }
                     }
                 }
@@ -102,8 +92,6 @@ Rectangle {
     }
 
     MouseArea {
-        id: area
-
         anchors.fill: parent
         hoverEnabled: true
         onEntered: Popouts.show(root, root.screen, {

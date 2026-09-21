@@ -12,7 +12,7 @@ Singleton {
 
     Process {
         running: true
-        command: ["bash", `${Quickshell.shellDir}/scripts/keys.sh`]
+        command: ["bash", `${Quickshell.shellDir}/scripts/locks.sh`]
 
         stdout: SplitParser {
             onRead: data => {

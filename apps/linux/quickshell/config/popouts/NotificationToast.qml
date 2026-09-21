@@ -33,20 +33,15 @@ Item {
     readonly property bool shown: !Panels.anyOpen && (notice || (Notifs.toastShown && !!notif))
     readonly property alias hitArea: hitArea
 
-    x: 0
     y: Metrics.barHeight
     width: shown ? target : 0
-    height: body.implicitHeight + Metrics.popoutPadding * 2
+    height: content.implicitHeight + Metrics.popoutPadding * 2
 
     visible: width > 0
     clip: true
 
     Behavior on width {
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     Item {
@@ -61,7 +56,7 @@ Item {
         height: root.height
 
         Row {
-            id: body
+            id: content
 
             x: Metrics.popoutPadding
             y: Metrics.popoutPadding

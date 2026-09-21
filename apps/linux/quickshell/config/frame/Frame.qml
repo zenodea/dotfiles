@@ -5,6 +5,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
+import qs.controls
 import qs.drawer
 import qs.launcher
 import qs.modules
@@ -23,6 +24,14 @@ PanelWindow {
     property real hide: hasFullscreen ? 1 : 0
 
     readonly property real escapeScale: height / 2 / Math.max(1, height / 2 - (Metrics.barHeight + Metrics.innerShadow)) * 1.02
+
+    readonly property real innerLeft: Metrics.strip
+    readonly property real innerRight: width - Metrics.strip
+    readonly property real innerTop: Metrics.barHeight
+    readonly property real innerBottom: height - Metrics.strip
+    readonly property real innerWidth: innerRight - innerLeft
+    readonly property real innerHeight: innerBottom - innerTop
+    readonly property real popoutRadius: Math.min(Metrics.frameRadius, Math.max(0, popout.height) / 2)
 
     onHasFullscreenChanged: {
         if (hasFullscreen) {
@@ -49,11 +58,6 @@ PanelWindow {
             easing.bezierCurve: Metrics.easeOutQuint
         }
     }
-
-    readonly property real innerLeft: Metrics.strip
-    readonly property real innerRight: width - Metrics.strip
-    readonly property real innerTop: Metrics.barHeight
-    readonly property real innerBottom: height - Metrics.strip
 
     screen: modelData
     color: "transparent"
@@ -83,7 +87,13 @@ PanelWindow {
                 item: bottomEdge
             },
             Region {
+                item: rightEdge
+            },
+            Region {
                 item: drawer.hitArea
+            },
+            Region {
+                item: controls.hitArea
             },
             Region {
                 item: launcher.hitArea
@@ -97,14 +107,21 @@ PanelWindow {
     Timer {
         id: leftDwell
 
-        interval: 180
+        interval: Metrics.edgeDwell
         onTriggered: Panels.hoverOpenDrawer()
+    }
+
+    Timer {
+        id: rightDwell
+
+        interval: Metrics.edgeDwell
+        onTriggered: Panels.hoverOpenControls()
     }
 
     Timer {
         id: bottomDwell
 
-        interval: 180
+        interval: Metrics.edgeDwell
         onTriggered: Panels.hoverOpenLauncher()
     }
 
@@ -125,33 +142,33 @@ PanelWindow {
             origin.x: root.width / 2
             origin.y: root.height / 2
             xScale: 1 + (root.escapeScale - 1) * root.hide
-            yScale: 1 + (root.escapeScale - 1) * root.hide
+            yScale: xScale
         }
 
         Shade {
             x: root.innerLeft
             y: root.innerTop
-            span: root.innerRight - root.innerLeft
+            span: root.innerWidth
         }
 
         Shade {
             x: root.innerRight
             y: root.innerTop
-            span: root.innerBottom - root.innerTop
+            span: root.innerHeight
             rotation: 90
         }
 
         Shade {
             x: root.innerRight
             y: root.innerBottom
-            span: root.innerRight - root.innerLeft
+            span: root.innerWidth
             rotation: 180
         }
 
         Shade {
             x: root.innerLeft
             y: root.innerBottom
-            span: root.innerBottom - root.innerTop
+            span: root.innerHeight
             rotation: 270
         }
 
@@ -189,11 +206,7 @@ PanelWindow {
                 color: Theme.bg
 
                 Behavior on x {
-                    NumberAnimation {
-                        duration: Metrics.animDuration
-                        easing.type: Easing.Bezier
-                        easing.bezierCurve: Metrics.easeOutQuint
-                    }
+                    Ease {}
                 }
             }
 
@@ -213,7 +226,7 @@ PanelWindow {
             Rectangle {
                 y: root.innerTop
                 width: Metrics.strip
-                height: root.innerBottom - root.innerTop
+                height: root.innerHeight
                 color: Theme.bg
             }
 
@@ -221,7 +234,7 @@ PanelWindow {
                 x: root.innerRight
                 y: root.innerTop
                 width: Metrics.strip
-                height: root.innerBottom - root.innerTop
+                height: root.innerHeight
                 color: Theme.bg
             }
 
@@ -255,59 +268,48 @@ PanelWindow {
                 rotation: 270
             }
 
-            Rectangle {
-                x: popout.x
-                y: popout.y - Metrics.seamOverlap
-                width: popout.width
-                height: popout.height + Metrics.seamOverlap
-                color: Theme.bg
-                bottomLeftRadius: popout.x > 0 ? Metrics.frameRadius : 0
-                bottomRightRadius: popout.x + popout.width < parent.width ? Metrics.frameRadius : 0
+            Backing {
+                panel: popout
+                bottomLeftRadius: popout.x > 0 ? root.popoutRadius : 0
+                bottomRightRadius: popout.x + popout.width < parent.width ? root.popoutRadius : 0
             }
 
-            Rectangle {
-                x: drawer.x
-                y: drawer.y
-                width: drawer.width
-                height: drawer.height
-                color: Theme.bg
+            Backing {
+                panel: drawer
+                seam: 0
             }
 
-            Rectangle {
-                x: launcher.x
-                y: launcher.y
-                width: launcher.width
-                height: launcher.height
-                color: Theme.bg
+            Backing {
+                panel: controls
+                seam: 0
             }
 
-            Rectangle {
-                x: levels.x
-                y: levels.y - Metrics.seamOverlap
-                width: levels.width
-                height: levels.height + Metrics.seamOverlap
-                color: Theme.bg
+            Backing {
+                panel: launcher
+                seam: 0
+            }
+
+            Backing {
+                panel: levels
                 bottomLeftRadius: Metrics.frameRadius
             }
 
-            Rectangle {
-                x: toast.x
-                y: toast.y - Metrics.seamOverlap
-                width: toast.width
-                height: toast.height + Metrics.seamOverlap
-                color: Theme.bg
+            Backing {
+                panel: toast
                 bottomRightRadius: Metrics.frameRadius
             }
 
             Fillet {
                 visible: popout.height > 0 && popout.x > 0
-                x: popout.x - Metrics.frameRadius
+                size: root.popoutRadius
+                x: popout.x - root.popoutRadius
                 y: popout.y
                 rotation: 90
             }
 
             Fillet {
                 visible: popout.height > 0 && popout.x + popout.width < parent.width
+                size: root.popoutRadius
                 x: popout.x + popout.width
                 y: popout.y
             }
@@ -323,6 +325,20 @@ PanelWindow {
                 x: drawer.width
                 y: root.innerBottom - Metrics.frameRadius
                 rotation: 270
+            }
+
+            Fillet {
+                visible: controls.width > 0
+                x: controls.x - Metrics.frameRadius
+                y: root.innerTop
+                rotation: 90
+            }
+
+            Fillet {
+                visible: controls.width > 0
+                x: controls.x - Metrics.frameRadius
+                y: root.innerBottom - Metrics.frameRadius
+                rotation: 180
             }
 
             Fillet {
@@ -383,9 +399,8 @@ PanelWindow {
 
         Row {
             anchors.right: parent.right
-            anchors.rightMargin: root.innerLeft
+            anchors.rightMargin: Metrics.strip
             height: Metrics.barHeight
-            spacing: 0
 
             CapsLock {
                 screen: root.modelData
@@ -407,7 +422,7 @@ PanelWindow {
                 screen: root.modelData
             }
 
-            Mullvad {
+            VpnStatus {
                 screen: root.modelData
             }
 
@@ -449,6 +464,12 @@ PanelWindow {
             screen: root.modelData
         }
 
+        Controls {
+            id: controls
+
+            screen: root.modelData
+        }
+
         Launcher {
             id: launcher
 
@@ -456,10 +477,8 @@ PanelWindow {
         }
 
         Item {
-            id: keyboard
-
             anchors.fill: parent
-            focus: Panels.drawer && Panels.launcher === ""
+            focus: (Panels.drawer || Panels.controls) && Panels.launcher === ""
             Keys.onEscapePressed: Panels.close()
         }
 
@@ -468,7 +487,7 @@ PanelWindow {
 
             y: root.innerTop
             width: Metrics.strip
-            height: root.innerBottom - root.innerTop
+            height: root.innerHeight
 
             HoverHandler {
                 onHoveredChanged: {
@@ -482,11 +501,30 @@ PanelWindow {
         }
 
         Item {
+            id: rightEdge
+
+            x: root.innerRight
+            y: root.innerTop
+            width: Metrics.strip
+            height: root.innerHeight
+
+            HoverHandler {
+                onHoveredChanged: {
+                    Panels.controlsEdgePointer = hovered;
+                    if (hovered)
+                        rightDwell.restart();
+                    else
+                        rightDwell.stop();
+                }
+            }
+        }
+
+        Item {
             id: bottomEdge
 
             x: root.innerLeft
             y: root.innerBottom
-            width: root.innerRight - root.innerLeft
+            width: root.innerWidth
             height: Metrics.strip
 
             HoverHandler {
@@ -499,5 +537,16 @@ PanelWindow {
                 }
             }
         }
+    }
+
+    component Backing: Rectangle {
+        required property Item panel
+        property real seam: Metrics.seamOverlap
+
+        x: panel.x
+        y: panel.y - seam
+        width: panel.width
+        height: panel.height + seam
+        color: Theme.bg
     }
 }

@@ -3,7 +3,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.bar
+import qs.frame
 import qs.services
 
 ShellRoot {
@@ -20,6 +20,10 @@ ShellRoot {
 
         function drawer(tab: string): void {
             Panels.toggleDrawer(tab);
+        }
+
+        function controls(): void {
+            Panels.toggleControls();
         }
 
         function launcher(mode: string): void {
