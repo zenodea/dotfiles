@@ -4,7 +4,7 @@ set -e
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-has() { command -v "$1" &>/dev/null; }
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ── Bootstrap yay (AUR helper) ───────────────────────────────────────────────
 
@@ -25,6 +25,7 @@ PACMAN_PACKAGES=(
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
     xdg-utils
+    polkit-kde-agent
 
     # Idle / lock / wallpaper / blue light
     hypridle
@@ -33,9 +34,6 @@ PACMAN_PACKAGES=(
     awww
 
     # Status bar + what its modules call
-    # quickshell runs the bar in apps/linux/quickshell; waybar is still here
-    # while the two are being compared. Only Arch packages quickshell — the
-    # Debian and Fedora scripts would have to build it from source.
     quickshell
     waybar
     playerctl
@@ -48,9 +46,11 @@ PACMAN_PACKAGES=(
     fuzzel
     rofi
 
-    # What the quickshell drawer reaches for
+    # What the quickshell panels reach for
     wf-recorder
     libvips
+    libheif
+    pacman-contrib
 
     # Terminal
     ghostty
@@ -147,10 +147,6 @@ yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
 
 # ── Post-install ─────────────────────────────────────────────────────────────
 
-echo "==> Enabling services..."
-sudo systemctl enable --now bluetooth
-sudo systemctl enable --now NetworkManager
-sudo systemctl enable --now power-profiles-daemon
-sudo systemctl enable --now mullvad-daemon
+enable_services
 
 echo "Done. Run ./install.sh next to link your dotfiles and render the theme."
