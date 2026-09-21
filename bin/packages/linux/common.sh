@@ -1,5 +1,5 @@
-# common.sh — steps shared by the Fedora and Debian scripts for things neither
-# distro packages. Arch gets all of these from pacman/AUR and doesn't source this.
+# common.sh — steps shared by the distro scripts. Arch only calls enable_services;
+# the rest covers what neither Fedora nor Debian packages.
 
 has() { command -v "$1" &> /dev/null; }
 
@@ -60,9 +60,11 @@ install_flatpaks() {
 
 enable_services() {
     echo "==> Enabling services..."
-    sudo systemctl enable --now bluetooth
-    sudo systemctl enable --now NetworkManager
-    sudo systemctl enable --now power-profiles-daemon
-    systemctl list-unit-files mullvad-daemon.service &> /dev/null \
-        && sudo systemctl enable --now mullvad-daemon
+    local unit
+    for unit in bluetooth NetworkManager power-profiles-daemon upower mullvad-daemon; do
+        systemctl list-unit-files "$unit.service" &> /dev/null \
+            && sudo systemctl enable --now "$unit"
+    done
+    systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service \
+        || echo "    no user session, skipping the audio units"
 }
