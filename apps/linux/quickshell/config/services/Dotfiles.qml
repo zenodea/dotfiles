@@ -23,7 +23,7 @@ Singleton {
 
     function apply(kind: string, name: string): void {
         const flag = kind === "theme" ? "--theme" : kind === "font" ? "--font" : "--wallpaper";
-        Quickshell.execDetached(["dotfiles", flag, name]);
+        Quickshell.execDetached([`${root.repo}/bin/dotfiles`, flag, name]);
     }
 
     function toggleAppearance(): void {
@@ -32,15 +32,15 @@ Singleton {
     }
 
     function randomTheme(): void {
-        Quickshell.execDetached(["dotfiles", "--random"]);
+        Quickshell.execDetached([`${root.repo}/bin/dotfiles`, "--random"]);
     }
 
     function randomWallpaper(): void {
-        Quickshell.execDetached(["dotfiles", "--wallpaper", "random"]);
+        Quickshell.execDetached([`${root.repo}/bin/dotfiles`, "--wallpaper", "random"]);
     }
 
     function toggleAuto(): void {
-        Quickshell.execDetached(["dotfiles", "--auto", autoTheme ? "off" : "on"]);
+        Quickshell.execDetached([`${root.repo}/bin/dotfiles`, "--auto", autoTheme ? "off" : "on"]);
         autoSoon.restart();
     }
 
