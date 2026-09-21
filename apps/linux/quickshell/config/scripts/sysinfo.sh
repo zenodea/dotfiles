@@ -26,6 +26,13 @@ while true; do
         cpu=0
     fi
 
+    top_name=""
+    top_cpu=0
+    if awk "BEGIN{exit !($cpu >= 0.4)}"; then
+        read -r top_cpu top_name < <(top -bn2 -d0.3 -w 200 | awk '/^top -/ {n++} n == 2 && $1 ~ /^[0-9]+$/ {print int($9), $12; exit}')
+        top_name=$(tr -cd '[:alnum:]._+-' <<< "$top_name")
+    fi
+
     mem_total=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
     mem_avail=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)
     mem_used=$((mem_total - mem_avail))
@@ -39,8 +46,8 @@ while true; do
 
     up=$(awk '{printf "%d", $1}' /proc/uptime)
 
-    printf '{"cpu":%s,"mem":%s,"memUsedMb":%d,"memTotalMb":%d,"temp":%d,"disk":%s,"uptime":%d}\n' \
-        "$cpu" "$mem" "$((mem_used / 1024))" "$((mem_total / 1024))" "$temp" "$disk" "$up"
+    printf '{"cpu":%s,"mem":%s,"memUsedMb":%d,"memTotalMb":%d,"temp":%d,"disk":%s,"uptime":%d,"top":"%s","topCpu":%d}\n' \
+        "$cpu" "$mem" "$((mem_used / 1024))" "$((mem_total / 1024))" "$temp" "$disk" "$up" "$top_name" "${top_cpu:-0}"
 
     sleep "$interval"
 done

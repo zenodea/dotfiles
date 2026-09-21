@@ -4,8 +4,6 @@ import QtQuick
 import Quickshell
 
 Singleton {
-    id: root
-
     readonly property int borderWidth: 1
     readonly property int radius: 0
     readonly property int frameRadius: 10
@@ -18,7 +16,6 @@ Singleton {
     readonly property int itemPadding: 10
     readonly property int iconSize: 16
     readonly property int fontSize: 13
-    readonly property int spacing: 2
     readonly property int sectionSpacing: 12
     readonly property int gap: 6
 
@@ -33,11 +30,12 @@ Singleton {
 
     readonly property int drawerWidth: 380
     readonly property int drawerPadding: 16
-    readonly property int launcherHeight: 300
+    readonly property int launcherRows: 5
     readonly property int launcherHeader: 44
     readonly property int launcherFooter: 26
     readonly property int launcherCellWidth: 260
     readonly property int launcherCellHeight: 52
+    readonly property int launcherHeight: launcherHeader + borderWidth + launcherRows * launcherCellHeight
 
     readonly property var easeOutQuint: [0.23, 1, 0.32, 1, 1, 1]
     readonly property int shortAnim: 150
@@ -46,6 +44,7 @@ Singleton {
     readonly property var emphasized: [0.38, 1.21, 0.22, 1, 1, 1]
     readonly property int morphDuration: 450
     readonly property int escapeDuration: 420
+    readonly property int edgeDwell: 180
 
     readonly property string iconFont: {
         const installed = Qt.fontFamilies();

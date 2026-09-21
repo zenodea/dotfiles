@@ -22,11 +22,7 @@ Item {
     onShownChanged: canvas.requestPaint()
 
     Behavior on shown {
-        NumberAnimation {
-            duration: Metrics.animDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.easeOutQuint
-        }
+        Ease {}
     }
 
     Canvas {

@@ -119,8 +119,6 @@ PopupWindow {
                             color: itemArea.containsMouse && entry.modelData.enabled ? Theme.alpha(Theme.fg, 0.08) : "transparent"
 
                             Text {
-                                id: label
-
                                 anchors.left: parent.left
                                 anchors.leftMargin: Metrics.popoutPadding
                                 anchors.verticalCenter: parent.verticalCenter

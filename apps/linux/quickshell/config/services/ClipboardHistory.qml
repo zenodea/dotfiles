@@ -38,13 +38,22 @@ Singleton {
         refreshSoon.restart();
     }
 
-    Process {
-        running: root.available
-        command: ["bash", root.script, "watch"]
+    Watcher {
+        type: "text"
+        kind: "text"
+        mime: "text/plain"
+    }
 
-        stdout: SplitParser {
-            onRead: root.refresh()
-        }
+    Watcher {
+        type: "image/png"
+        kind: "image"
+        mime: "image/png"
+    }
+
+    Watcher {
+        type: "image/jpeg"
+        kind: "image"
+        mime: "image/jpeg"
     }
 
     Process {
@@ -79,5 +88,18 @@ Singleton {
 
         interval: 120
         onTriggered: root.refresh()
+    }
+
+    component Watcher: Process {
+        required property string type
+        required property string kind
+        required property string mime
+
+        running: root.available
+        command: ["wl-paste", "--type", type, "--watch", "bash", root.script, "add", kind, mime]
+
+        stdout: SplitParser {
+            onRead: root.refresh()
+        }
     }
 }

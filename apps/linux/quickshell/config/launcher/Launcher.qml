@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Services.UPower
 import qs.services
 import qs.style
-import qs.widgets
 
 Item {
     id: root
@@ -92,23 +91,6 @@ Item {
         }
     ]
 
-    function tone(kind: string): color {
-        if (kind === "danger")
-            return Theme.red;
-        if (kind === "warn")
-            return Theme.yellow;
-        return Theme.fg;
-    }
-
-    function elapsed(seconds: int): string {
-        const d = Math.floor(seconds / 86400);
-        const h = Math.floor(seconds % 86400 / 3600);
-        const m = Math.floor(seconds % 3600 / 60);
-        if (d > 0)
-            return `${d}d ${h}h`;
-        return h > 0 ? `${h}h ${m}m` : `${m}m`;
-    }
-
     readonly property var results: {
         const q = query.trim().toLowerCase();
         const matches = name => !q || name.toLowerCase().includes(q);
@@ -187,11 +169,7 @@ Item {
     clip: true
 
     Behavior on height {
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     function step(direction: string): void {
@@ -203,12 +181,16 @@ Item {
         list.positionViewAtIndex(list.currentIndex, GridView.Contain);
     }
 
+    function reset(): void {
+        query = "";
+        input.text = "";
+        list.currentIndex = 0;
+        list.positionViewAtBeginning();
+    }
+
     onShownChanged: {
         if (shown) {
-            query = "";
-            input.text = "";
-            list.currentIndex = 0;
-            list.positionViewAtBeginning();
+            reset();
             input.forceActiveFocus();
             focusAgain.tries = 0;
             focusAgain.restart();
@@ -238,10 +220,7 @@ Item {
             lastMode = Panels.launcher;
         if (mode === "wallpapers")
             Dotfiles.refreshWallpapers();
-        query = "";
-        input.text = "";
-        list.currentIndex = 0;
-        list.positionViewAtBeginning();
+        reset();
         if (shown)
             input.forceActiveFocus();
     }
@@ -429,172 +408,25 @@ Item {
                     visible: (cell.modelData.current ?? false) && !root.session
                 }
 
-                Rectangle {
-                    id: tile
-
+                SessionTile {
                     visible: root.session
                     x: 7
                     y: 7
                     width: parent.width - 14
                     height: parent.height - 14
-                    color: cell.selected ? Theme.alpha(Theme.accent, 0.16) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.1) : Theme.alpha(Theme.fg, 0.045)
-
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: Metrics.shortAnim
-                        }
-                    }
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 7
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: cell.modelData.icon ?? ""
-                            color: cell.selected ? Theme.accent : root.tone(cell.modelData.tone ?? "")
-                            font.family: Metrics.iconFont
-                            font.pixelSize: 34
-                            renderType: Text.NativeRendering
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Metrics.shortAnim
-                                }
-                            }
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: cell.modelData.name
-                            color: cell.selected ? Theme.accent : Theme.fgBright
-                            font.family: Theme.fontMono
-                            font.pixelSize: 12
-                            font.bold: true
-                            renderType: Text.NativeRendering
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: cell.modelData.sub ?? ""
-                            color: Theme.muted
-                            font.family: Theme.fontMono
-                            font.pixelSize: 10
-                            renderType: Text.NativeRendering
-                        }
-                    }
+                    item: cell.modelData
+                    selected: cell.selected
+                    hovered: cellArea.containsMouse
                 }
 
-                Row {
+                ResultRow {
                     visible: !root.session
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.leftMargin: Metrics.popoutPadding
                     anchors.rightMargin: Metrics.popoutPadding
-                    spacing: Metrics.gap + 2
-
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: cell.modelData.kind === "app"
-                        source: cell.modelData.kind === "app" ? Quickshell.iconPath(cell.modelData.entry.icon, true) : ""
-                        width: 22
-                        height: 22
-                        sourceSize.width: 44
-                        sourceSize.height: 44
-                        asynchronous: true
-                    }
-
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: cell.modelData.kind === "wallpaper"
-                        source: cell.modelData.kind === "wallpaper" ? cell.modelData.thumb : ""
-                        width: 56
-                        height: 32
-                        fillMode: Image.PreserveAspectCrop
-                        sourceSize.width: 112
-                        sourceSize.height: 64
-                        asynchronous: true
-                        cache: true
-                    }
-
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: cell.modelData.kind === "theme"
-                        spacing: 2
-
-                        Rectangle {
-                            width: 10
-                            height: 22
-                            color: cell.modelData.theme?.bg ?? "transparent"
-                        }
-
-                        Rectangle {
-                            width: 10
-                            height: 22
-                            color: cell.modelData.theme?.fg ?? "transparent"
-                        }
-
-                        Rectangle {
-                            width: 10
-                            height: 22
-                            color: cell.modelData.theme?.accent ?? "transparent"
-                        }
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: cell.modelData.kind === "session"
-                        text: cell.modelData.icon ?? ""
-                        color: Theme.fg
-                        font.family: Metrics.iconFont
-                        font.pixelSize: 15
-                        renderType: Text.NativeRendering
-                    }
-
-                    Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: cell.modelData.kind === "font"
-                        width: 34
-                        height: 30
-                        color: Theme.alpha(Theme.fg, 0.07)
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Aa"
-                            color: cell.modelData.font?.installed ? Theme.fgBright : Theme.alpha(Theme.muted, 0.7)
-                            font.family: cell.modelData.font?.installed ? cell.modelData.font.mono : Theme.fontMono
-                            font.pixelSize: 15
-                            renderType: Text.NativeRendering
-                        }
-                    }
-
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width - 80
-                        spacing: 0
-
-                        Text {
-                            width: parent.width
-                            text: cell.modelData.name
-                            color: Theme.fg
-                            font.family: Theme.fontMono
-                            font.pixelSize: 12
-                            elide: Text.ElideRight
-                            renderType: Text.NativeRendering
-                        }
-
-                        Text {
-                            width: parent.width
-                            visible: (cell.modelData.sub ?? "") !== ""
-                            text: cell.modelData.sub ?? ""
-                            color: Theme.muted
-                            font.family: Theme.fontMono
-                            font.pixelSize: 9
-                            elide: Text.ElideRight
-                            renderType: Text.NativeRendering
-                        }
-                    }
+                    item: cell.modelData
                 }
 
                 MouseArea {
@@ -617,13 +449,13 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             text: {
-                const parts = [`up ${root.elapsed(SysInfo.uptime)}`];
+                const parts = [`up ${SysInfo.uptimeText}`];
                 if (Updates.summary)
                     parts.push(Updates.summary);
                 if (UPower.displayDevice?.isLaptopBattery ?? false)
                     parts.push(`battery ${Math.round((UPower.displayDevice.percentage <= 1 ? UPower.displayDevice.percentage * 100 : UPower.displayDevice.percentage))}%`);
-                if (Notifs.all.length > 0)
-                    parts.push(`${Notifs.all.length} notification${Notifs.all.length === 1 ? "" : "s"} waiting`);
+                if (Notifs.count > 0)
+                    parts.push(`${Notifs.count} notification${Notifs.count === 1 ? "" : "s"} waiting`);
                 return parts.join("  ·  ");
             }
             color: Theme.muted

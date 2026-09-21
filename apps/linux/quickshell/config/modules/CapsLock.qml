@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import qs.services
 import qs.style
 import qs.widgets

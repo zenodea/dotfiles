@@ -16,10 +16,8 @@ Rectangle {
         color: Theme.accent
 
         Behavior on width {
-            NumberAnimation {
+            Ease {
                 duration: Metrics.shortAnim
-                easing.type: Easing.Bezier
-                easing.bezierCurve: Metrics.easeOutQuint
             }
         }
     }

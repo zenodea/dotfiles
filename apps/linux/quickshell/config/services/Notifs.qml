@@ -9,6 +9,7 @@ Singleton {
 
     property Notification latest: null
     property bool toastShown: false
+    property bool dnd: false
 
     readonly property var all: server.trackedNotifications.values
     readonly property int count: all.length
@@ -36,6 +37,8 @@ Singleton {
         onNotification: n => {
             n.tracked = true;
             root.latest = n;
+            if (root.dnd && n.urgency !== NotificationUrgency.Critical)
+                return;
             root.toastShown = true;
 
             const timeout = n.expireTimeout > 0 ? n.expireTimeout : 5000;

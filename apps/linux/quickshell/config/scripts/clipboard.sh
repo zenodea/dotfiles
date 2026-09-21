@@ -26,18 +26,6 @@ prune() {
 }
 
 case "${1:-list}" in
-    watch)
-        kids=()
-        wl-paste --type text --watch "$0" add text text/plain &
-        kids+=($!)
-        wl-paste --type image/png --watch "$0" add image image/png &
-        kids+=($!)
-        wl-paste --type image/jpeg --watch "$0" add image image/jpeg &
-        kids+=($!)
-        trap 'kill "${kids[@]}" 2> /dev/null' EXIT INT TERM
-        wait
-        ;;
-
     add)
         tmp=$(mktemp "$dir/.incoming.XXXXXX")
         cat > "$tmp"
@@ -59,10 +47,14 @@ case "${1:-list}" in
         fi
 
         id=$(sha1sum < "$tmp" | cut -c1-16)
-        mv -f "$tmp" "$entries/$id"
 
         exec 9> "$dir/.lock"
-        flock -w 5 9 || exit 0
+        if ! flock -w 5 9; then
+            rm -f "$tmp"
+            exit 0
+        fi
+
+        mv -f "$tmp" "$entries/$id"
 
         new=$(mktemp "$dir/.index.XXXXXX")
         {

@@ -27,7 +27,7 @@ Singleton {
         if (!usable || value === root.limit)
             return;
         root.pending = value;
-        apply.command = ["bash", `${Quickshell.shellDir}/scripts/charge-limit.sh`, "set", String(value)];
+        apply.command = ["bash", `${Quickshell.shellDir}/scripts/charge.sh`, "set", String(value)];
         apply.running = true;
     }
 
@@ -35,7 +35,7 @@ Singleton {
         id: status
 
         running: true
-        command: ["bash", `${Quickshell.shellDir}/scripts/charge-limit.sh`, "status"]
+        command: ["bash", `${Quickshell.shellDir}/scripts/charge.sh`, "status"]
 
         stdout: StdioCollector {
             onStreamFinished: {

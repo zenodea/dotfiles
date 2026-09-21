@@ -17,21 +17,19 @@ Scope {
 
     ExclusionZone {
         anchors.left: true
-        exclusiveZone: Metrics.strip
     }
 
     ExclusionZone {
         anchors.right: true
-        exclusiveZone: Metrics.strip
     }
 
     ExclusionZone {
         anchors.bottom: true
-        exclusiveZone: Metrics.strip
     }
 
     component ExclusionZone: PanelWindow {
         screen: root.screen
+        exclusiveZone: Metrics.strip
         color: "transparent"
         mask: Region {}
         implicitWidth: 1

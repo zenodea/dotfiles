@@ -5,20 +5,18 @@ import Quickshell
 import qs.style
 import qs.services
 
-Rectangle {
+Item {
     id: root
 
     property string icon: ""
     property string label: ""
     property color iconColour: Theme.fg
     property color labelColour: Theme.fg
-    property bool active: false
     property bool hoverable: true
     property bool shown: true
 
     property real level: -1
     property real labelWidth: 0
-    property real iconWidth: Metrics.iconSize + 4
 
     property ShellScreen screen: null
     property string title: ""
@@ -38,15 +36,13 @@ Rectangle {
     readonly property bool hovered: area.containsMouse
     readonly property bool lit: hovered && hoverable
 
-    onHoveredChanged: {
+    function present(): void {
         if (hovered && (title || popoutContent))
             Popouts.show(root, screen, popoutOpts);
     }
 
-    onPopoutOptsChanged: {
-        if (hovered && (title || popoutContent))
-            Popouts.show(root, screen, popoutOpts);
-    }
+    onHoveredChanged: present()
+    onPopoutOptsChanged: present()
 
     readonly property real naturalWidth: row.implicitWidth + Metrics.itemPadding * 2
 
@@ -57,24 +53,11 @@ Rectangle {
     clip: true
 
     Behavior on implicitWidth {
-        NumberAnimation {
-            duration: Metrics.animDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.easeOutQuint
-        }
+        Ease {}
     }
 
     Behavior on opacity {
         NumberAnimation {
-            duration: Metrics.shortAnim
-        }
-    }
-
-    radius: Metrics.radius
-    color: active ? Theme.alpha(Theme.accent, 0.15) : "transparent"
-
-    Behavior on color {
-        ColorAnimation {
             duration: Metrics.shortAnim
         }
     }
@@ -89,10 +72,8 @@ Rectangle {
             y: root.lit ? -1 : 0
 
             Behavior on y {
-                NumberAnimation {
+                Ease {
                     duration: Metrics.shortAnim
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.easeOutQuint
                 }
             }
         }
@@ -100,7 +81,7 @@ Rectangle {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.icon !== ""
-            width: root.iconWidth > 0 ? root.iconWidth : implicitWidth
+            width: Metrics.iconSize + 4
             horizontalAlignment: Text.AlignHCenter
             text: root.icon
             color: root.lit ? Theme.accent : root.iconColour
@@ -148,10 +129,8 @@ Rectangle {
             color: root.lit ? Theme.accent : Theme.alpha(Theme.accent, 0.7)
 
             Behavior on width {
-                NumberAnimation {
+                Ease {
                     duration: Metrics.shortAnim
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.easeOutQuint
                 }
             }
         }

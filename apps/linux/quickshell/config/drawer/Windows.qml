@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Hyprland
 import qs.services
 import qs.style
-import qs.widgets
 
 Column {
     id: root
@@ -115,7 +114,6 @@ Column {
                         anchors.right: parent.right
                         anchors.rightMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 0
 
                         Text {
                             width: parent.width
@@ -140,8 +138,6 @@ Column {
                     }
 
                     MouseArea {
-                        id: area
-
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {

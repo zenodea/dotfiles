@@ -13,7 +13,6 @@ Item {
     readonly property bool shown: Panels.drawer && Panels.screen?.name === screen?.name
     readonly property alias hitArea: hitArea
 
-    x: 0
     y: Metrics.barHeight
     width: shown ? Metrics.drawerWidth : 0
     height: parent.height - Metrics.barHeight - Metrics.strip
@@ -22,17 +21,12 @@ Item {
     clip: true
 
     Behavior on width {
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     Item {
         id: hitArea
 
-        x: 0
         width: root.shown ? Metrics.drawerWidth : 0
         height: root.height
     }
@@ -42,7 +36,6 @@ Item {
     }
 
     Column {
-        x: 0
         width: Metrics.drawerWidth
         height: root.height
 

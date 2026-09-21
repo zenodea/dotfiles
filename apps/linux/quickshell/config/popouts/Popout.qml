@@ -15,15 +15,16 @@ Item {
     readonly property bool shown: Popouts.open && Popouts.screen === screen
     readonly property alias hitArea: hitArea
 
+    readonly property real targetHeight: shown ? loader.implicitHeight + Metrics.popoutPadding * 2 : 0
     readonly property real targetWidth: Popouts.fixedWidth > 0 ? Popouts.fixedWidth : Math.max(Metrics.popoutMinWidth, loader.implicitWidth + Metrics.popoutPadding * 2)
 
     width: targetWidth
     x: Math.max(0, Math.min(maxX - targetWidth, Popouts.anchorX - targetWidth / 2))
 
     y: Metrics.barHeight
-    height: shown ? loader.implicitHeight + Metrics.popoutPadding * 2 : 0
+    height: targetHeight
 
-    visible: height > 0
+    visible: morphing
     clip: true
 
     readonly property bool morphing: height > 0
@@ -31,29 +32,17 @@ Item {
     Behavior on x {
         enabled: root.morphing
 
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     Behavior on width {
         enabled: root.morphing
 
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     Behavior on height {
-        NumberAnimation {
-            duration: Metrics.morphDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
-        }
+        Morph {}
     }
 
     Connections {
@@ -78,7 +67,7 @@ Item {
     HoverHandler {
         onHoveredChanged: {
             if (hovered)
-                Popouts.hold(root);
+                Popouts.stay();
         }
     }
 
@@ -86,7 +75,7 @@ Item {
         id: hitArea
 
         width: root.shown ? root.targetWidth : 0
-        height: root.shown ? loader.implicitHeight + Metrics.popoutPadding * 2 : 0
+        height: root.targetHeight
     }
 
     Loader {

@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import qs.style
 import qs.services
 import qs.widgets
@@ -9,7 +8,7 @@ BarButton {
 
     readonly property bool down: Vpn.state === "down"
 
-    shown: Vpn.state !== "absent"
+    shown: Vpn.available
     icon: Vpn.connected ? "󰦝" : "󰦞"
     iconColour: Vpn.connected ? Theme.green : Vpn.state === "connecting" ? Theme.yellow : down ? Theme.alpha(Theme.muted, 0.6) : Theme.muted
 

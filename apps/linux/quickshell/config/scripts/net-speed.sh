@@ -11,12 +11,9 @@ fmt_speed() {
 }
 
 series() {
-    local max=$1 v out=""
+    local max=$1
     shift
-    for v in "$@"; do
-        out+=$(awk "BEGIN{printf \"%.3f,\", ($max > 0) ? $v / $max : 0}")
-    done
-    printf '%s' "${out%,}"
+    awk -v max="$max" 'BEGIN { for (i = 1; i < ARGC; i++) printf "%s%.3f", (i > 1 ? "," : ""), ARGV[i] / max }' "$@"
 }
 
 declare -a rx_h tx_h

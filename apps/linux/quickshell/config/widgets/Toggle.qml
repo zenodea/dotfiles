@@ -15,10 +15,8 @@ Item {
     implicitHeight: 34
 
     Behavior on progress {
-        NumberAnimation {
+        Morph {
             duration: Metrics.animDuration
-            easing.type: Easing.Bezier
-            easing.bezierCurve: Metrics.emphasized
         }
     }
 
@@ -90,8 +88,6 @@ Item {
         }
 
         Rectangle {
-            id: knob
-
             y: 3
             x: 3 + (track.width - 6 - width) * root.progress
             width: area.pressed && root.enabled ? 20 : 14
@@ -99,10 +95,8 @@ Item {
             color: !root.enabled ? Theme.alpha(Theme.muted, 0.5) : root.checked ? Theme.accent : Theme.muted
 
             Behavior on width {
-                NumberAnimation {
+                Ease {
                     duration: Metrics.shortAnim
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Metrics.easeOutQuint
                 }
             }
 

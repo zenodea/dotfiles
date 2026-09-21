@@ -53,10 +53,7 @@ Singleton {
     }
 
     function refreshWallpapers(): void {
-        if (!walls.running) {
-            root.wallpapers = [];
-            walls.running = true;
-        }
+        walls.running = true;
     }
 
     Process {
@@ -89,19 +86,20 @@ Singleton {
     Process {
         id: walls
 
+        running: true
         command: ["bash", `${Quickshell.shellDir}/scripts/wallpapers.sh`]
 
-        stdout: SplitParser {
-            onRead: line => {
-                const tab = line.indexOf("\t");
-                if (tab < 0)
-                    return;
-                root.wallpapers = [...root.wallpapers,
-                    {
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const found = text.split("\n").filter(line => line.includes("\t")).map(line => {
+                    const tab = line.indexOf("\t");
+                    return {
                         name: line.slice(0, tab),
                         thumb: `file://${line.slice(tab + 1)}`
-                    }
-                ];
+                    };
+                });
+                if (JSON.stringify(found) !== JSON.stringify(root.wallpapers))
+                    root.wallpapers = found;
             }
         }
     }

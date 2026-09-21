@@ -3,10 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import Quickshell
-import Quickshell.Bluetooth
-import Quickshell.Io
-import Quickshell.Networking
-import Quickshell.Services.Pipewire
 import qs.services
 import qs.style
 import qs.widgets
@@ -16,29 +12,12 @@ Column {
 
     readonly property date now: clock.date
 
-    readonly property PwNode micSource: Pipewire.defaultAudioSource
-    readonly property bool micMuted: micSource?.audio?.muted ?? false
-
-    readonly property var cells: {
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        const first = new Date(year, month, 1).getDay();
-        const count = new Date(year, month + 1, 0).getDate();
-        const out = [];
-        for (let i = 0; i < first; i++)
-            out.push(0);
-        for (let d = 1; d <= count; d++)
-            out.push(d);
-        return out;
-    }
-
-    function screenshot(mode: string): void {
-        Panels.close();
-        shotDelay.mode = mode;
-        shotDelay.restart();
-    }
-
     spacing: 12
+
+    onVisibleChanged: {
+        if (visible)
+            Updates.refresh();
+    }
 
     SystemClock {
         id: clock
@@ -46,54 +25,13 @@ Column {
         precision: SystemClock.Minutes
     }
 
-    PwObjectTracker {
-        objects: [Pipewire.defaultAudioSource]
-    }
-
-    Timer {
-        id: shotDelay
-
-        property string mode: "region"
-
-        interval: 250
-        onTriggered: {
-            const dir = `${Quickshell.env("HOME")}/Pictures/Screenshots`;
-            const file = `${dir}/$(date +%Y-%m-%d-%H%M%S).png`;
-            let cmd = `mkdir -p '${dir}' && grim "${file}"`;
-            if (mode === "region")
-                cmd = `mkdir -p '${dir}' && grim -g "$(slurp)" "${file}"`;
-            else if (mode === "clip")
-                cmd = `grim -g "$(slurp)" - | wl-copy`;
-            else if (mode === "clipScreen")
-                cmd = "grim - | wl-copy";
-
-            shot.toClipboard = mode === "clip" || mode === "clipScreen";
-            shot.command = ["sh", "-c", cmd];
-            shot.running = true;
-        }
-    }
-
-    Process {
-        id: shot
-
-        property bool toClipboard: false
-
-        onExited: code => {
-            if (code !== 0)
-                return;
-            if (toClipboard)
-                Notices.show("Screenshot", "Copied to clipboard", "󰆏");
-            else
-                Notices.show("Screenshot", "Saved to Pictures/Screenshots", "󰹑");
-        }
-    }
-
-    Row {
+    Item {
         width: parent.width
-        spacing: 10
+        height: clockFace.implicitHeight
 
         Column {
-            anchors.verticalCenter: parent.verticalCenter
+            id: clockFace
+
             spacing: -4
 
             Text {
@@ -113,22 +51,58 @@ Column {
                 renderType: Text.NativeRendering
             }
         }
+
+        Column {
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            visible: Weather.known
+            spacing: 2
+
+            Row {
+                anchors.right: parent.right
+                spacing: 8
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Weather.icon
+                    color: Theme.accent
+                    font.family: Metrics.iconFont
+                    font.pixelSize: 24
+                    renderType: Text.NativeRendering
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: `${Math.round(Weather.temp)}°`
+                    color: Theme.fgBright
+                    font.family: Theme.fontMono
+                    font.pixelSize: 24
+                    font.bold: true
+                    renderType: Text.NativeRendering
+                }
+            }
+
+            PopoutLabel {
+                anchors.right: parent.right
+                font.pixelSize: 10
+                text: `${Weather.label}  ·  ${Math.round(Weather.low)}° – ${Math.round(Weather.high)}°`
+            }
+        }
     }
 
     Card {
         width: parent.width
         title: Notifs.count > 0 ? `Notifications (${Notifs.count})` : "Notifications"
 
-        Notifications {
+        Toggle {
             width: parent.width
+            icon: Notifs.dnd ? "󰂛" : "󰂚"
+            label: "Do not disturb"
+            checked: Notifs.dnd
+            onToggled: Notifs.dnd = !Notifs.dnd
         }
-    }
 
-    Card {
-        width: parent.width
-        title: "Status"
-
-        Status {
+        Notifications {
             width: parent.width
         }
     }
@@ -168,72 +142,34 @@ Column {
                 fill: Theme.purple
             }
         }
+
+        Item {
+            width: parent.width
+            height: upkeep.implicitHeight
+
+            PopoutLabel {
+                id: upkeep
+
+                font.pixelSize: 10
+                text: [`up ${SysInfo.uptimeText}`, Updates.summary].filter(Boolean).join("  ·  ")
+            }
+
+            PopoutLabel {
+                anchors.right: parent.right
+                font.pixelSize: 10
+                color: Theme.yellow
+                text: SysInfo.top ? `${SysInfo.top} ${SysInfo.topCpu}%` : ""
+            }
+        }
     }
 
     Card {
         width: parent.width
         title: Qt.formatDateTime(root.now, "MMMM yyyy")
 
-        Grid {
-            columns: 7
-            spacing: 0
-
-            Repeater {
-                model: ["S", "M", "T", "W", "T", "F", "S"]
-
-                Item {
-                    required property string modelData
-                    required property int index
-
-                    width: (root.width - 24) / 7
-                    height: 18
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: parent.modelData
-                        color: parent.index === 0 || parent.index === 6 ? Theme.alpha(Theme.accent, 0.8) : Theme.alpha(Theme.muted, 0.7)
-                        font.family: Theme.fontMono
-                        font.pixelSize: 9
-                        renderType: Text.NativeRendering
-                    }
-                }
-            }
-
-            Repeater {
-                model: root.cells
-
-                Item {
-                    id: cell
-
-                    required property int modelData
-                    required property int index
-
-                    readonly property bool today: modelData === root.now.getDate()
-                    readonly property bool weekend: index % 7 === 0 || index % 7 === 6
-
-                    width: (root.width - 24) / 7
-                    height: 26
-
-                    Rectangle {
-                        anchors.centerIn: parent
-                        width: 24
-                        height: 24
-                        color: cell.today ? Theme.accent : "transparent"
-                        visible: cell.modelData > 0
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        visible: cell.modelData > 0
-                        text: cell.modelData
-                        color: cell.today ? Theme.bg : cell.weekend ? Theme.muted : Theme.fg
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        font.bold: cell.today
-                        renderType: Text.NativeRendering
-                    }
-                }
-            }
+        Calendar {
+            width: parent.width
+            now: root.now
         }
     }
 
@@ -241,7 +177,7 @@ Column {
         width: parent.width
         height: media.implicitHeight + 24
         color: Theme.surface
-        visible: media.visible
+        visible: !!Media.player
         clip: true
 
         Image {
@@ -267,138 +203,6 @@ Column {
             y: 12
             artSize: 56
             textWidth: root.width - 100
-        }
-    }
-
-    Card {
-        width: parent.width
-        title: "Quick actions"
-
-        Toggle {
-            width: parent.width
-            icon: Networking.wifiEnabled ? "󰖩" : "󰖪"
-            label: "Wi-Fi"
-            checked: Networking.wifiEnabled
-            onToggled: Networking.wifiEnabled = !Networking.wifiEnabled
-        }
-
-        Toggle {
-            width: parent.width
-            visible: !!Bluetooth.defaultAdapter
-            icon: (Bluetooth.defaultAdapter?.enabled ?? false) ? "󰂯" : "󰂲"
-            label: "Bluetooth"
-            checked: Bluetooth.defaultAdapter?.enabled ?? false
-            onToggled: Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
-        }
-
-        Toggle {
-            width: parent.width
-            visible: !!root.micSource
-            icon: root.micMuted ? "󰍭" : "󰍬"
-            label: "Microphone"
-            checked: !root.micMuted
-            onToggled: {
-                if (root.micSource?.audio)
-                    root.micSource.audio.muted = !root.micSource.audio.muted;
-            }
-        }
-
-        Toggle {
-            width: parent.width
-            enabled: Idle.available
-            icon: Idle.inhibited ? "󰅶" : "󰾪"
-            label: "Keep awake"
-            checked: Idle.inhibited
-            onToggled: Idle.toggle()
-        }
-
-        Toggle {
-            width: parent.width
-            visible: Vpn.state !== "absent"
-            enabled: Vpn.state !== "down"
-            icon: Vpn.connected ? "󰦝" : "󰦞"
-            label: Vpn.state === "down" ? "Mullvad (daemon down)" : "Mullvad"
-            checked: Vpn.connected
-            onToggled: Vpn.toggle()
-        }
-
-        Toggle {
-            width: parent.width
-            enabled: Night.available
-            icon: Night.on ? "󰖔" : "󰖙"
-            label: "Night mode"
-            checked: Night.on
-            onToggled: Night.toggle()
-        }
-    }
-
-    Card {
-        width: parent.width
-        title: "Capture"
-
-        Grid {
-            id: capture
-
-            width: parent.width
-            columns: 2
-            spacing: 6
-
-            readonly property real cell: (width - spacing) / 2
-
-            PillButton {
-                width: capture.cell
-                maxTextWidth: capture.cell - 42
-                icon: "󰹑"
-                label: "Region"
-                enabled: Tools.has("grim") && Tools.has("slurp")
-                onClicked: root.screenshot("region")
-            }
-
-            PillButton {
-                width: capture.cell
-                maxTextWidth: capture.cell - 42
-                icon: "󰆏"
-                label: "Copy region"
-                enabled: Tools.has("grim") && Tools.has("slurp") && Tools.has("wl-copy")
-                onClicked: root.screenshot("clip")
-            }
-
-            PillButton {
-                width: capture.cell
-                maxTextWidth: capture.cell - 42
-                icon: "󰍹"
-                label: "Screen"
-                enabled: Tools.has("grim")
-                onClicked: root.screenshot("screen")
-            }
-
-            PillButton {
-                width: capture.cell
-                maxTextWidth: capture.cell - 42
-                icon: "󰆏"
-                label: "Copy screen"
-                enabled: Tools.has("grim") && Tools.has("wl-copy")
-                onClicked: root.screenshot("clipScreen")
-            }
-
-            PillButton {
-                width: capture.cell
-                maxTextWidth: capture.cell - 42
-                icon: Recorder.recording ? "󰙧" : "󰑊"
-                label: Recorder.recording ? "Stop" : "Record screen"
-                active: Recorder.recording
-                enabled: Tools.has("wf-recorder")
-                onClicked: Recorder.toggle(false)
-            }
-
-            PillButton {
-                width: capture.cell
-                maxTextWidth: capture.cell - 42
-                icon: "󰻂"
-                label: "Record region"
-                enabled: Tools.has("wf-recorder") && Tools.has("slurp") && !Recorder.recording
-                onClicked: Recorder.toggle(true)
-            }
         }
     }
 }
