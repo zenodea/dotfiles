@@ -62,6 +62,7 @@ set_wallpaper() {
     local wp="$1"
     # Keep the stable copy in sync (hyprlock/hyprland configs point at it)
     cp "$wp" "$HOME/.config/current-wallpaper" 2>/dev/null || true
+    basename "$wp" > "$DOTFILES/.current-wallpaper"
     case "$PLATFORM" in
         linux)
             if pgrep -x awww-daemon > /dev/null 2>&1; then
