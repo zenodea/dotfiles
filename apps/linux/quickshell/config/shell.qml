@@ -33,6 +33,10 @@ ShellRoot {
         function close(): void {
             Panels.close();
         }
+
+        function screenshot(mode: string): void {
+            Screenshot.take(mode);
+        }
     }
 
     Variants {

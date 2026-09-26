@@ -32,12 +32,28 @@ Item {
     implicitHeight: row.implicitHeight
     visible: !!player
 
+    function sync(): void {
+        root.position = root.player?.position ?? 0;
+    }
+
+    onVisibleChanged: sync()
+    onPlayerChanged: sync()
+    onPlayingChanged: sync()
+
+    Connections {
+        function onPostTrackChanged(): void {
+            root.sync();
+        }
+
+        target: root.player
+    }
+
     Timer {
-        running: root.playing && root.visible
+        running: root.visible && !!root.player
         interval: 1000
         repeat: true
         triggeredOnStart: true
-        onTriggered: root.position = root.player?.position ?? 0
+        onTriggered: root.sync()
     }
 
     Row {
@@ -140,9 +156,50 @@ Item {
             Row {
                 spacing: Metrics.gap
 
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 10
+                    spacing: 2
+
+                    Repeater {
+                        model: 3
+
+                        Rectangle {
+                            id: bar
+
+                            required property int index
+
+                            anchors.bottom: parent.bottom
+                            width: 3
+                            height: 3
+                            color: root.playing ? Theme.accent : Theme.muted
+
+                            SequentialAnimation on height {
+                                running: root.playing && root.visible
+                                loops: Animation.Infinite
+                                onRunningChanged: if (!running) bar.height = 3
+
+                                PauseAnimation {
+                                    duration: bar.index * 140
+                                }
+                                NumberAnimation {
+                                    to: 10
+                                    duration: 320
+                                    easing.type: Easing.InOutSine
+                                }
+                                NumberAnimation {
+                                    to: 3
+                                    duration: 320
+                                    easing.type: Easing.InOutSine
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.hasLength ? `${root.clockText(root.position)} / ${root.clockText(root.player?.length ?? 0)}` : "--:-- / --:--"
+                    text: root.hasLength ? `${root.clockText(root.position)} / ${root.clockText(root.player?.length ?? 0)}` : root.playing ? "Playing" : "Paused"
                     color: Theme.muted
                     font.family: Theme.fontMono
                     font.pixelSize: 11

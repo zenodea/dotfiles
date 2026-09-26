@@ -9,7 +9,9 @@ import qs.style
 Item {
     id: root
 
-    readonly property real target: 360
+    readonly property real natural: Metrics.popoutPadding * 2 + (glyph !== "" ? 34 : 0) + (image !== "" ? 44 : 0) + Math.max(summaryText.implicitWidth, bodyText.implicitWidth) + 4
+    readonly property real target: showingNotice ? Math.min(360, Math.max(200, natural)) : 360
+    readonly property real radius: Math.min(Metrics.frameRadius, width / 2, height / 2)
     readonly property Notification notif: Notifs.latest
     readonly property bool notice: Notices.active
     property bool showingNotice: false
@@ -52,8 +54,10 @@ Item {
     }
 
     Item {
+        x: root.width - root.target
         width: root.target
         height: root.height
+        opacity: root.shown ? Math.pow(Math.min(1, root.width / root.target), 3) : 1
 
         Row {
             id: content
@@ -102,6 +106,8 @@ Item {
                 }
 
                 Text {
+                    id: summaryText
+
                     width: parent.width
                     text: root.summary
                     color: Theme.fgBright
@@ -113,6 +119,8 @@ Item {
                 }
 
                 Text {
+                    id: bodyText
+
                     width: parent.width
                     visible: text !== ""
                     text: root.body

@@ -143,6 +143,10 @@ Column {
             }
         }
 
+        Status {
+            width: parent.width
+        }
+
         Item {
             width: parent.width
             height: upkeep.implicitHeight

@@ -22,33 +22,11 @@ local function apply()
   vim.cmd 'hi NormalFloat guibg=NONE | hi FloatBorder guibg=NONE | hi FloatTitle guibg=NONE | hi NotifyBackground guibg=NONE'
 
   -- italic comments and strings
-  for _, group in ipairs { 'Comment', 'String', '@string' } do
+  for _, group in ipairs { 'Comment', 'SpecialComment', 'String', '@string' } do
     local hl = vim.api.nvim_get_hl(0, { name = group, link = false })
     hl.italic = true
     vim.api.nvim_set_hl(0, group, hl)
   end
-
-  -- Zenbones-style minimal rendering, approximated through base16: flatten
-  -- the noisy groups to plain fg (identifiers share base08 with error
-  -- diagnostics, so the palette alone can't do this). Strings keep their
-  -- color and take zenbones' italic.
-  if vim.startswith(theme.name or '', 'zenbones') then
-    local fg = theme.palette.base05
-    for _, group in ipairs { 'Identifier', 'Function', 'Type', 'Delimiter', '@variable', '@function', '@type', '@constructor', '@namespace', '@tag' } do
-      vim.api.nvim_set_hl(0, group, { fg = fg })
-    end
-    for _, group in ipairs { 'Statement', 'Keyword', '@keyword' } do
-      vim.api.nvim_set_hl(0, group, { fg = fg, bold = true })
-    end
-    for _, group in ipairs { 'String', '@string' } do
-      vim.api.nvim_set_hl(0, group, { fg = theme.palette.base0B, italic = true })
-    end
-  end
-
-  -- italic comments (Comic Code ships a true italic)
-  local comment = vim.api.nvim_get_hl(0, { name = 'Comment' })
-  comment.italic = true
-  vim.api.nvim_set_hl(0, 'Comment', comment)
 
   -- Zenbones-style minimal rendering, approximated through base16: flatten
   -- the noisy groups to plain fg (identifiers share base08 with error

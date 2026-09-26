@@ -96,6 +96,10 @@ Item {
                     width: parent.width
                 }
 
+                ChargeLimit {
+                    width: parent.width
+                }
+
                 Toggle {
                     width: parent.width
                     enabled: Idle.available

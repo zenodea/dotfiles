@@ -2,6 +2,7 @@
 
 group=$(id -gn)
 rule=/etc/udev/rules.d/99-dotfiles-charge-limit.rules
+modconf=/etc/modprobe.d/dotfiles-charge-limit.conf
 
 attr() {
     local bat
@@ -70,30 +71,28 @@ set_limit() {
 }
 
 setup() {
-    local dev
-
-    if ! attr > /dev/null; then
-        sudo modprobe cros_charge_control 2> /dev/null
-        for dev in /sys/bus/platform/devices/cros-charge-control.*; do
-            [[ -d "$dev" && ! -e "$dev/driver" ]] || continue
-            printf '%s\n' "${dev##*/}" | sudo tee /sys/bus/platform/drivers/cros-charge-control/bind > /dev/null 2>&1
-        done
-    fi
-
     sudo tee "$rule" > /dev/null <<RULE
 ACTION=="add|change", SUBSYSTEM=="power_supply", KERNEL=="BAT*", RUN+="/bin/sh -c 'for a in charge_control_end_threshold charge_control_start_threshold; do test -e /sys%p/\$a && chgrp $group /sys%p/\$a && chmod 0664 /sys%p/\$a; done'"
 RULE
-
     sudo udevadm control --reload
+
+    # Framework boards refuse to bind cros_charge_control unless told otherwise
+    if ! attr > /dev/null && modinfo -p cros_charge_control 2> /dev/null | grep -q probe_with_fwk_charge_control; then
+        printf 'options cros_charge_control probe_with_fwk_charge_control=1\n' | sudo tee "$modconf" > /dev/null
+        sudo modprobe -r cros_charge_control 2> /dev/null
+        sudo modprobe cros_charge_control
+        udevadm settle
+    fi
+
     sudo udevadm trigger --subsystem-match=power_supply
+    udevadm settle
 
     if attr > /dev/null; then
         echo "ready: $(attr)"
-    else
+    elif ! command -v framework_tool > /dev/null 2>&1; then
         echo "this kernel exposes no charge_control_end_threshold; install framework-system to use framework_tool instead"
+        return 1
     fi
-
-    state_json
 }
 
 case "$1" in

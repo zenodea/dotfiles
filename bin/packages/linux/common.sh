@@ -22,6 +22,35 @@ install_nerd_symbols() {
     fc-cache -f "$dir"
 }
 
+# Iosevka and Iosevka Aile — neither distro packages them.
+install_iosevka() {
+    local dir="$HOME/.local/share/fonts/Iosevka" tmp name
+    [ -d "$dir" ] && return 0
+    echo "==> Installing Iosevka..."
+    mkdir -p "$dir"
+    tmp="$(mktemp -d)"
+    for name in Iosevka IosevkaAile; do
+        curl -fsSL -o "$tmp/$name.zip" "$(curl -fsSL https://api.github.com/repos/be5invis/Iosevka/releases/latest \
+            | grep -o "\"browser_download_url\": *\"[^\"]*/PkgTTC-$name-[0-9.]*\.zip\"" | cut -d'"' -f4)"
+        unzip -oq "$tmp/$name.zip" -d "$dir"
+    done
+    rm -rf "$tmp"
+    fc-cache -f "$dir"
+}
+
+install_commit_mono() {
+    local dir="$HOME/.local/share/fonts/CommitMono" tmp
+    [ -d "$dir" ] && return 0
+    echo "==> Installing Commit Mono..."
+    mkdir -p "$dir"
+    tmp="$(mktemp -d)"
+    curl -fsSL -o "$tmp/cm.zip" "$(curl -fsSL https://api.github.com/repos/eigilnikolajsen/commit-mono/releases/latest \
+        | grep -o '"browser_download_url": *"[^"]*\.zip"' | head -1 | cut -d'"' -f4)"
+    unzip -ojq "$tmp/cm.zip" '*.otf' -d "$dir"
+    rm -rf "$tmp"
+    fc-cache -f "$dir"
+}
+
 # Bibata cursors — hyprland.conf sets Bibata-Modern-Ice / Bibata-Modern-Classic.
 install_bibata() {
     local dir="$HOME/.local/share/icons"

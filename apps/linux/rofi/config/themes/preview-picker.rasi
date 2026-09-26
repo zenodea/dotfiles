@@ -1,13 +1,13 @@
 * {
     background-color: transparent;
-    text-color:       rgba(192, 202, 245, 0.55);
+    text-color:       rgba(231, 229, 228, 0.55);
     font:             "JetBrainsMono Nerd Font 15";
 }
 
 window {
-    background-color: rgba(26, 27, 38, 0.7);
+    background-color: rgba(28, 25, 23, 0.7);
     border:           1px solid;
-    border-color:     #7dcfff;
+    border-color:     #ef4444;
     padding:          12px;
     width:            860px;
     location:         center;
@@ -34,15 +34,15 @@ icon-current-entry {
 
 element {
     background-color: transparent;
-    text-color:       rgba(192, 202, 245, 0.55);
+    text-color:       rgba(231, 229, 228, 0.55);
     padding:          13px 20px;
     children:         [ element-text ];
 }
 
 element selected.normal {
-    background-color: rgba(125, 207, 255, 0.12);
+    background-color: rgba(239, 68, 68, 0.12);
     border:           1px;
-    border-color:     rgba(125, 207, 255, 0.55);
+    border-color:     rgba(239, 68, 68, 0.55);
 }
 
 element-text {
@@ -51,5 +51,5 @@ element-text {
 }
 
 element-text selected.normal {
-    text-color: #7dcfff;
+    text-color: #ef4444;
 }

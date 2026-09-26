@@ -15,7 +15,8 @@ Item {
     readonly property alias hitArea: hitArea
     property string lastMode: "apps"
     readonly property bool session: mode === "session"
-    readonly property bool tiles: mode === "wallpapers"
+    readonly property bool tiles: mode === "wallpapers" || mode === "themes" || mode === "apps" || mode === "fonts"
+    readonly property bool single: session
 
     onSessionChanged: {
         if (session)
@@ -92,35 +93,63 @@ Item {
         }
     ]
 
+    function titled(name: string): string {
+        return name.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    }
+
     readonly property var results: {
         const q = query.trim().toLowerCase();
         const matches = name => !q || name.toLowerCase().includes(q);
 
         if (mode === "apps")
-            return DesktopEntries.applications.values.filter(a => !a.noDisplay && (matches(a.name) || matches(a.comment ?? ""))).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60).map(a => ({
+            return DesktopEntries.applications.values.filter(a => !a.noDisplay && (matches(a.name) || matches(a.comment ?? ""))).map(a => ({
                         kind: "app",
                         name: a.name,
                         sub: a.genericName || a.comment || "",
+                        icon: Quickshell.iconPath(a.icon, true),
                         entry: a
-                    }));
+                    })).sort((a, b) => (a.icon === "") - (b.icon === "") || a.name.localeCompare(b.name)).slice(0, 60);
 
         if (mode === "themes")
-            return Dotfiles.themes.filter(t => matches(t.name)).map(t => ({
-                        kind: "theme",
-                        name: t.name,
-                        sub: t.appearance,
-                        theme: t,
-                        current: t.name === Dotfiles.currentTheme
-                    }));
+            return Dotfiles.themes.filter(t => matches(t.name)).map(t => {
+                const light = t.name.endsWith("-light");
+                return {
+                    kind: "theme",
+                    name: t.name,
+                    base: light ? t.name.slice(0, -6) : t.name,
+                    label: titled(light ? t.name.slice(0, -6) : t.name),
+                    light,
+                    theme: t,
+                    current: t.name === Dotfiles.currentTheme
+                };
+            }).sort((a, b) => a.base.localeCompare(b.base) || a.light - b.light);
 
-        if (mode === "fonts")
-            return Dotfiles.fonts.filter(f => matches(f.name) || matches(f.mono)).map(f => ({
+        if (mode === "fonts") {
+            const active = Dotfiles.fonts.find(f => f.name === Dotfiles.currentFont);
+            const mono = Dotfiles.fonts.filter(f => matches(f.name) || matches(f.mono)).map(f => ({
                         kind: "font",
                         name: f.name,
-                        sub: f.installed ? f.mono : `${f.mono} · not installed`,
+                        label: f.title ?? titled(f.name),
                         font: f,
                         current: f.name === Dotfiles.currentFont
                     }));
+            const text = Dotfiles.textFonts.filter(f => matches(f.name) || matches(f.family)).map(f => ({
+                        kind: "text-font",
+                        name: f.name,
+                        label: f.title ?? titled(f.name),
+                        font: f,
+                        current: Dotfiles.currentTextFont ? f.name === Dotfiles.currentTextFont : f.family === active?.text
+                    }));
+            // Interleaved so the grid's two rows are mono on top, text below.
+            const rows = [];
+            for (let i = 0; i < Math.max(mono.length, text.length); i++)
+                rows.push(mono[i] ?? {
+                    kind: "blank"
+                }, text[i] ?? {
+                    kind: "blank"
+                });
+            return rows;
+        }
 
         if (mode === "wallpapers")
             return Dotfiles.wallpapers.filter(w => matches(w.name) || matches(w.label)).map(w => ({
@@ -153,6 +182,10 @@ Item {
             Dotfiles.apply("theme", item.name);
         else if (item.kind === "font")
             Dotfiles.apply("font", item.name);
+        else if (item.kind === "text-font")
+            Dotfiles.apply("text-font", item.name);
+        else if (item.kind === "blank")
+            return;
         else if (item.kind === "wallpaper") {
             Dotfiles.apply("wallpaper", item.name);
             Notices.show("Wallpaper", item.label, "󰸉");
@@ -175,19 +208,27 @@ Item {
     }
 
     function step(direction: string): void {
+        const from = list.currentIndex;
         const forward = direction === "down" || direction === "right";
-        if (session || direction === "right" || direction === "left")
+        if (single || direction === "right" || direction === "left")
             forward ? list.moveCurrentIndexRight() : list.moveCurrentIndexLeft();
         else
             forward ? list.moveCurrentIndexDown() : list.moveCurrentIndexUp();
+        if (results[list.currentIndex]?.kind === "blank")
+            list.currentIndex = from;
         list.positionViewAtIndex(list.currentIndex, GridView.Contain);
     }
 
     function reset(): void {
         query = "";
         input.text = "";
-        list.currentIndex = 0;
-        list.positionViewAtBeginning();
+        const top = results.findIndex(r => r.current && r.kind !== "text-font");
+        const active = top >= 0 ? top : results.findIndex(r => r.current);
+        list.currentIndex = Math.max(0, active);
+        if (active > 0)
+            list.positionViewAtIndex(active, GridView.Center);
+        else
+            list.positionViewAtBeginning();
     }
 
     onShownChanged: {
@@ -222,7 +263,10 @@ Item {
             lastMode = Panels.launcher;
         if (mode === "wallpapers")
             Dotfiles.refreshWallpapers();
+        else if (mode === "themes")
+            Dotfiles.refreshThemes();
         reset();
+        Qt.callLater(reset);
         if (shown)
             input.forceActiveFocus();
     }
@@ -373,10 +417,11 @@ Item {
         GridView {
             id: list
 
-            width: parent.width
+            x: root.mode === "fonts" ? fontRows.gutter : 0
+            width: parent.width - x
             height: Metrics.launcherHeight - Metrics.launcherHeader - Metrics.borderWidth - (root.session ? Metrics.launcherFooter : 0)
-            cellWidth: root.session ? 170 : root.tiles ? Math.round(cellHeight * 16 / 9) : root.mode === "fonts" ? 320 : Metrics.launcherCellWidth
-            cellHeight: root.session ? height : root.tiles ? height / 2 : Metrics.launcherCellHeight
+            cellWidth: root.session ? 170 : root.mode === "apps" ? 150 : root.mode === "fonts" ? Math.max(300, Math.floor(width / Math.max(1, Math.ceil(root.results.length / 2)))) : root.tiles ? Math.round(cellHeight * 16 / 9) : Math.max(320, Math.floor(width / Math.max(1, root.results.length)))
+            cellHeight: root.single ? height : height / 2
             leftMargin: root.session ? Math.max(0, (width - root.results.length * cellWidth) / 2) : 0
             flow: GridView.FlowTopToBottom
             model: root.results
@@ -385,7 +430,7 @@ Item {
             keyNavigationEnabled: false
             boundsBehavior: Flickable.StopAtBounds
 
-            delegate: Rectangle {
+            delegate: Item {
                 id: cell
 
                 required property int index
@@ -395,20 +440,6 @@ Item {
 
                 width: list.cellWidth
                 height: list.cellHeight
-                color: root.session || root.tiles ? "transparent" : selected ? Theme.alpha(Theme.accent, 0.15) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.07) : "transparent"
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: Metrics.shortAnim
-                    }
-                }
-
-                Rectangle {
-                    width: 2
-                    height: parent.height
-                    color: Theme.accent
-                    visible: (cell.modelData.current ?? false) && !root.session && !root.tiles
-                }
 
                 SessionTile {
                     visible: root.session
@@ -422,7 +453,7 @@ Item {
                 }
 
                 WallpaperTile {
-                    visible: root.tiles
+                    visible: root.mode === "wallpapers"
                     x: 3
                     y: 3
                     width: parent.width - 6
@@ -432,14 +463,38 @@ Item {
                     hovered: cellArea.containsMouse
                 }
 
-                ResultRow {
-                    visible: !root.session && !root.tiles
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: Metrics.popoutPadding
-                    anchors.rightMargin: Metrics.popoutPadding
+                ThemeTile {
+                    visible: root.mode === "themes"
+                    x: 3
+                    y: 3
+                    width: parent.width - 6
+                    height: parent.height - 6
                     item: cell.modelData
+                    selected: cell.selected
+                    hovered: cellArea.containsMouse
+                }
+
+                FontTile {
+                    visible: root.mode === "fonts" && cell.modelData.kind !== "blank"
+                    x: 4
+                    y: 4
+                    width: parent.width - 8
+                    height: parent.height - 8
+                    item: cell.modelData
+                    selected: cell.selected
+                    hovered: cellArea.containsMouse
+                }
+
+                AppTile {
+                    visible: root.mode === "apps"
+                    x: 3
+                    y: 3
+                    width: parent.width - 6
+                    height: parent.height - 6
+                    item: cell.modelData
+                    selected: cell.selected
+                    hovered: cellArea.containsMouse
+                    query: root.query
                 }
 
                 MouseArea {
@@ -475,6 +530,52 @@ Item {
             font.family: Theme.fontMono
             font.pixelSize: 10
             renderType: Text.NativeRendering
+        }
+    }
+
+    Item {
+        id: fontRows
+
+        readonly property int gutter: 34
+
+        visible: root.mode === "fonts"
+        y: root.height - Metrics.launcherHeight + Metrics.launcherHeader + Metrics.borderWidth
+        width: root.width
+        height: list.height
+
+        Repeater {
+            model: ["MONO", "TEXT"]
+
+            Text {
+                required property int index
+                required property string modelData
+
+                x: (fontRows.gutter - height) / 2
+                y: index * fontRows.height / 2 + fontRows.height / 4 + width / 2
+                transformOrigin: Item.TopLeft
+                rotation: -90
+                text: modelData
+                color: Theme.accent
+                font.family: Theme.fontMono
+                font.pixelSize: 10
+                font.bold: true
+                font.letterSpacing: 3
+                renderType: Text.NativeRendering
+            }
+        }
+
+        Rectangle {
+            x: fontRows.gutter - 1
+            width: Metrics.borderWidth
+            height: parent.height
+            color: Theme.alpha(Theme.fg, 0.15)
+        }
+
+        Rectangle {
+            y: Math.round(parent.height / 2)
+            width: parent.width
+            height: Metrics.borderWidth
+            color: Theme.alpha(Theme.fg, 0.15)
         }
     }
 }
