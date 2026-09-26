@@ -122,6 +122,10 @@ PACMAN_PACKAGES=(
     ttf-nerd-fonts-symbols
     noto-fonts
     noto-fonts-emoji
+    inter-font
+    ttf-ibm-plex
+    ttc-iosevka
+    ttc-iosevka-aile
 
     # Misc
     pyenv
@@ -139,6 +143,7 @@ sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"
 AUR_PACKAGES=(
     bibata-cursor-theme  # cursor theme
     oh-my-zsh-git        # zsh framework
+    otf-commit-mono      # font
 )
 
 echo "==> Installing AUR packages..."

@@ -18,7 +18,7 @@ Singleton {
 
     function start(region: bool): void {
         const dir = `${Quickshell.env("HOME")}/Videos/Recordings`;
-        const geometry = region ? ` -g "$(slurp)"` : "";
+        const geometry = region ? ` -g "$(slurp < /dev/null)"` : "";
         Quickshell.execDetached(["sh", "-c", `mkdir -p '${dir}' && wf-recorder${geometry} -f "${dir}/$(date +%Y-%m-%d-%H%M%S).mp4"`]);
         Notices.show("Recording", region ? "Pick a region" : "Started", "󰑊");
         check.restart();

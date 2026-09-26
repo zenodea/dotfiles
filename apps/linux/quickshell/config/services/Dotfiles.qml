@@ -11,9 +11,11 @@ Singleton {
 
     property var themes: []
     property var fonts: []
+    property var textFonts: []
     property var wallpapers: []
     property string currentTheme: ""
     property string currentFont: ""
+    property string currentTextFont: ""
     property string currentWallpaper: ""
     property bool autoTheme: false
     property bool settled: false
@@ -23,7 +25,7 @@ Singleton {
     readonly property bool paired: themes.some(t => t.name === otherVariant)
 
     function apply(kind: string, name: string): void {
-        const flag = kind === "theme" ? "--theme" : kind === "font" ? "--font" : "--wallpaper";
+        const flag = kind === "theme" ? "--theme" : kind === "font" ? "--font" : kind === "text-font" ? "--text-font" : "--wallpaper";
         Quickshell.execDetached([`${root.repo}/bin/dotfiles`, flag, name]);
     }
 
@@ -53,6 +55,10 @@ Singleton {
         return root.repo ? `file://${root.repo}/wallpapers/full-size/${name}` : "";
     }
 
+    function refreshThemes(): void {
+        themeList.running = true;
+    }
+
     function refreshWallpapers(): void {
         walls.running = true;
     }
@@ -67,11 +73,17 @@ Singleton {
     }
 
     Process {
+        id: themeList
+
         running: true
         command: ["bash", `${Quickshell.shellDir}/scripts/themes.sh`]
 
         stdout: StdioCollector {
-            onStreamFinished: root.themes = JSON.parse(text)
+            onStreamFinished: {
+                const found = JSON.parse(text);
+                if (JSON.stringify(found) !== JSON.stringify(root.themes))
+                    root.themes = found;
+            }
         }
     }
 
@@ -81,6 +93,15 @@ Singleton {
 
         stdout: StdioCollector {
             onStreamFinished: root.fonts = JSON.parse(text)
+        }
+    }
+
+    Process {
+        running: true
+        command: ["bash", `${Quickshell.shellDir}/scripts/text-fonts.sh`]
+
+        stdout: StdioCollector {
+            onStreamFinished: root.textFonts = JSON.parse(text)
         }
     }
 
@@ -152,6 +173,19 @@ Singleton {
             if (root.settled && name !== root.currentFont)
                 Notices.show("Font", name, "󰛖");
             root.currentFont = name;
+        }
+    }
+
+    FileView {
+        path: root.repo ? `${root.repo}/.current-text-font` : ""
+        printErrors: false
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const name = text().trim();
+            if (root.settled && name !== root.currentTextFont)
+                Notices.show("Text font", name, "󰛖");
+            root.currentTextFont = name;
         }
     }
 

@@ -120,6 +120,8 @@ PACKAGES=(
     # Fonts (Nerd Font symbols installed below)
     google-noto-sans-fonts
     google-noto-color-emoji-fonts
+    rsms-inter-fonts
+    ibm-plex-sans-fonts
     fontconfig
 
     # Misc
@@ -136,6 +138,8 @@ sudo dnf install -y "${PACKAGES[@]}"
 
 install_awww
 install_nerd_symbols
+install_iosevka
+install_commit_mono
 install_bibata
 install_oh_my_zsh
 install_zed

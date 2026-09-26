@@ -44,6 +44,22 @@ current_font() {
   printf '%s' "$f"
 }
 
+text_font_names() {
+  local f
+  for f in "$DOTFILES/fonts/text"/*.sh; do
+    basename "$f" .sh
+  done
+}
+
+text_font_exists() { [[ -f "$DOTFILES/fonts/text/$1.sh" ]]; }
+
+# Empty when unset: the mono preset's own FONT_TEXT_FAMILY applies.
+current_text_font() {
+  local f
+  f="$(cat "$DOTFILES/.current-text-font" 2>/dev/null)"
+  if text_font_exists "$f"; then printf '%s' "$f"; fi
+}
+
 # --- light / dark ----------------------------------------------------------
 
 # Light or dark is a fact about the palette, so read it off the background's

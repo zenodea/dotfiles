@@ -33,7 +33,6 @@ Singleton {
     readonly property int launcherRows: 5
     readonly property int launcherHeader: 44
     readonly property int launcherFooter: 26
-    readonly property int launcherCellWidth: 260
     readonly property int launcherCellHeight: 52
     readonly property int launcherHeight: launcherHeader + borderWidth + launcherRows * launcherCellHeight
 

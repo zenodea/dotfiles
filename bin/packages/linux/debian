@@ -121,6 +121,8 @@ PACKAGES=(
     # Fonts (Nerd Font symbols installed below)
     fonts-noto-core
     fonts-noto-color-emoji
+    fonts-inter
+    fonts-ibm-plex
     fontconfig
 
     # Misc
@@ -151,6 +153,8 @@ fi
 
 install_awww
 install_nerd_symbols
+install_iosevka
+install_commit_mono
 install_bibata
 install_oh_my_zsh
 install_zed

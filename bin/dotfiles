@@ -41,6 +41,9 @@ Light / dark:
 Font:
   --font <name>, -f    Switch font (regenerates configs, live-reloads apps)
   --font               List available fonts
+  --text-font <name>, -T
+                       Switch the proportional (UI/prose) font independently
+  --text-font          List available text fonts
 
 Wallpaper:
   --wallpaper <name|random>, -w
@@ -149,6 +152,42 @@ cmd_font() {
     theme="$(current_theme)"
     if [[ -z "$theme" ]]; then
         echo "font: $arg (no active theme; applies on the next theme switch)"
+        return 0
+    fi
+    exec "$DOTFILES/bin/switch-theme" "$theme"
+}
+
+cmd_text_font() {
+    local arg="$1"
+
+    if [[ -z "$arg" ]]; then
+        local current name
+        current="$(current_text_font)"
+        echo "Available text fonts:"
+        while IFS= read -r name; do
+            if [[ "$name" == "$current" ]]; then
+                echo "  $name (active)"
+            else
+                echo "  $name"
+            fi
+        done < <(text_font_names)
+        return 0
+    fi
+
+    if ! text_font_exists "$arg"; then
+        echo "Error: text font '$arg' not found (fonts/text/$arg.sh)" >&2
+        echo "" >&2
+        echo "Available text fonts:" >&2
+        text_font_names | sed 's/^/  /' >&2
+        return 1
+    fi
+
+    echo "$arg" > "$DOTFILES/.current-text-font"
+
+    local theme
+    theme="$(current_theme)"
+    if [[ -z "$theme" ]]; then
+        echo "text font: $arg (no active theme; applies on the next theme switch)"
         return 0
     fi
     exec "$DOTFILES/bin/switch-theme" "$theme"
@@ -536,6 +575,9 @@ case "${1:-}" in
     --font|-f)
         cmd_font "${2:-}"
         ;;
+    --text-font|-T)
+        cmd_text_font "${2:-}"
+        ;;
     --wallpaper|-w)
         cmd_wallpaper "${2:-}"
         ;;
@@ -560,6 +602,9 @@ case "${1:-}" in
         ;;
     --fonts-plain)
         font_names
+        ;;
+    --text-fonts-plain)
+        text_font_names
         ;;
     --help|-h|"")
         usage

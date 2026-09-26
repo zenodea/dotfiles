@@ -6,6 +6,8 @@ Shape {
     id: root
 
     property real size: Metrics.frameRadius
+    // Bleeds under the surfaces it joins, so fractional-pixel edges can't leave a seam.
+    readonly property real bleed: 1
 
     width: size
     height: size
@@ -14,8 +16,13 @@ Shape {
     ShapePath {
         strokeWidth: -1
         fillColor: Theme.bg
-        startX: 0
-        startY: 0
+        startX: -root.bleed
+        startY: -root.bleed
+
+        PathLine {
+            x: root.size
+            y: -root.bleed
+        }
 
         PathLine {
             x: root.size
@@ -31,8 +38,13 @@ Shape {
         }
 
         PathLine {
-            x: 0
-            y: 0
+            x: -root.bleed
+            y: root.size
+        }
+
+        PathLine {
+            x: -root.bleed
+            y: -root.bleed
         }
     }
 }

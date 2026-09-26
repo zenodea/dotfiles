@@ -203,6 +203,8 @@ PanelWindow {
                 y: root.innerTop - Metrics.seamOverlap
                 width: workspaces.tabWidth
                 height: Metrics.workspaceTab + Metrics.seamOverlap
+                bottomLeftRadius: Metrics.workspaceTab
+                bottomRightRadius: Metrics.workspaceTab
                 color: Theme.bg
 
                 Behavior on x {
@@ -296,7 +298,7 @@ PanelWindow {
 
             Backing {
                 panel: toast
-                bottomRightRadius: Metrics.frameRadius
+                bottomRightRadius: toast.radius
             }
 
             Fillet {
@@ -357,12 +359,14 @@ PanelWindow {
 
             Fillet {
                 visible: toast.width > 0
+                size: toast.radius
                 x: toast.width
                 y: toast.y
             }
 
             Fillet {
                 visible: toast.width > 0
+                size: toast.radius
                 x: root.innerLeft
                 y: toast.y + toast.height
             }

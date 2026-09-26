@@ -168,6 +168,9 @@ FONT_FIELDS=(FONT_MONO_FAMILY FONT_TEXT_FAMILY FONT_SIZE FONT_CELL_HEIGHT FONT_C
 # shellcheck source=/dev/null
 set -a
 source "$DOTFILES/fonts/$(current_font).sh"
+_text="$(current_text_font)"
+# shellcheck source=/dev/null
+[[ -n "$_text" ]] && source "$DOTFILES/fonts/text/$_text.sh"
 set +a
 export FONT_TEXT_FAMILY="${FONT_TEXT_FAMILY:-Helvetica Neue}"
 export FONT_SIZE="${FONT_SIZE:-14}"
