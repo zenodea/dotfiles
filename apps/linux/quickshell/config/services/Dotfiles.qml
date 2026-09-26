@@ -49,7 +49,7 @@ Singleton {
     }
 
     function wallpaperPath(name: string): string {
-        return root.repo ? `file://${root.repo}/wallpapers/${name}` : "";
+        return root.repo ? `file://${root.repo}/wallpapers/full-size/${name}` : "";
     }
 
     function refreshWallpapers(): void {
