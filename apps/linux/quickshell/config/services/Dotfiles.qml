@@ -14,6 +14,7 @@ Singleton {
     property var wallpapers: []
     property string currentTheme: ""
     property string currentFont: ""
+    property string currentWallpaper: ""
     property bool autoTheme: false
     property bool settled: false
 
@@ -93,8 +94,10 @@ Singleton {
             onStreamFinished: {
                 const found = text.split("\n").filter(line => line.includes("\t")).map(line => {
                     const tab = line.indexOf("\t");
+                    const name = line.slice(0, tab);
                     return {
-                        name: line.slice(0, tab),
+                        name,
+                        label: name.replace(/\.[^.]+$/, "").replace(/^\d+[-_ ]*/, "").replace(/[-_]+/g, " "),
                         thumb: `file://${line.slice(tab + 1)}`
                     };
                 });
@@ -150,5 +153,12 @@ Singleton {
                 Notices.show("Font", name, "󰛖");
             root.currentFont = name;
         }
+    }
+
+    FileView {
+        path: root.repo ? `${root.repo}/.current-wallpaper` : ""
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.currentWallpaper = text().trim()
     }
 }

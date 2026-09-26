@@ -15,6 +15,7 @@ Item {
     readonly property alias hitArea: hitArea
     property string lastMode: "apps"
     readonly property bool session: mode === "session"
+    readonly property bool tiles: mode === "wallpapers"
 
     onSessionChanged: {
         if (session)
@@ -122,11 +123,12 @@ Item {
                     }));
 
         if (mode === "wallpapers")
-            return Dotfiles.wallpapers.filter(w => matches(w.name)).map(w => ({
+            return Dotfiles.wallpapers.filter(w => matches(w.name) || matches(w.label)).map(w => ({
                         kind: "wallpaper",
                         name: w.name,
+                        label: w.label,
                         thumb: w.thumb,
-                        sub: ""
+                        current: w.name === Dotfiles.currentWallpaper
                     }));
 
         if (mode === "session")
@@ -153,7 +155,7 @@ Item {
             Dotfiles.apply("font", item.name);
         else if (item.kind === "wallpaper") {
             Dotfiles.apply("wallpaper", item.name);
-            Notices.show("Wallpaper", item.name, "󰸉");
+            Notices.show("Wallpaper", item.label, "󰸉");
         } else if (item.kind === "session")
             Quickshell.execDetached(item.command);
 
@@ -373,8 +375,8 @@ Item {
 
             width: parent.width
             height: Metrics.launcherHeight - Metrics.launcherHeader - Metrics.borderWidth - (root.session ? Metrics.launcherFooter : 0)
-            cellWidth: root.session ? 170 : root.mode === "fonts" ? 320 : Metrics.launcherCellWidth
-            cellHeight: root.session ? height : Metrics.launcherCellHeight
+            cellWidth: root.session ? 170 : root.tiles ? Math.round(cellHeight * 16 / 9) : root.mode === "fonts" ? 320 : Metrics.launcherCellWidth
+            cellHeight: root.session ? height : root.tiles ? height / 2 : Metrics.launcherCellHeight
             leftMargin: root.session ? Math.max(0, (width - root.results.length * cellWidth) / 2) : 0
             flow: GridView.FlowTopToBottom
             model: root.results
@@ -393,7 +395,7 @@ Item {
 
                 width: list.cellWidth
                 height: list.cellHeight
-                color: root.session ? "transparent" : selected ? Theme.alpha(Theme.accent, 0.15) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.07) : "transparent"
+                color: root.session || root.tiles ? "transparent" : selected ? Theme.alpha(Theme.accent, 0.15) : cellArea.containsMouse ? Theme.alpha(Theme.fg, 0.07) : "transparent"
 
                 Behavior on color {
                     ColorAnimation {
@@ -405,7 +407,7 @@ Item {
                     width: 2
                     height: parent.height
                     color: Theme.accent
-                    visible: (cell.modelData.current ?? false) && !root.session
+                    visible: (cell.modelData.current ?? false) && !root.session && !root.tiles
                 }
 
                 SessionTile {
@@ -419,8 +421,19 @@ Item {
                     hovered: cellArea.containsMouse
                 }
 
+                WallpaperTile {
+                    visible: root.tiles
+                    x: 3
+                    y: 3
+                    width: parent.width - 6
+                    height: parent.height - 6
+                    item: cell.modelData
+                    selected: cell.selected
+                    hovered: cellArea.containsMouse
+                }
+
                 ResultRow {
-                    visible: !root.session
+                    visible: !root.session && !root.tiles
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter

@@ -12,6 +12,7 @@ render() {
         return 0
     fi
     cp "$SOURCE" "$HOME/.config/current-wallpaper"
+    echo "$WALLPAPER" > "$DOTFILES/.current-wallpaper"
     note "wrote: $(pretty "$HOME/.config/current-wallpaper") ($WALLPAPER)"
 }
 
