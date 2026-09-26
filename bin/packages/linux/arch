@@ -48,7 +48,6 @@ PACMAN_PACKAGES=(
 
     # What the quickshell panels reach for
     wf-recorder
-    libvips
     libheif
     pacman-contrib
 
