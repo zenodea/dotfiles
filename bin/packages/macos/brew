@@ -107,6 +107,11 @@ CASKS=(
     # range — without SF Pro every icon in the bar renders as an empty box.
     font-sf-pro
     font-hack-nerd-font
+    font-inter
+    font-ibm-plex-sans
+    font-iosevka
+    font-iosevka-aile
+    font-commit-mono
 )
 
 echo "==> Installing casks..."

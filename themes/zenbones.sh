@@ -20,4 +20,4 @@ PURPLE="b279a7"
 
 GHOSTTY_THEME="Zenbones Dark"
 VIFM_COLORSCHEME="Default"
-WALLPAPER="wallhaven-85vm3k.png"
+WALLPAPER="95-reaching-hands-frame.png"

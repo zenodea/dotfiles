@@ -119,12 +119,16 @@ if command -v dotfiles > /dev/null 2>&1; then
         case "${words[CURRENT-1]}" in
             --theme|-t)
                 compadd -- $(dotfiles --themes-plain 2>/dev/null) ;;
+            --font|-f)
+                compadd -- $(dotfiles --fonts-plain 2>/dev/null) ;;
+            --text-font|-T)
+                compadd -- $(dotfiles --text-fonts-plain 2>/dev/null) ;;
             --wallpaper|-w)
                 compadd -- random $(dotfiles --wallpapers-plain 2>/dev/null) ;;
             --auto)
                 compadd -- on off status ;;
             *)
-                compadd -- --theme --pick --random --list --wallpaper \
+                compadd -- --theme --pick --random --list --font --text-font --wallpaper \
                     --auto --sync-appearance \
                     --update --doctor --sync --save --help ;;
         esac

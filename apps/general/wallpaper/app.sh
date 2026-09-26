@@ -4,7 +4,7 @@
 # Runs before hypr/ because general/ apps are rendered first, so the stable
 # copy is in place by the time hyprland reloads.
 
-SOURCE="$DOTFILES/wallpapers/${WALLPAPER:-}"
+SOURCE="$DOTFILES/wallpapers/full-size/${WALLPAPER:-}"
 
 render() {
   if [[ -z "${WALLPAPER:-}" || ! -f "$SOURCE" ]]; then
@@ -12,6 +12,7 @@ render() {
     return 0
   fi
   cp "$SOURCE" "$HOME/.config/current-wallpaper"
+  echo "$WALLPAPER" > "$DOTFILES/.current-wallpaper"
   note "wrote: $(pretty "$HOME/.config/current-wallpaper") ($WALLPAPER)"
 }
 
