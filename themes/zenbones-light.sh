@@ -18,3 +18,4 @@ PURPLE="88507d"
 
 GHOSTTY_THEME="Zenbones Light"
 VIFM_COLORSCHEME="Default"
+WALLPAPER="17-soot-sprites-gray.png"

@@ -4,7 +4,7 @@ set -e
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-has() { command -v "$1" &>/dev/null; }
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ── Bootstrap yay (AUR helper) ───────────────────────────────────────────────
 
@@ -25,6 +25,7 @@ PACMAN_PACKAGES=(
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gtk
     xdg-utils
+    polkit-kde-agent
 
     # Idle / lock / wallpaper / blue light
     hypridle
@@ -33,6 +34,7 @@ PACMAN_PACKAGES=(
     awww
 
     # Status bar + what its modules call
+    quickshell
     waybar
     playerctl
     blueman
@@ -43,6 +45,11 @@ PACMAN_PACKAGES=(
     # Launchers
     fuzzel
     rofi
+
+    # What the quickshell panels reach for
+    wf-recorder
+    libheif
+    pacman-contrib
 
     # Terminal
     ghostty
@@ -115,6 +122,10 @@ PACMAN_PACKAGES=(
     ttf-nerd-fonts-symbols
     noto-fonts
     noto-fonts-emoji
+    inter-font
+    ttf-ibm-plex
+    ttc-iosevka
+    ttc-iosevka-aile
 
     # Misc
     pyenv
@@ -132,6 +143,7 @@ sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"
 AUR_PACKAGES=(
     bibata-cursor-theme  # cursor theme
     oh-my-zsh-git        # zsh framework
+    otf-commit-mono      # font
 )
 
 echo "==> Installing AUR packages..."
@@ -139,10 +151,6 @@ yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
 
 # ── Post-install ─────────────────────────────────────────────────────────────
 
-echo "==> Enabling services..."
-sudo systemctl enable --now bluetooth
-sudo systemctl enable --now NetworkManager
-sudo systemctl enable --now power-profiles-daemon
-sudo systemctl enable --now mullvad-daemon
+enable_services
 
 echo "Done. Run ./install.sh next to link your dotfiles and render the theme."

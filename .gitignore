@@ -3,6 +3,8 @@ nvim.log
 
 # Machine-local: which appearance a manual theme pick is holding against.
 .auto-pin
+# Machine-local: the wallpaper last set, for the launcher's marker.
+.current-wallpaper
 apps/linux/vifm/config/vifminfo.json
 # lazygit writes its runtime state next to config.yml, i.e. into the repo.
 apps/general/lazygit/config/state.yml

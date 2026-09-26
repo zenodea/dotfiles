@@ -1,0 +1,19 @@
+{
+  "font": {
+    "mono": "${FONT_MONO_FAMILY}"
+  },
+  "colours": {
+    "bg": "#${BG}",
+    "surface": "#${SURFACE}",
+    "muted": "#${MUTED}",
+    "fg": "#${FG}",
+    "fgBright": "#${FG_BRIGHT}",
+    "accent": "#${ACCENT}",
+    "blue": "#${BLUE}",
+    "red": "#${RED}",
+    "green": "#${GREEN}",
+    "yellow": "#${YELLOW}",
+    "orange": "#${ORANGE}",
+    "purple": "#${PURPLE}"
+  }
+}
