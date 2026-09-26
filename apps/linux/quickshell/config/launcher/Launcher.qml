@@ -219,6 +219,16 @@ Item {
         list.positionViewAtIndex(list.currentIndex, GridView.Contain);
     }
 
+    function page(direction: int): void {
+        const rows = single ? 1 : 2;
+        const cols = Math.max(1, Math.floor(Math.floor(list.width / list.cellWidth) / 2));
+        let i = Math.max(0, Math.min(results.length - 1, list.currentIndex + direction * cols * rows));
+        while (i !== list.currentIndex && results[i]?.kind === "blank")
+            i -= direction;
+        list.currentIndex = i;
+        list.positionViewAtIndex(i, GridView.Contain);
+    }
+
     function reset(): void {
         query = "";
         input.text = "";
@@ -386,6 +396,10 @@ Item {
                         root.step("right");
                     else if (event.key === Qt.Key_H)
                         root.step("left");
+                    else if (event.key === Qt.Key_D)
+                        root.page(1);
+                    else if (event.key === Qt.Key_U)
+                        root.page(-1);
                     else
                         return;
                     event.accepted = true;
