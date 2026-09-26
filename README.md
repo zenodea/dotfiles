@@ -1,187 +1,237 @@
 # dotfiles
 
-Personal configs for Linux and macOS, with a live theme system.
+My configs for Linux (Hyprland) and macOS (AeroSpace), with one theme system
+that recolors everything at once.
+
+![Desktop](screenshots/desktop.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="screenshots/terminal.png" alt="Terminal"><br><sub>Ghostty over the blurred wallpaper</sub></td>
+    <td width="50%"><img src="screenshots/theme-picker.png" alt="Theme picker"><br><sub>Launcher, themes tab</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="screenshots/dashboard.png" alt="Dashboard"><br><sub>Drawer: dashboard</sub></td>
+    <td width="50%"><img src="screenshots/control-center.png" alt="Control centre"><br><sub>Control centre</sub></td>
+  </tr>
+</table>
 
 ## Install
 
 ```sh
-git clone --recurse-submodules https://github.com/zenodea/dotfiles_nixless
+git clone --recurse-submodules https://github.com/zenodea/dotfiles_nixless ~/dotfiles
+cd ~/dotfiles
+bin/install-packages   # optional: Arch, Fedora, Debian or Homebrew
 ./install.sh
 ```
 
-Symlinks the configs and the `dotfiles` CLI, then renders the active theme.
-Existing files are backed up as `<file>.bak`. If you cloned without
-`--recurse-submodules`, `install.sh` checks out the wallpapers submodule for
-you.
+`install-packages` picks the script for your OS from `bin/packages/`. You can
+also run one of those directly.
+
+`install.sh` symlinks the configs and the `dotfiles` command, checks out the
+wallpapers submodule if it's missing, and renders the current theme. Any file
+it would replace gets moved to `<file>.bak` first.
 
 ## Layout
 
-Everything for one app lives in one directory:
-
 ```
 apps/<general|mac|linux>/<name>/
-    app.sh        how to render + reload it
-    templates/    its themed configs
-    config/       its static config → symlinked to ~/.config/<name>
+    app.sh        how to render and reload the app
+    templates/    themed config templates
+    config/       static config, symlinked to ~/.config/<name>
 
 home/<general|mac|linux>/    mirrors $HOME (.zshrc, scripts/, …)
-themes/<name>.sh             the palettes
-wallpapers/                  submodule → github.com/zenodea/wallpapers
+themes/<name>.sh             palettes
+fonts/<name>.sh              mono fonts
+fonts/text/<name>.sh         proportional fonts
+bin/                         dotfiles, switch-theme, install-packages
+wallpapers/                  submodule: github.com/zenodea/wallpapers
+screenshots/                 images for this README
 ```
 
-`general/` applies everywhere, `mac/` and `linux/` only on that OS. Apps with
-no `app.sh` (lazygit, yazi, aerospace) are static config that just gets
-symlinked; apps with no `config/` (ghostty, borders, fuzzel) are wholly
-generated and render straight to `~/.config`.
+`general/` is used on both systems, `mac/` and `linux/` only on their own.
+Apps without an `app.sh` (lazygit, yazi, aerospace) are only symlinked. Apps
+without a `config/` (ghostty, borders, fuzzel) are fully generated and written
+straight to `~/.config`.
 
-## Theme switching
+## Linux shell
+
+The bar, launcher and panels are a [Quickshell](https://quickshell.org) config
+in `apps/linux/quickshell/`. It replaced waybar and rofi. Both are still
+installed and themed, and the `rofi-dotfiles` and `rofi-power` scripts in
+`home/linux/scripts/` still work, but nothing starts them by default.
+
+- **Frame**: bar along the top with workspaces, clock, volume, brightness,
+  power profile, VPN, Wi-Fi, Bluetooth, media and battery. It hides for
+  fullscreen windows.
+- **Launcher** (bottom): apps, themes, fonts, wallpapers and a session page.
+- **Drawer** (left): dashboard (clock, weather, notifications, system stats,
+  calendar), window list, clipboard history.
+- **Control centre** (right): volume, brightness, Wi-Fi, Bluetooth, Mullvad,
+  mic, power profile, charge limit, keep awake, night mode, screenshots and
+  screen recording.
+
+| Key | |
+|---|---|
+| `Super Space` / `Super Q` | launcher |
+| `Super T` / `Super F` / `Super W` | themes / fonts / wallpapers |
+| `Super Shift P` | session |
+| `Super D` | dashboard |
+| `Super Tab` | windows |
+| `Super Shift V` | clipboard |
+| `Super C` | control centre |
+
+The shell reads its colors from a JSON file the theme switch writes, so it
+recolors without restarting.
+
+## Themes
 
 ```sh
-dotfiles --theme <name>     # switch everything, live (tab-completes)
-dotfiles --pick             # interactive picker
-dotfiles --random           # surprise me
-dotfiles --list             # available themes
+dotfiles --theme <name>     # switch theme (tab-completes)
+dotfiles --pick             # pick with fzf
+dotfiles --random
+dotfiles --list
+dotfiles --current
 ```
 
-A switch regenerates every app's config from its templates and reloads it live.
+Switching re-renders every app's config from its templates and reloads the
+apps that are running.
 
-Themed: hyprland · waybar · fuzzel · rofi · vifm · sketchybar · borders ·
-Alfred · Raycast · ghostty · nvim · zed · Firefox · Obsidian · wallpaper
+Themed apps: hyprland, hyprlock, quickshell, waybar, fuzzel, rofi, gtk, vifm,
+sketchybar, borders, Alfred, Raycast, ghostty, tmux, nvim, zed, Firefox,
+Obsidian, and the wallpaper.
 
-## Font switching
+Themes (each has a `-light` version): catppuccin-mocha, dracula, everforest,
+github, gruvbox, gruvbox-material, monaspace, nightfox, night-owl, nord,
+rose-pine, sonokai, tokyo-night, zenbones.
+
+## Fonts
 
 ```sh
-dotfiles --font <name>      # switch the font pairing, live (tab-completes)
-dotfiles --font             # available fonts
+dotfiles --font <name>          # mono font
+dotfiles --text-font <name>     # proportional font
+dotfiles --font                 # list mono fonts
+dotfiles --text-font            # list text fonts
 ```
 
-Fonts are orthogonal to themes: `.current-font` holds the active one, and every
-theme switch re-applies it. A preset in `fonts/<name>.sh` is a *pairing* — a
-mono family plus a proportional companion:
+Fonts are separate from themes. The current choice is stored in
+`.current-font` and reapplied on every theme switch. A font file looks like
+this:
 
 ```sh
-FONT_MONO_FAMILY="Berkeley Mono"        # ghostty, zed buffer, code everywhere
-FONT_TEXT_FAMILY="IBM Plex Sans Text"   # zed UI, Obsidian notes, sketchybar labels
-FONT_SIZE="14"                          # optional, terminal pt size
-FONT_CELL_HEIGHT="10%"                  # optional, ghostty line-height tweak
-FONT_CELL_WIDTH="0%"                    # optional, ghostty cell-width tweak
+FONT_MONO_FAMILY="Berkeley Mono"        # ghostty, zed editor, code
+FONT_TEXT_FAMILY="IBM Plex Sans Text"   # zed UI, Obsidian, sketchybar labels
+FONT_SIZE="14"                          # optional, terminal size
+FONT_CELL_HEIGHT="10%"                  # optional, ghostty line height
+FONT_CELL_WIDTH="0%"                    # optional, ghostty cell width
 ```
 
-The mono half reaches ghostty (and everything in a terminal), zed's buffer,
-Obsidian code blocks and Firefox's default `monospace`; the text half reaches
-zed's UI, Obsidian notes/interface, sketchybar labels and Firefox chrome +
-default `sans-serif`. Sketchybar icons stay on SF Pro — they're SF Symbols
-glyphs, which only exist in Apple's SF fonts.
+The mono font goes to ghostty (and so everything in the terminal), zed's
+editor, Obsidian code blocks and Firefox's `monospace`. The text font goes to
+zed's UI, Obsidian, sketchybar labels, Firefox's UI and its `sans-serif`.
+`--text-font` swaps only the text font. Sketchybar icons stay on SF Pro
+because they're SF Symbols.
 
 ## Light / dark
 
 ```sh
-dotfiles --auto on          # follow the system's light/dark setting
+dotfiles --auto on          # follow light/dark automatically
 dotfiles --auto off
 dotfiles --auto             # status
 ```
 
-A theme is light or dark by virtue of its background's brightness — nothing
-declares it, and the terminal opacity and Zed base theme follow from that too.
-A *pair* is one name plus a suffix: `gruvbox` is the dark half, `gruvbox-light`
-the light one. `--auto on` tracks the pair the active theme belongs to and
-refuses if the other half doesn't exist.
+A theme counts as light or dark based on how bright its background is. That
+also decides terminal opacity and zed's base theme. `gruvbox` is the dark
+version and `gruvbox-light` the light one. `--auto on` follows whichever pair
+the current theme belongs to.
 
-All twelve themes are paired. To add another, drop a `<name>-light.sh` next to
-the dark one; it's picked up with no further wiring.
+To add a light version of a theme, add `themes/<name>-light.sh`. Nothing else
+needs changing.
 
-On macOS the system is the schedule — set Appearance to **Auto** in System
-Settings and you inherit real sunrise/sunset, plus manual ⌃-click toggles. A
-launchd agent polls once a minute and only re-renders when the answer changed.
-Linux has no such setting, so the boundaries come from the clock (07:00/19:00,
-override with `DOTFILES_DAY_START` / `DOTFILES_DAY_END`) on a systemd user
-timer. `--auto on` installs the agent or timer; `--auto off` removes it.
+On macOS it follows the system appearance, so set Appearance to **Auto** in
+System Settings. A launchd agent checks once a minute and only re-renders when
+the mode changes. On Linux it goes by the clock: light from 07:00 to 19:00, set
+by `DOTFILES_DAY_START` and `DOTFILES_DAY_END`, run by a systemd user timer.
+`--auto on` installs the agent or timer and `--auto off` removes it.
 
-Picking a theme by hand while auto is on wins until light/dark next flips — so
-a mid-afternoon `dotfiles --theme dracula` isn't undone a minute later. If the
-theme you pick is itself paired, auto rebases onto it.
+If you pick a theme by hand while auto is on, your pick holds until the next
+light/dark change. If that theme has a pair, auto switches to following it.
 
-A light half inherits the dark half's `WALLPAPER`, so the desktop stays put
-across a flip. Give it its own `WALLPAPER=` to override that.
+A light theme uses its dark version's `WALLPAPER` unless it sets its own.
 
-`MUTED` — comments, placeholders, line numbers, inactive labels — is derived
-rather than declared: `FG` is faded toward `BG` only as far as the 4.5:1
-body-text contrast floor allows, so muted text stays as quiet as it can be
-without going unreadable. This used to reuse `BORDER`, which is tuned to sit
-*close* to `BG` so dividers stay quiet, and on a light palette that left
-comments around 1.2–1.9:1 against the background. A theme can set `MUTED=`
-itself to reclaim its upstream comment hue; the derivation is then skipped.
+`MUTED` (comments, placeholders, line numbers) is worked out from `FG` and
+`BG`: it's the faintest color that still has 4.5:1 contrast against the
+background. A theme can set `MUTED=` to use its own color instead.
 
-One note on what auto mode deliberately does *not* do: on macOS it never writes
-the system appearance (`apps/mac/appearance/` skips while auto is on). Setting
-Light or Dark explicitly is what turns Auto *off*, so doing it would disable the
-schedule being followed.
+Auto mode never changes the macOS system appearance, because setting Light or
+Dark by hand turns macOS's Auto off.
 
 ### Adding an app
 
-Drop a directory in `apps/<general|mac|linux>/<name>/` with an `app.sh`:
+Make `apps/<general|mac|linux>/<name>/` with an `app.sh`:
 
 ```sh
 render() {                          # paths are relative to this app's dir
     generate config "$HOME/.config/ghostty/config"
 }
 
-reload() {                          # poke the running app (optional)
+reload() {                          # optional
     pgrep -x ghostty > /dev/null 2>&1 || return 0
     pkill -SIGUSR2 ghostty
     note "reloaded"
 }
 ```
 
-`generate <template> <dest>` reads from the app's own `templates/`; `<dest>` is
-absolute for a live path, or relative to the app dir (i.e. `config/…`) for
-something symlinked into `~/.config`. A `general/` app whose reload differs per
-OS defines `reload_mac` and `reload_linux` instead of `reload`.
+`generate <template> <dest>` reads from the app's `templates/`. `<dest>` is
+either an absolute path or a path inside the app dir (like `config/…`) for
+files that get symlinked. A `general/` app that reloads differently on each OS
+can define `reload_mac` and `reload_linux`.
 
-`switch-theme` sources each `app.sh` in its own subshell with the palette
-exported (`$BG`, `$ACCENT`, `$ACCENT_RGB`, `$THEME_APPEARANCE`, …) and
-`generate`/`copy`/`note`/`skip`/`have` available. An app that only pokes the
-system (`mac/appearance`, `linux/gtk`) can define `reload` and skip `render`.
-An app that fails is reported and skipped; the rest still run. Pass
-`--no-reload` to render without touching running apps.
+`switch-theme` runs each `app.sh` in its own subshell with the palette exported
+(`$BG`, `$ACCENT`, `$ACCENT_RGB`, `$THEME_APPEARANCE`, …) and the helpers
+`generate`, `copy`, `note`, `skip` and `have`. An app can have only a `reload`
+(like `mac/appearance` or `linux/gtk`). If one app fails, it's reported and the
+rest still run. `--no-reload` renders without reloading anything.
 
 ## Other commands
 
 ```sh
-dotfiles --wallpaper <name|random>   # wallpaper only
-dotfiles --update                    # git pull + re-apply theme
-dotfiles --doctor                    # check symlinks, deps, drift
-dotfiles --save [msg]                # add + commit + push
+dotfiles --wallpaper <name|random>   # change the wallpaper only
+dotfiles --update                    # git pull, then reapply the theme
+dotfiles --doctor                    # check symlinks, dependencies, drift
+dotfiles --save [msg]                # add, commit, push
 dotfiles --sync                      # re-run install.sh
-dotfiles --current                   # print the active theme
 ```
 
-## Alfred (macOS)
+## Other apps
 
-`apps/mac/alfred/workflows/dotfiles/` is an Alfred workflow wrapping the CLI.
-`install.sh` symlinks it into Alfred's workflow folder, so editing it in the
-repo edits the installed workflow — restart Alfred once after the first install.
+- **tmux**: themed config plus git, popup and sessionizer scripts.
+- **pi**: `apps/general/pi/` links extensions into `~/.pi/agent/extensions`
+  and adds the packages in `packages.txt` to its settings.
+- **Raycast** (macOS): `apps/mac/raycast/extension/` is a Raycast extension for
+  the `dotfiles` command: search themes and fonts, set wallpapers, random
+  theme, toggle auto, maintenance. See its own README for development.
+- **Alfred** (macOS): `apps/mac/alfred/workflows/dotfiles/` is a workflow for
+  the same command. `install.sh` symlinks it into Alfred, so edits in the repo
+  apply right away. Restart Alfred once after the first install. Type
+  `dotfiles`, then:
 
-Type `dotfiles` in Alfred, then:
-
-| | |
-|---|---|
-| `theme <name>` | switch theme (⇥ to drill into the list) |
-| `wallpaper <name>` | wallpaper only, `random` included |
-| `random` | random theme |
-| `update` / `sync` / `doctor` | output shown in Large Type |
-| `save` | commit + push the repo |
+  | | |
+  |---|---|
+  | `theme <name>` | switch theme (⇥ to browse) |
+  | `wallpaper <name>` | wallpaper only, `random` works |
+  | `random` | random theme |
+  | `update` / `sync` / `doctor` | output shown in Large Type |
+  | `save` | commit and push |
 
 ## Notes
 
-- After switching themes on one machine, run `dotfiles --update` on the
-  other to pull and live-reload it there.
-- Raycast needs Pro and one ⏎ in its popup; everything else is automatic.
-- The rendered configs are gitignored — only the palette, the templates and
-  `.current-theme` are tracked, so switching themes doesn't dirty the repo.
-  `install.sh` renders them, which is why a fresh clone must run it first.
-- `.auto-theme` (which pair auto mode tracks) is tracked too, so both machines
-  agree; `install.sh` reinstalls the agent/timer when it's present. The pin
-  that holds a manual pick is machine-local and gitignored.
-- Auto mode rewrites `.current-theme` twice a day, so the repo goes dirty on
-  its own — `--doctor` will say so, and `--save` clears it.
+- After switching themes on one machine, run `dotfiles --update` on the other.
+- Raycast needs Pro, and you have to press ⏎ once in its popup to apply a
+  theme.
+- Rendered configs are gitignored. Only palettes, templates and
+  `.current-theme` are tracked, so a fresh clone has to run `install.sh`.
+- `.auto-theme` is tracked so both machines follow the same pair, and
+  `install.sh` puts the agent or timer back. The manual-pick pin is local only.
+- Auto mode rewrites `.current-theme` twice a day, so the repo shows as
+  changed. `--doctor` reports it and `--save` commits it.
