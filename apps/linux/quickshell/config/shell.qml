@@ -3,7 +3,9 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import qs.frame
+import qs.lock
 import qs.services
 
 ShellRoot {
@@ -41,6 +43,16 @@ ShellRoot {
         function screenshot(mode: string): void {
             Screenshot.take(mode);
         }
+
+        function lock(): void {
+            Lock.lock();
+        }
+    }
+
+    WlSessionLock {
+        locked: Lock.locked
+
+        LockSurface {}
     }
 
     Variants {

@@ -44,6 +44,7 @@ Singleton {
     readonly property int morphDuration: 450
     readonly property int escapeDuration: 420
     readonly property int edgeDwell: 180
+    readonly property int lockDuration: 700
 
     readonly property string iconFont: {
         const installed = Qt.fontFamilies();

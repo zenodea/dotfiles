@@ -16,7 +16,7 @@ chosen=$(printf "%s\n" "$LOCK" "$SUSPEND" "$LOGOUT" "$REBOOT" "$SHUTDOWN" | \
     rofi -dmenu "${POWER_MENU_ARGS[@]}")
 
 case "$chosen" in
-    "$LOCK")     hyprlock ;;
+    "$LOCK")     qs ipc call shell lock ;;
     "$SUSPEND")  systemctl suspend ;;
     "$LOGOUT")   hyprctl dispatch exit ;;
     "$REBOOT")   systemctl reboot ;;
