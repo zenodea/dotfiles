@@ -45,6 +45,8 @@ themes/<name>.sh             palettes
 fonts/<name>.sh              mono fonts
 fonts/text/<name>.sh         proportional fonts
 bin/                         dotfiles, switch-theme, install-packages
+lib/common.sh                helpers shared by bin/ and install.sh
+lib/dotfiles/                the dotfiles command's subcommands
 wallpapers/                  submodule: github.com/zenodea/wallpapers
 screenshots/                 images for this README
 ```
