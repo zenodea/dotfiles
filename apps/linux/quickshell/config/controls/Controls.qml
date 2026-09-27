@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.agent
 import qs.services
 import qs.style
 import qs.widgets
@@ -76,7 +77,7 @@ Item {
         id: agentTab
 
         Item {
-            AgentChat {
+            AgentPage {
                 x: Metrics.drawerPadding
                 y: Metrics.drawerPadding
                 width: parent.width - Metrics.drawerPadding * 2
