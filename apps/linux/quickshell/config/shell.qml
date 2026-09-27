@@ -23,7 +23,11 @@ ShellRoot {
         }
 
         function controls(): void {
-            Panels.toggleControls();
+            Panels.toggleControls("controls");
+        }
+
+        function agent(): void {
+            Panels.toggleControls("agent");
         }
 
         function launcher(mode: string): void {

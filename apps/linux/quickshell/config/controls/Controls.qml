@@ -36,105 +36,156 @@ Item {
         onHoveredChanged: Panels.controlsPointer = hovered
     }
 
-    Flickable {
+    Column {
         x: root.width - width
         width: Metrics.drawerWidth
         height: root.height
-        contentHeight: cards.implicitHeight + Metrics.drawerPadding * 2
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
 
-        Column {
-            id: cards
+        TabBar {
+            id: tabs
 
-            x: Metrics.drawerPadding
-            y: Metrics.drawerPadding
-            width: parent.width - Metrics.drawerPadding * 2
-            spacing: 12
-
-            Card {
-                width: parent.width
-                title: "Levels"
-
-                Levels {
-                    width: parent.width
+            width: parent.width
+            current: Panels.controlsTab
+            model: [
+                {
+                    id: "controls",
+                    label: "Controls"
+                },
+                {
+                    id: "agent",
+                    label: "Agent"
                 }
+            ]
+            onPicked: id => Panels.controlsTab = id
+        }
+
+        Rectangle {
+            width: parent.width
+            height: Metrics.borderWidth
+            color: Theme.alpha(Theme.fg, 0.15)
+        }
+
+        Loader {
+            width: parent.width
+            height: root.height - tabs.height - Metrics.borderWidth
+            sourceComponent: Panels.controlsTab === "agent" ? agentTab : controlsTab
+        }
+    }
+
+    Component {
+        id: agentTab
+
+        Item {
+            AgentChat {
+                x: Metrics.drawerPadding
+                y: Metrics.drawerPadding
+                width: parent.width - Metrics.drawerPadding * 2
+                height: parent.height - Metrics.drawerPadding * 2
+                active: root.shown
             }
+        }
+    }
 
-            Card {
-                width: parent.width
-                title: "Network"
+    Component {
+        id: controlsTab
 
-                WifiPicker {
+        Flickable {
+            contentHeight: cards.implicitHeight + Metrics.drawerPadding * 2
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
+            Column {
+                id: cards
+
+                x: Metrics.drawerPadding
+                y: Metrics.drawerPadding
+                width: parent.width - Metrics.drawerPadding * 2
+                spacing: 12
+
+                Card {
                     width: parent.width
-                    scanning: root.shown
+                    title: "Levels"
+
+                    Levels {
+                        width: parent.width
+                    }
                 }
 
-                BluetoothPicker {
+                Card {
                     width: parent.width
+                    title: "Network"
+
+                    WifiPicker {
+                        width: parent.width
+                        scanning: root.shown
+                    }
+
+                    BluetoothPicker {
+                        width: parent.width
+                    }
+
+                    VpnPicker {
+                        width: parent.width
+                    }
                 }
 
-                VpnPicker {
+                Card {
                     width: parent.width
-                }
-            }
+                    title: "Audio"
 
-            Card {
-                width: parent.width
-                title: "Audio"
-
-                AudioPicker {
-                    width: parent.width
-                }
-            }
-
-            Card {
-                width: parent.width
-                title: "Power"
-
-                Profiles {
-                    width: parent.width
+                    AudioPicker {
+                        width: parent.width
+                    }
                 }
 
-                ChargeLimit {
+                Card {
                     width: parent.width
+                    title: "Power"
+
+                    Profiles {
+                        width: parent.width
+                    }
+
+                    ChargeLimit {
+                        width: parent.width
+                    }
+
+                    Toggle {
+                        width: parent.width
+                        enabled: Idle.available
+                        icon: Idle.inhibited ? "󰅶" : "󰾪"
+                        label: "Keep awake"
+                        checked: Idle.inhibited
+                        onToggled: Idle.toggle()
+                    }
+
+                    Toggle {
+                        width: parent.width
+                        enabled: Night.available
+                        icon: Night.on ? "󰖔" : "󰖙"
+                        label: "Night mode"
+                        checked: Night.on
+                        onToggled: Night.toggle()
+                    }
                 }
 
-                Toggle {
+                Card {
                     width: parent.width
-                    enabled: Idle.available
-                    icon: Idle.inhibited ? "󰅶" : "󰾪"
-                    label: "Keep awake"
-                    checked: Idle.inhibited
-                    onToggled: Idle.toggle()
+                    title: "Capture"
+
+                    Capture {
+                        width: parent.width
+                    }
                 }
 
-                Toggle {
+                Card {
                     width: parent.width
-                    enabled: Night.available
-                    icon: Night.on ? "󰖔" : "󰖙"
-                    label: "Night mode"
-                    checked: Night.on
-                    onToggled: Night.toggle()
-                }
-            }
+                    title: "Tray"
+                    visible: Tray.items.length > 0
 
-            Card {
-                width: parent.width
-                title: "Capture"
-
-                Capture {
-                    width: parent.width
-                }
-            }
-
-            Card {
-                width: parent.width
-                title: "Tray"
-                visible: Tray.items.length > 0
-
-                TrayRow {
-                    width: parent.width
+                    TrayRow {
+                        width: parent.width
+                    }
                 }
             }
         }

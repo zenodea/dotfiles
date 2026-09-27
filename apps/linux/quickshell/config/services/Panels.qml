@@ -12,6 +12,7 @@ Singleton {
     property string drawerTab: "dashboard"
     property string launcher: ""
     property bool controls: false
+    property string controlsTab: "controls"
 
     property bool drawerByHover: false
     property bool launcherByHover: false
@@ -72,13 +73,15 @@ Singleton {
         drawer = true;
     }
 
-    function toggleControls(): void {
-        if (controls) {
+    function toggleControls(tab: string): void {
+        const wanted = tab || "controls";
+        if (controls && controlsTab === wanted) {
             controls = false;
             return;
         }
         controlsClose.stop();
         screen = focusedScreen();
+        controlsTab = wanted;
         controlsByHover = false;
         launcher = "";
         drawer = false;
