@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
+import "agent.js" as AgentJs
 
 Singleton {
     id: root
@@ -13,11 +14,10 @@ Singleton {
     readonly property bool shown: Panels.controls && Panels.controlsTab === "agent"
 
     readonly property string home: Quickshell.env("HOME")
-    readonly property string stateDir: `${Quickshell.env("XDG_STATE_HOME") || `${home}/.local/state`}/dotfiles`
-    readonly property string workDir: `${stateDir}/agent`
+    readonly property string workDir: `${AgentStore.stateDir}/agent`
     readonly property string transcriptDir: `${home}/.claude/projects/${workDir.replace(/[^A-Za-z0-9]/g, "-")}`
 
-    readonly property var models: ["default", "haiku", "sonnet", "opus"]
+    readonly property var models: AgentStore.models
     readonly property int idleMinutes: 15
 
     property bool busy: false
@@ -30,9 +30,9 @@ Singleton {
     readonly property string pathPrefix: 'export PATH="$HOME/.local/bin:$PATH"; '
     property string claudePath: ""
 
-    property string sessionId: ""
-    property var sessions: []
-    property string model: "default"
+    readonly property string sessionId: AgentStore.last
+    readonly property var sessions: AgentStore.sessions
+    readonly property string model: AgentStore.model
     property string runningModel: ""
     property real usage5h: -1
     property real usage7d: -1
@@ -172,8 +172,7 @@ Singleton {
     function reset(): void {
         stop();
         clearView();
-        sessionId = "";
-        save();
+        AgentStore.setLast("");
     }
 
     function resume(id: string): void {
@@ -181,10 +180,9 @@ Singleton {
             return;
         stop();
         clearView();
-        sessionId = id;
+        AgentStore.setLast(id);
         transcript.path = "";
         transcript.path = `${transcriptDir}/${id}.jsonl`;
-        save();
     }
 
     function cycleModel(): void {
@@ -192,10 +190,8 @@ Singleton {
     }
 
     function setModel(name: string): bool {
-        if (!models.includes(name))
+        if (!AgentStore.setModel(name))
             return false;
-        model = name;
-        save();
         if (proc.running && !busy && pendingApprovals === 0)
             stop();
         return true;
@@ -306,14 +302,6 @@ Singleton {
         });
     }
 
-    function describe(input: var): string {
-        if (!input)
-            return "";
-        const pick = input.command ?? input.file_path ?? input.path ?? input.pattern ?? input.url ?? input.query ?? input.description;
-        const text = pick !== undefined ? String(pick) : JSON.stringify(input);
-        return text.replace(/\s+/g, " ").slice(0, 400);
-    }
-
     function findTool(id: string): int {
         for (let i = messages.count - 1; i >= 0; i--)
             if (messages.get(i).role === "tool" && messages.get(i).callId === id)
@@ -333,27 +321,10 @@ Singleton {
     }
 
     function remember(): void {
-        if (!sessionId)
-            return;
-        const now = Date.now();
-        const existing = sessions.find(s => s.id === sessionId);
-        const title = existing?.title ?? (pendingTitle || "Untitled");
-        sessions = [
-            {
-                id: sessionId,
-                title: title.replace(/\s+/g, " ").slice(0, 80),
-                updated: now
-            }
-        ].concat(sessions.filter(s => s.id !== sessionId)).slice(0, 30);
-        pendingTitle = "";
-        save();
-    }
-
-    function save(): void {
-        store.model = model;
-        store.last = sessionId;
-        store.sessions = sessions;
-        storeFile.writeAdapter();
+        if (sessionId) {
+            AgentStore.remember(sessionId, pendingTitle);
+            pendingTitle = "";
+        }
     }
 
     function handleSubagent(event: var): void {
@@ -364,7 +335,7 @@ Singleton {
             return;
         for (const block of event.message?.content ?? [])
             if (block.type === "tool_use")
-                messages.setProperty(row, "detail", `↳ ${block.name} ${describe(block.input)}`);
+                messages.setProperty(row, "detail", `↳ ${block.name} ${AgentJs.describe(block.input)}`);
     }
 
     function handle(event: var): void {
@@ -375,8 +346,8 @@ Singleton {
         switch (event.type) {
         case "system":
             if (event.subtype === "init" && event.session_id && event.session_id !== sessionId) {
-                sessionId = event.session_id;
-                remember();
+                AgentStore.remember(event.session_id, pendingTitle);
+                pendingTitle = "";
             }
             break;
         case "rate_limit_event":
@@ -407,7 +378,7 @@ Singleton {
             streamIndex = -1;
             for (const block of event.message?.content ?? [])
                 if (block.type === "tool_use" && block.name !== "AskUserQuestion")
-                    push("tool", block.name, describe(block.input), "running", block.id);
+                    push("tool", block.name, AgentJs.describe(block.input), "running", block.id);
             break;
         case "user":
             for (const block of event.message?.content ?? [])
@@ -423,7 +394,7 @@ Singleton {
                     push("question", "", JSON.stringify(req.input?.questions ?? []), "pending", event.request_id);
                     notify("Has a question for you");
                 } else {
-                    push("approval", req.display_name ?? req.tool_name, describe(req.input), "pending", event.request_id);
+                    push("approval", req.display_name ?? req.tool_name, AgentJs.describe(req.input), "pending", event.request_id);
                     notify(`Wants to run ${req.display_name ?? req.tool_name}`);
                 }
                 refreshActive();
@@ -451,42 +422,6 @@ Singleton {
         }
     }
 
-    function replay(text: string): void {
-        for (const line of text.split("\n")) {
-            if (!line)
-                continue;
-            let e;
-            try {
-                e = JSON.parse(line);
-            } catch (err) {
-                continue;
-            }
-            if (e.isSidechain || e.isMeta || !e.message)
-                continue;
-            const content = e.message.content;
-            if (e.type === "user") {
-                if (typeof content === "string") {
-                    if (!content.startsWith("<"))
-                        push("user", content, "", "", "");
-                    continue;
-                }
-                for (const block of content ?? []) {
-                    if (block.type === "tool_result")
-                        markTool(block.tool_use_id, block.is_error === true);
-                    else if (block.type === "text" && !block.text.startsWith("<") && !block.text.startsWith("[Request interrupted"))
-                        push("user", block.text, "", "", "");
-                }
-            } else if (e.type === "assistant") {
-                for (const block of content ?? []) {
-                    if (block.type === "text" && block.text.trim())
-                        push("assistant", block.text, "", "", "");
-                    else if (block.type === "tool_use" && block.name !== "AskUserQuestion")
-                        push("tool", block.name, describe(block.input), "done", block.id);
-                }
-            }
-        }
-    }
-
     Process {
         running: true
         command: ["sh", "-c", root.pathPrefix + "command -v claude"]
@@ -497,31 +432,12 @@ Singleton {
     }
 
     FileView {
-        id: storeFile
-
-        path: `${root.stateDir}/agent.json`
-        printErrors: false
-        onLoaded: {
-            root.model = root.models.includes(store.model) ? store.model : "default";
-            root.sessions = store.sessions ?? [];
-            root.sessionId = store.last;
-        }
-
-        JsonAdapter {
-            id: store
-
-            property string model: "default"
-            property string last: ""
-            property var sessions: []
-        }
-    }
-
-    FileView {
         id: transcript
 
         onLoaded: {
             if (root.messages.count === 0)
-                root.replay(text());
+                for (const e of AgentJs.replay(text()))
+                    root.messages.append(e);
         }
     }
 
