@@ -61,24 +61,20 @@ Item {
         anchors.centerIn: parent
         spacing: -1
 
-        Text {
+        Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.label
             color: Theme.fgBright
-            font.family: Theme.fontMono
             font.pixelSize: 13
             font.bold: true
-            renderType: Text.NativeRendering
         }
 
-        Text {
+        Label {
             anchors.horizontalCenter: parent.horizontalCenter
             visible: root.caption !== ""
             text: root.caption
             color: Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 8
-            renderType: Text.NativeRendering
         }
     }
 }

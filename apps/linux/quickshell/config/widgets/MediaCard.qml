@@ -67,14 +67,12 @@ Item {
             height: root.artSize
             color: Theme.alpha(Theme.fg, 0.07)
 
-            Text {
+            Icon {
                 anchors.centerIn: parent
                 visible: cover.status !== Image.Ready
                 text: "󰝚"
                 color: Theme.alpha(Theme.muted, 0.8)
-                font.family: Metrics.iconFont
                 font.pixelSize: root.artSize / 2.4
-                renderType: Text.NativeRendering
             }
 
             Image {
@@ -93,35 +91,29 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 2
 
-            Text {
+            Label {
                 text: root.player?.trackTitle ?? ""
                 color: Theme.fgBright
-                font.family: Theme.fontMono
                 font.pixelSize: 15
                 font.bold: true
                 width: root.textWidth
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
             }
 
-            Text {
+            Label {
                 text: root.player?.trackArtist ?? ""
                 color: Theme.muted
-                font.family: Theme.fontMono
                 font.pixelSize: 12
                 width: root.textWidth
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
             }
 
-            Text {
+            Label {
                 text: root.player?.trackAlbum ?? ""
                 color: Theme.muted
-                font.family: Theme.fontMono
                 font.pixelSize: 12
                 width: root.textWidth
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
             }
 
             Item {
@@ -197,13 +189,10 @@ Item {
                     }
                 }
 
-                Text {
+                Label {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.hasLength ? `${root.clockText(root.position)} / ${root.clockText(root.player?.length ?? 0)}` : root.playing ? "Playing" : "Paused"
                     color: Theme.muted
-                    font.family: Theme.fontMono
-                    font.pixelSize: 11
-                    renderType: Text.NativeRendering
                 }
 
                 Item {

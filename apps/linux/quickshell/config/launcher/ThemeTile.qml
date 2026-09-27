@@ -1,5 +1,6 @@
 import QtQuick
 import qs.style
+import qs.widgets
 
 Item {
     id: root
@@ -50,23 +51,18 @@ Item {
             width: parent.width
             spacing: 6
 
-            Text {
+            Icon {
                 text: root.item.light ? "󰖨" : "󰖔"
                 color: root.t.accent ?? Theme.accent
-                font.family: Metrics.iconFont
                 font.pixelSize: 12
-                renderType: Text.NativeRendering
             }
 
-            Text {
+            Label {
                 width: parent.width - 18
                 text: root.item.label ?? ""
                 color: root.t.fg ?? Theme.fg
-                font.family: Theme.fontMono
-                font.pixelSize: 11
                 font.bold: true
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
             }
         }
 
@@ -76,7 +72,7 @@ Item {
             color: root.t.accent ?? Theme.accent
         }
 
-        Text {
+        Label {
             width: parent.width
             textFormat: Text.StyledText
             text: {
@@ -85,11 +81,9 @@ Item {
                     return "";
                 return [`${root.span(t.purple, "fn")} ${root.span(t.blue, "greet")}${root.span(t.fg, "(n) {")}`, `  ${root.span(t.purple, "if")} ${root.span(t.fg, "n >")} ${root.span(t.orange, "0")} ${root.span(t.fg, "{")}`, `    ${root.span(t.yellow, "say")}${root.span(t.fg, "(")}${root.span(t.green, "\"hi\"")}${root.span(t.fg, ")")}`, `  ${root.span(t.fg, "}")} ${root.span(t.red, "// todo")}`, root.span(t.fg, "}")].join("<br>");
             }
-            font.family: Theme.fontMono
             font.pixelSize: 9
             lineHeight: 1.1
             clip: true
-            renderType: Text.NativeRendering
         }
     }
 
@@ -121,13 +115,11 @@ Item {
         color: Theme.accent
         visible: root.item.current ?? false
 
-        Text {
+        Icon {
             anchors.centerIn: parent
             text: "󰄬"
             color: Theme.bg
-            font.family: Metrics.iconFont
             font.pixelSize: 13
-            renderType: Text.NativeRendering
         }
     }
 

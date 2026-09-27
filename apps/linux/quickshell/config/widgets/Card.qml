@@ -11,7 +11,7 @@ Rectangle {
     implicitHeight: holder.implicitHeight + padding * 2 + (title ? heading.implicitHeight + 8 : 0)
     color: Theme.surface
 
-    Text {
+    Label {
         id: heading
 
         x: root.padding
@@ -19,10 +19,8 @@ Rectangle {
         visible: root.title !== ""
         text: root.title.toUpperCase()
         color: Theme.muted
-        font.family: Theme.fontMono
         font.pixelSize: 9
         font.letterSpacing: 1.2
-        renderType: Text.NativeRendering
     }
 
     Column {

@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import qs.style
+import qs.widgets
 
 Grid {
     id: root
@@ -35,13 +36,11 @@ Grid {
             width: root.cellWidth
             height: 18
 
-            Text {
+            Label {
                 anchors.centerIn: parent
                 text: parent.modelData
                 color: parent.index === 0 || parent.index === 6 ? Theme.alpha(Theme.accent, 0.8) : Theme.alpha(Theme.muted, 0.7)
-                font.family: Theme.fontMono
                 font.pixelSize: 9
-                renderType: Text.NativeRendering
             }
         }
     }
@@ -69,15 +68,12 @@ Grid {
                 visible: cell.modelData > 0
             }
 
-            Text {
+            Label {
                 anchors.centerIn: parent
                 visible: cell.modelData > 0
                 text: cell.modelData
                 color: cell.today ? Theme.bg : cell.weekend ? Theme.muted : Theme.fg
-                font.family: Theme.fontMono
-                font.pixelSize: 11
                 font.bold: cell.today
-                renderType: Text.NativeRendering
             }
         }
     }

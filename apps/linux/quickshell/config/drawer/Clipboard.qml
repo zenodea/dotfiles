@@ -29,15 +29,12 @@ Column {
 
     Component.onCompleted: ClipboardHistory.refresh()
 
-    Text {
+    Label {
         visible: !ClipboardHistory.available
         width: parent.width
         wrapMode: Text.WordWrap
         text: "wl-clipboard is not installed.\n\nsudo pacman -S wl-clipboard"
         color: Theme.muted
-        font.family: Theme.fontMono
-        font.pixelSize: 11
-        renderType: Text.NativeRendering
     }
 
     Rectangle {
@@ -70,13 +67,10 @@ Column {
         }
     }
 
-    Text {
+    Label {
         visible: ClipboardHistory.available && root.shown.length === 0
         text: ClipboardHistory.entries.length === 0 ? "Clipboard history is empty" : "Nothing matches"
         color: Theme.muted
-        font.family: Theme.fontMono
-        font.pixelSize: 11
-        renderType: Text.NativeRendering
     }
 
     Repeater {
@@ -108,14 +102,12 @@ Column {
                 width: entry.image ? 62 : 16
                 height: entry.image ? 40 : 16
 
-                Text {
+                Icon {
                     anchors.centerIn: parent
                     visible: !entry.image
                     text: "󰅍"
                     color: rowHover.hovered ? Theme.accent : Theme.muted
-                    font.family: Metrics.iconFont
                     font.pixelSize: 13
-                    renderType: Text.NativeRendering
                 }
 
                 Image {
@@ -129,20 +121,16 @@ Column {
                 }
             }
 
-            Text {
+            Label {
                 anchors.left: badge.right
                 anchors.leftMargin: 10
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
                 text: entry.image ? `image · ${entry.modelData.preview}` : entry.modelData.preview
-                color: Theme.fg
-                font.family: Theme.fontMono
-                font.pixelSize: 11
                 maximumLineCount: 2
                 wrapMode: Text.WrapAnywhere
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
             }
 
             HoverHandler {

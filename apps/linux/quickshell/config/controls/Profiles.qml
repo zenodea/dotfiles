@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell.Services.UPower
 import qs.style
+import qs.widgets
 
 Row {
     id: profiles
@@ -54,22 +55,18 @@ Row {
                 anchors.centerIn: parent
                 spacing: Metrics.gap
 
-                Text {
+                Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: segment.modelData.icon
                     color: segment.active ? Theme.accent : Theme.muted
-                    font.family: Metrics.iconFont
                     font.pixelSize: 13
-                    renderType: Text.NativeRendering
                 }
 
-                Text {
+                Label {
                     anchors.verticalCenter: parent.verticalCenter
                     text: segment.modelData.label
                     color: segment.active ? Theme.accent : Theme.fg
-                    font.family: Theme.fontMono
                     font.pixelSize: 10
-                    renderType: Text.NativeRendering
                 }
             }
 

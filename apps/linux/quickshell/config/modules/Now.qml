@@ -56,14 +56,12 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 5
 
-            Text {
+            Label {
                 anchors.verticalCenter: parent.verticalCenter
                 text: Qt.formatDateTime(root.now, "HH:mm")
                 color: area.containsMouse ? Theme.accent : Theme.fgBright
-                font.family: Theme.fontMono
                 font.pixelSize: 15
                 font.bold: true
-                renderType: Text.NativeRendering
 
                 Behavior on color {
                     ColorAnimation {
@@ -127,24 +125,20 @@ Rectangle {
                         asynchronous: true
                     }
 
-                    Text {
+                    Icon {
                         anchors.centerIn: parent
                         visible: root.art === ""
                         text: root.playing ? "󰏤" : "󰐊"
                         color: Theme.muted
-                        font.family: Metrics.iconFont
                         font.pixelSize: Metrics.iconSize
-                        renderType: Text.NativeRendering
                     }
                 }
 
-                Text {
+                Label {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.truncate(root.player?.trackTitle ?? "", 28)
                     color: area.containsMouse ? Theme.accent : root.playing ? Theme.fg : Theme.muted
-                    font.family: Theme.fontMono
                     font.pixelSize: Metrics.fontSize
-                    renderType: Text.NativeRendering
 
                     Behavior on color {
                         ColorAnimation {
@@ -257,13 +251,11 @@ Rectangle {
                                 asynchronous: true
                             }
 
-                            Text {
+                            Label {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: Media.label(source.modelData)
                                 color: source.current ? Theme.accent : Theme.fg
-                                font.family: Theme.fontMono
                                 font.pixelSize: 12
-                                renderType: Text.NativeRendering
                             }
                         }
 

@@ -16,16 +16,14 @@ Item {
 
     implicitHeight: 20
 
-    Text {
+    Icon {
         id: glyph
 
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         text: root.icon
         color: root.iconColour
-        font.family: Metrics.iconFont
         font.pixelSize: 16
-        renderType: Text.NativeRendering
 
         MouseArea {
             anchors.fill: parent
@@ -34,7 +32,7 @@ Item {
         }
     }
 
-    Text {
+    Label {
         id: reading
 
         anchors.right: parent.right
@@ -43,9 +41,7 @@ Item {
         width: 34
         text: root.valueText
         color: Theme.muted
-        font.family: Theme.fontMono
         font.pixelSize: 10
-        renderType: Text.NativeRendering
     }
 
     Slider {

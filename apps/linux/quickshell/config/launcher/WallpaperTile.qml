@@ -1,5 +1,6 @@
 import QtQuick
 import qs.style
+import qs.widgets
 
 Item {
     id: root
@@ -38,17 +39,14 @@ Item {
         color: Theme.alpha(Theme.bg, 0.8)
         visible: root.selected || root.hovered
 
-        Text {
+        Label {
             anchors.fill: parent
             anchors.leftMargin: 8
             anchors.rightMargin: 8
             verticalAlignment: Text.AlignVCenter
             text: root.item.label ?? ""
             color: root.selected ? Theme.accent : Theme.fg
-            font.family: Theme.fontMono
-            font.pixelSize: 11
             elide: Text.ElideRight
-            renderType: Text.NativeRendering
         }
     }
 
@@ -61,13 +59,11 @@ Item {
         color: Theme.accent
         visible: root.item.current ?? false
 
-        Text {
+        Icon {
             anchors.centerIn: parent
             text: "󰄬"
             color: Theme.bg
-            font.family: Metrics.iconFont
             font.pixelSize: 13
-            renderType: Text.NativeRendering
         }
     }
 

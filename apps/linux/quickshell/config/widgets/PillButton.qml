@@ -29,26 +29,20 @@ Rectangle {
         anchors.centerIn: parent
         spacing: Metrics.gap
 
-        Text {
+        Icon {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.icon !== ""
             text: root.icon
             color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.active ? Theme.accent : Theme.fg
-            font.family: Metrics.iconFont
-            font.pixelSize: 14
-            renderType: Text.NativeRendering
         }
 
-        Text {
+        Label {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.label !== ""
             width: root.maxTextWidth > 0 ? Math.min(implicitWidth, root.maxTextWidth) : implicitWidth
             elide: Text.ElideRight
             text: root.label
             color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.active ? Theme.accent : Theme.fg
-            font.family: Theme.fontMono
-            font.pixelSize: 11
-            renderType: Text.NativeRendering
         }
     }
 

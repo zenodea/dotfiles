@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import qs.style
+import qs.widgets
 
 PopupWindow {
     id: root
@@ -71,15 +72,12 @@ PopupWindow {
                     visible: height > 0
                     color: backArea.containsMouse ? Theme.alpha(Theme.fg, 0.08) : "transparent"
 
-                    Text {
+                    Label {
                         anchors.left: parent.left
                         anchors.leftMargin: Metrics.popoutPadding
                         anchors.verticalCenter: parent.verticalCenter
                         text: "󰅁  back"
                         color: Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        renderType: Text.NativeRendering
                     }
 
                     MouseArea {
@@ -118,27 +116,22 @@ PopupWindow {
                             visible: !entry.modelData.isSeparator
                             color: itemArea.containsMouse && entry.modelData.enabled ? Theme.alpha(Theme.fg, 0.08) : "transparent"
 
-                            Text {
+                            Label {
                                 anchors.left: parent.left
                                 anchors.leftMargin: Metrics.popoutPadding
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: (entry.modelData.checkState === Qt.Checked ? "󰄲  " : "") + entry.modelData.text
                                 color: !entry.modelData.enabled ? Theme.alpha(Theme.muted, 0.5) : itemArea.containsMouse ? Theme.accent : Theme.fg
-                                font.family: Theme.fontMono
-                                font.pixelSize: 11
-                                renderType: Text.NativeRendering
                             }
 
-                            Text {
+                            Icon {
                                 anchors.right: parent.right
                                 anchors.rightMargin: Metrics.popoutPadding
                                 anchors.verticalCenter: parent.verticalCenter
                                 visible: entry.modelData.hasChildren
                                 text: "󰅂"
                                 color: Theme.muted
-                                font.family: Metrics.iconFont
                                 font.pixelSize: 11
-                                renderType: Text.NativeRendering
                             }
 
                             MouseArea {

@@ -86,18 +86,16 @@ Item {
         }
     }
 
-    Text {
+    Label {
         visible: !Agent.available
         width: parent.width
         wrapMode: Text.WordWrap
         text: "Claude Code is not installed.\n\ncurl -fsSL https://claude.ai/install.sh | bash"
         color: Theme.muted
-        font.family: Theme.fontMono
         font.pixelSize: 13
-        renderType: Text.NativeRendering
     }
 
-    Text {
+    Label {
         visible: Agent.available && Agent.messages.count === 0 && !root.picking
         anchors.centerIn: list
         width: list.width
@@ -105,9 +103,7 @@ Item {
         wrapMode: Text.WordWrap
         text: "Ask Claude to do something on this machine."
         color: Theme.alpha(Theme.muted, 0.7)
-        font.family: Theme.fontMono
         font.pixelSize: 13
-        renderType: Text.NativeRendering
     }
 
     ListView {
@@ -151,22 +147,18 @@ Item {
                 Row {
                     spacing: Metrics.gap
 
-                    Text {
+                    Label {
                         text: "›"
                         color: Theme.accent
-                        font.family: Theme.fontMono
                         font.pixelSize: 14
-                        renderType: Text.NativeRendering
                     }
 
-                    Text {
+                    Label {
                         width: entry.width - 14
                         wrapMode: Text.Wrap
                         text: entry.text
                         color: Theme.fgBright
-                        font.family: Theme.fontMono
                         font.pixelSize: 14
-                        renderType: Text.NativeRendering
                     }
                 }
             }
@@ -202,35 +194,28 @@ Item {
                         anchors.rightMargin: 8
                         spacing: Metrics.gap
 
-                        Text {
+                        Icon {
                             anchors.verticalCenter: parent.verticalCenter
                             text: entry.phase === "running" ? "󰔟" : entry.phase === "error" ? "󰅖" : "󰄬"
                             color: entry.phase === "running" ? Theme.yellow : entry.phase === "error" ? Theme.red : Theme.green
-                            font.family: Metrics.iconFont
-                            font.pixelSize: 14
-                            renderType: Text.NativeRendering
                         }
 
-                        Text {
+                        Label {
                             id: toolName
 
                             anchors.verticalCenter: parent.verticalCenter
                             text: entry.text
                             color: Theme.accent
-                            font.family: Theme.fontMono
                             font.pixelSize: 13
-                            renderType: Text.NativeRendering
                         }
 
-                        Text {
+                        Label {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width - toolName.width - 40
                             elide: Text.ElideRight
                             text: entry.detail
                             color: Theme.muted
-                            font.family: Theme.fontMono
                             font.pixelSize: 13
-                            renderType: Text.NativeRendering
                         }
                     }
                 }
@@ -270,24 +255,19 @@ Item {
                         width: parent.width - 16
                         spacing: Metrics.gap
 
-                        Text {
+                        Label {
                             text: entry.phase === "pending" ? `Allow ${entry.text}?` : `${entry.text} ${entry.phase}`
                             color: entry.phase === "denied" ? Theme.red : entry.phase === "allowed" ? Theme.green : Theme.yellow
-                            font.family: Theme.fontMono
                             font.pixelSize: 13
-                            renderType: Text.NativeRendering
                         }
 
-                        Text {
+                        Label {
                             width: parent.width
                             wrapMode: Text.WrapAnywhere
                             maximumLineCount: entry.phase === "pending" ? 8 : 2
                             elide: Text.ElideRight
                             text: entry.detail
-                            color: Theme.fg
-                            font.family: Theme.fontMono
                             font.pixelSize: 13
-                            renderType: Text.NativeRendering
                         }
 
                         Row {
@@ -444,15 +424,13 @@ Item {
                         width: parent.width - 16
                         spacing: 14
 
-                        Text {
+                        Label {
                             visible: !card.pending
                             width: parent.width
                             wrapMode: Text.Wrap
                             text: entry.phase === "answered" ? `󰋗 ${entry.text}` : "󰋗 skipped"
                             color: entry.phase === "answered" ? Theme.accent : Theme.muted
-                            font.family: Theme.fontMono
                             font.pixelSize: 13
-                            renderType: Text.NativeRendering
                         }
 
                         Repeater {
@@ -467,23 +445,19 @@ Item {
                                 width: body.width
                                 spacing: 6
 
-                                Text {
+                                Label {
                                     text: (question.modelData.header ?? "").toUpperCase() + (question.modelData.multiSelect ? "  · pick any" : "")
                                     color: card.current === question.index ? Theme.accent : Theme.muted
-                                    font.family: Theme.fontMono
                                     font.pixelSize: 10
                                     font.letterSpacing: 1
-                                    renderType: Text.NativeRendering
                                 }
 
-                                Text {
+                                Label {
                                     width: parent.width
                                     wrapMode: Text.Wrap
                                     text: question.modelData.question
                                     color: Theme.fgBright
-                                    font.family: Theme.fontMono
                                     font.pixelSize: 14
-                                    renderType: Text.NativeRendering
                                 }
 
                                 Repeater {
@@ -515,16 +489,14 @@ Item {
                                             }
                                         }
 
-                                        Text {
+                                        Label {
                                             id: number
 
                                             x: 6
                                             y: 5
                                             text: option.index + 1
                                             color: option.picked ? Theme.accent : Theme.muted
-                                            font.family: Theme.fontMono
                                             font.pixelSize: 13
-                                            renderType: Text.NativeRendering
                                         }
 
                                         Column {
@@ -534,25 +506,21 @@ Item {
                                             y: 5
                                             width: parent.width - 28
 
-                                            Text {
+                                            Label {
                                                 width: parent.width
                                                 wrapMode: Text.Wrap
                                                 text: option.modelData.label
                                                 color: option.picked ? Theme.accent : Theme.fg
-                                                font.family: Theme.fontMono
                                                 font.pixelSize: 13
-                                                renderType: Text.NativeRendering
                                             }
 
-                                            Text {
+                                            Label {
                                                 visible: text !== ""
                                                 width: parent.width
                                                 wrapMode: Text.Wrap
                                                 text: option.modelData.description ?? ""
                                                 color: Theme.muted
-                                                font.family: Theme.fontMono
                                                 font.pixelSize: 12
-                                                renderType: Text.NativeRendering
                                             }
                                         }
 
@@ -666,13 +634,11 @@ Item {
             Component {
                 id: errorEntry
 
-                Text {
+                Label {
                     wrapMode: Text.Wrap
                     text: entry.text
                     color: Theme.red
-                    font.family: Theme.fontMono
                     font.pixelSize: 13
-                    renderType: Text.NativeRendering
                 }
             }
         }
@@ -690,14 +656,12 @@ Item {
         model: root.picking ? Agent.sessions : []
         highlightMoveDuration: 0
 
-        header: Text {
+        header: Label {
             height: 28
             text: "SESSIONS  · ^J ^K ⏎ · esc"
             color: Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 10
             font.letterSpacing: 1
-            renderType: Text.NativeRendering
         }
 
         delegate: Rectangle {
@@ -719,7 +683,7 @@ Item {
                 color: Theme.accent
             }
 
-            Text {
+            Label {
                 id: when
 
                 anchors.right: parent.right
@@ -727,12 +691,10 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: session.modelData.id === Agent.sessionId ? "open" : root.ago(session.modelData.updated)
                 color: Theme.muted
-                font.family: Theme.fontMono
                 font.pixelSize: 12
-                renderType: Text.NativeRendering
             }
 
-            Text {
+            Label {
                 anchors.left: parent.left
                 anchors.leftMargin: 10
                 anchors.right: when.left
@@ -741,9 +703,7 @@ Item {
                 elide: Text.ElideRight
                 text: session.modelData.title
                 color: session.current ? Theme.accent : Theme.fg
-                font.family: Theme.fontMono
                 font.pixelSize: 13
-                renderType: Text.NativeRendering
             }
 
             MouseArea {
@@ -768,15 +728,13 @@ Item {
         height: visible ? implicitHeight : 0
         spacing: 2
 
-        Text {
+        Label {
             height: 22
             verticalAlignment: Text.AlignVCenter
             text: `QUEUED · ${Agent.queue.count}${Agent.queue.count > 3 ? " · scroll" : ""} · ↑ edit`
             color: Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 10
             font.letterSpacing: 1
-            renderType: Text.NativeRendering
         }
 
         ListView {
@@ -820,7 +778,7 @@ Item {
                     hoverEnabled: true
                 }
 
-                Text {
+                Label {
                     id: order
 
                     anchors.left: parent.left
@@ -828,12 +786,10 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: queued.index + 1
                     color: Theme.muted
-                    font.family: Theme.fontMono
                     font.pixelSize: 12
-                    renderType: Text.NativeRendering
                 }
 
-                Text {
+                Label {
                     anchors.left: order.right
                     anchors.leftMargin: 8
                     anchors.right: remove.left
@@ -843,9 +799,7 @@ Item {
                     maximumLineCount: 1
                     text: queued.text.replace(/\s+/g, " ")
                     color: Theme.alpha(Theme.fg, 0.75)
-                    font.family: Theme.fontMono
                     font.pixelSize: 13
-                    renderType: Text.NativeRendering
                 }
 
                 IconButton {
@@ -887,15 +841,13 @@ Item {
         width: parent.width
         height: 26
 
-        Text {
+        Label {
             anchors.verticalCenter: parent.verticalCenter
             text: root.flash !== "" ? root.flash : Agent.pendingApprovals > 0 ? "waiting · ^J ^K ⏎" : !Agent.running ? "idle" : Agent.thinking ? "thinking…" : Agent.busy ? "working…" : "ready"
             width: parent.width - statusButtons.width - 8
             elide: Text.ElideRight
             color: root.flash !== "" ? Theme.accent : Agent.pendingApprovals > 0 || Agent.busy ? Theme.yellow : Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 12
-            renderType: Text.NativeRendering
         }
 
         Row {
@@ -905,15 +857,13 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 2
 
-            Text {
+            Label {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: Agent.usage5h >= 0
                 rightPadding: 6
                 text: `5h ${Math.round(Agent.usage5h * 100)}%` + (Agent.usage7d >= 0 ? ` · 7d ${Math.round(Agent.usage7d * 100)}%` : "")
                 color: Agent.usage5h >= 0.9 ? Theme.red : Agent.usage5h >= 0.7 ? Theme.yellow : Theme.muted
-                font.family: Theme.fontMono
                 font.pixelSize: 12
-                renderType: Text.NativeRendering
             }
 
             Rectangle {
@@ -922,15 +872,13 @@ Item {
                 height: 18
                 color: modelArea.containsMouse ? Theme.alpha(Theme.fg, 0.1) : Theme.alpha(Theme.fg, 0.05)
 
-                Text {
+                Label {
                     id: modelLabel
 
                     anchors.centerIn: parent
                     text: Agent.model + (Agent.running && Agent.runningModel !== Agent.model ? "*" : "")
                     color: Agent.model === "default" ? Theme.muted : Theme.accent
-                    font.family: Theme.fontMono
                     font.pixelSize: 12
-                    renderType: Text.NativeRendering
                 }
 
                 MouseArea {

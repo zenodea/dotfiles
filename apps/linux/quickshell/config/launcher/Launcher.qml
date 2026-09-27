@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Services.UPower
 import qs.services
 import qs.style
+import qs.widgets
 
 Item {
     id: root
@@ -323,13 +324,10 @@ Item {
                         height: chips.height
                         color: chipArea.containsMouse && !active ? Theme.alpha(Theme.fg, 0.07) : "transparent"
 
-                        Text {
+                        Label {
                             anchors.centerIn: parent
                             text: chip.modelData.label
                             color: chip.active ? Theme.accent : Theme.muted
-                            font.family: Theme.fontMono
-                            font.pixelSize: 11
-                            renderType: Text.NativeRendering
                         }
 
                         Rectangle {
@@ -524,7 +522,7 @@ Item {
             }
         }
 
-        Text {
+        Label {
             visible: root.session
             width: parent.width
             height: Metrics.launcherFooter
@@ -541,9 +539,7 @@ Item {
                 return parts.join("  ·  ");
             }
             color: Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 10
-            renderType: Text.NativeRendering
         }
     }
 
@@ -560,7 +556,7 @@ Item {
         Repeater {
             model: ["MONO", "TEXT"]
 
-            Text {
+            Label {
                 required property int index
                 required property string modelData
 
@@ -570,11 +566,9 @@ Item {
                 rotation: -90
                 text: modelData
                 color: Theme.accent
-                font.family: Theme.fontMono
                 font.pixelSize: 10
                 font.bold: true
                 font.letterSpacing: 3
-                renderType: Text.NativeRendering
             }
         }
 

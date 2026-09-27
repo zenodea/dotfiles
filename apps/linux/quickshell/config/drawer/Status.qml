@@ -6,6 +6,7 @@ import Quickshell.Networking
 import Quickshell.Services.UPower
 import qs.services
 import qs.style
+import qs.widgets
 
 Grid {
     id: root
@@ -46,7 +47,7 @@ Grid {
         height: 44
         color: Theme.alpha(Theme.fg, 0.05)
 
-        Text {
+        Icon {
             id: glyph
 
             x: 10
@@ -54,9 +55,7 @@ Grid {
             width: 20
             text: tile.icon
             color: tile.iconColour
-            font.family: Metrics.iconFont
             font.pixelSize: 16
-            renderType: Text.NativeRendering
         }
 
         Column {
@@ -67,23 +66,17 @@ Grid {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
 
-            Text {
+            Label {
                 text: tile.caption.toUpperCase()
                 color: Theme.muted
-                font.family: Theme.fontMono
                 font.pixelSize: 9
                 font.letterSpacing: 1.2
-                renderType: Text.NativeRendering
             }
 
-            Text {
+            Label {
                 width: parent.width
                 elide: Text.ElideRight
                 text: tile.value
-                color: Theme.fg
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                renderType: Text.NativeRendering
             }
         }
     }
