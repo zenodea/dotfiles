@@ -38,7 +38,7 @@ QtObject {
             icon: "󰌾",
             sub: "Keep everything running",
             tone: "calm",
-            command: ["hyprlock"]
+            command: ["qs", "ipc", "call", "shell", "lock"]
         },
         {
             name: "Suspend",

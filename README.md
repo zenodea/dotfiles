@@ -14,6 +14,10 @@ that recolors everything at once.
     <td width="50%"><img src="screenshots/dashboard.png" alt="Dashboard"><br><sub>Drawer: dashboard</sub></td>
     <td width="50%"><img src="screenshots/control-center.png" alt="Control centre"><br><sub>Control centre</sub></td>
   </tr>
+  <tr>
+    <td width="50%"><img src="screenshots/agent.png" alt="Agent"><br><sub>Control centre, agent tab</sub></td>
+    <td width="50%"><img src="screenshots/lock.png" alt="Lock screen"><br><sub>Lock screen</sub></td>
+  </tr>
 </table>
 
 ## Install
@@ -72,6 +76,11 @@ installed and themed, and the `rofi-dotfiles` and `rofi-power` scripts in
 - **Control centre** (right): volume, brightness, Wi-Fi, Bluetooth, Mullvad,
   mic, power profile, charge limit, keep awake, night mode, screenshots and
   screen recording.
+- **Agent** (right, second tab): a Claude chat for the system, with saved
+  sessions and tool approvals in the panel.
+- **Lock screen**: the frame's sides close in over the desktop, then the clock,
+  weather, battery and password field fade in. hypridle and the session page
+  lock through it too.
 
 | Key | |
 |---|---|
@@ -82,6 +91,8 @@ installed and themed, and the `rofi-dotfiles` and `rofi-power` scripts in
 | `Super Tab` | windows |
 | `Super Shift V` | clipboard |
 | `Super C` | control centre |
+| `Super A` | agent |
+| `Super O` / `Super Shift L` | lock |
 
 The shell reads its colors from a JSON file the theme switch writes, so it
 recolors without restarting.
