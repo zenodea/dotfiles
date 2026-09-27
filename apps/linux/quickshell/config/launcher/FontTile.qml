@@ -1,5 +1,6 @@
 import QtQuick
 import qs.style
+import qs.widgets
 
 Rectangle {
     id: root
@@ -57,7 +58,7 @@ Rectangle {
         }
     }
 
-    Text {
+    Label {
         anchors.left: parent.left
         anchors.right: missingTag.visible ? missingTag.left : parent.right
         anchors.bottom: parent.bottom
@@ -65,10 +66,8 @@ Rectangle {
         anchors.bottomMargin: 10
         text: root.requested
         color: Theme.muted
-        font.family: Theme.fontMono
         font.pixelSize: 10
         elide: Text.ElideRight
-        renderType: Text.NativeRendering
     }
 
     Rectangle {
@@ -82,15 +81,13 @@ Rectangle {
         color: Theme.alpha(Theme.yellow, 0.15)
         visible: !root.installed
 
-        Text {
+        Label {
             id: missing
 
             anchors.centerIn: parent
             text: "not installed"
             color: Theme.yellow
-            font.family: Theme.fontMono
             font.pixelSize: 9
-            renderType: Text.NativeRendering
         }
     }
 
@@ -103,13 +100,11 @@ Rectangle {
         color: Theme.accent
         visible: root.item.current ?? false
 
-        Text {
+        Icon {
             anchors.centerIn: parent
             text: "󰄬"
             color: Theme.bg
-            font.family: Metrics.iconFont
             font.pixelSize: 13
-            renderType: Text.NativeRendering
         }
     }
 

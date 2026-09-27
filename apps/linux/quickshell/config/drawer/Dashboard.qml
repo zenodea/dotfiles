@@ -34,21 +34,16 @@ Column {
 
             spacing: -4
 
-            Text {
+            Label {
                 text: Qt.formatDateTime(root.now, "HH:mm")
                 color: Theme.fgBright
-                font.family: Theme.fontMono
                 font.pixelSize: 40
                 font.bold: true
-                renderType: Text.NativeRendering
             }
 
-            Text {
+            Label {
                 text: Qt.formatDateTime(root.now, "dddd, d MMMM")
                 color: Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                renderType: Text.NativeRendering
             }
         }
 
@@ -62,23 +57,19 @@ Column {
                 anchors.right: parent.right
                 spacing: 8
 
-                Text {
+                Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Weather.icon
                     color: Theme.accent
-                    font.family: Metrics.iconFont
                     font.pixelSize: 24
-                    renderType: Text.NativeRendering
                 }
 
-                Text {
+                Label {
                     anchors.verticalCenter: parent.verticalCenter
                     text: `${Math.round(Weather.temp)}°`
                     color: Theme.fgBright
-                    font.family: Theme.fontMono
                     font.pixelSize: 24
                     font.bold: true
-                    renderType: Text.NativeRendering
                 }
             }
 

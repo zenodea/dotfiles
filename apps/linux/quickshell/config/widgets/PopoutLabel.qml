@@ -1,10 +1,7 @@
 import QtQuick
 import qs.style
 
-Text {
+Label {
     visible: text !== ""
     color: Theme.muted
-    font.family: Theme.fontMono
-    font.pixelSize: 11
-    renderType: Text.NativeRendering
 }

@@ -20,7 +20,7 @@ Rectangle {
         }
     }
 
-    Text {
+    Icon {
         id: glyph
 
         anchors.left: parent.left
@@ -29,12 +29,9 @@ Rectangle {
         width: 18
         text: root.icon
         color: root.active ? Theme.accent : Theme.muted
-        font.family: Metrics.iconFont
-        font.pixelSize: 14
-        renderType: Text.NativeRendering
     }
 
-    Text {
+    Label {
         id: note
 
         anchors.right: parent.right
@@ -42,12 +39,10 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         text: root.detail
         color: Theme.muted
-        font.family: Theme.fontMono
         font.pixelSize: 10
-        renderType: Text.NativeRendering
     }
 
-    Text {
+    Label {
         anchors.left: glyph.right
         anchors.leftMargin: 6
         anchors.right: note.left
@@ -55,10 +50,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         text: root.label
         color: root.active ? Theme.accent : Theme.fg
-        font.family: Theme.fontMono
-        font.pixelSize: 11
         elide: Text.ElideRight
-        renderType: Text.NativeRendering
     }
 
     MouseArea {

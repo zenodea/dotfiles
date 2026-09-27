@@ -27,13 +27,10 @@ Row {
             height: tabs.height
             color: tabArea.containsMouse && !active ? Theme.alpha(Theme.fg, 0.07) : "transparent"
 
-            Text {
+            Label {
                 anchors.centerIn: parent
                 text: tab.modelData.label
                 color: tab.active ? Theme.accent : Theme.muted
-                font.family: Theme.fontMono
-                font.pixelSize: 11
-                renderType: Text.NativeRendering
 
                 Behavior on color {
                     ColorAnimation {

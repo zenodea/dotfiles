@@ -78,16 +78,14 @@ Item {
             }
         }
 
-        Text {
+        Icon {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.icon !== ""
             width: Metrics.iconSize + 4
             horizontalAlignment: Text.AlignHCenter
             text: root.icon
             color: root.lit ? Theme.accent : root.iconColour
-            font.family: Metrics.iconFont
             font.pixelSize: Metrics.iconSize
-            renderType: Text.NativeRendering
 
             Behavior on color {
                 ColorAnimation {
@@ -96,16 +94,14 @@ Item {
             }
         }
 
-        Text {
+        Label {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.label !== ""
             width: root.labelWidth > 0 ? root.labelWidth : implicitWidth
             horizontalAlignment: root.labelWidth > 0 ? Text.AlignRight : Text.AlignLeft
             text: root.label
             color: root.lit ? Theme.accent : root.labelColour
-            font.family: Theme.fontMono
             font.pixelSize: Metrics.fontSize
-            renderType: Text.NativeRendering
 
             Behavior on color {
                 ColorAnimation {

@@ -1,6 +1,7 @@
 import QtQuick
 import qs.services
 import qs.style
+import qs.widgets
 
 Item {
     id: root
@@ -28,26 +29,22 @@ Item {
             anchors.centerIn: parent
             spacing: 12
 
-            Text {
+            Icon {
                 anchors.verticalCenter: parent.verticalCenter
                 text: Osd.icon
                 color: Osd.muted ? Theme.muted : Theme.accent
-                font.family: Metrics.iconFont
                 font.pixelSize: 18
-                renderType: Text.NativeRendering
             }
 
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 5
 
-                Text {
+                Label {
                     text: Osd.muted ? "muted" : `${Math.round(Osd.level * 100)}%`
                     color: Theme.fgBright
-                    font.family: Theme.fontMono
                     font.pixelSize: 14
                     font.bold: true
-                    renderType: Text.NativeRendering
                 }
 
                 Rectangle {

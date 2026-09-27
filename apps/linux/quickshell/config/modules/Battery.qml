@@ -94,13 +94,11 @@ BarButton {
                 height: 8
             }
 
-            Text {
+            Label {
                 text: Charge.capped ? `CHARGE LIMIT · ${Charge.limit}%` : "CHARGE LIMIT"
                 color: Theme.muted
-                font.family: Theme.fontMono
                 font.pixelSize: 10
                 font.letterSpacing: 1
-                renderType: Text.NativeRendering
             }
 
             Item {

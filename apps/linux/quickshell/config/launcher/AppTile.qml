@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.style
+import qs.widgets
 
 Rectangle {
     id: root
@@ -45,28 +46,23 @@ Rectangle {
             asynchronous: true
         }
 
-        Text {
+        Label {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             textFormat: Text.StyledText
             text: root.marked(root.item.name ?? "")
             color: root.selected ? Theme.fgBright : Theme.fg
-            font.family: Theme.fontMono
-            font.pixelSize: 11
             elide: Text.ElideRight
-            renderType: Text.NativeRendering
         }
 
-        Text {
+        Label {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
             visible: root.selected && text !== ""
             text: root.item.sub ?? ""
             color: Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 9
             elide: Text.ElideRight
-            renderType: Text.NativeRendering
         }
     }
 

@@ -1,5 +1,6 @@
 import QtQuick
 import qs.style
+import qs.widgets
 
 Rectangle {
     id: root
@@ -28,13 +29,11 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 7
 
-        Text {
+        Icon {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.item.icon ?? ""
             color: root.selected ? Theme.accent : root.tone(root.item.tone ?? "")
-            font.family: Metrics.iconFont
             font.pixelSize: 34
-            renderType: Text.NativeRendering
 
             Behavior on color {
                 ColorAnimation {
@@ -43,23 +42,19 @@ Rectangle {
             }
         }
 
-        Text {
+        Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.item.name
             color: root.selected ? Theme.accent : Theme.fgBright
-            font.family: Theme.fontMono
             font.pixelSize: 12
             font.bold: true
-            renderType: Text.NativeRendering
         }
 
-        Text {
+        Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.item.sub ?? ""
             color: Theme.muted
-            font.family: Theme.fontMono
             font.pixelSize: 10
-            renderType: Text.NativeRendering
         }
     }
 }

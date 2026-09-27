@@ -33,16 +33,14 @@ Item {
         }
     }
 
-    Text {
+    Icon {
         id: glyph
 
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         text: root.icon
         color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.checked ? Theme.accent : Theme.muted
-        font.family: Metrics.iconFont
         font.pixelSize: 15
-        renderType: Text.NativeRendering
 
         Behavior on color {
             ColorAnimation {
@@ -51,7 +49,7 @@ Item {
         }
     }
 
-    Text {
+    Label {
         anchors.left: glyph.right
         anchors.leftMargin: 10
         anchors.right: track.left
@@ -59,10 +57,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         text: root.label
         color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : root.checked ? Theme.fgBright : Theme.fg
-        font.family: Theme.fontMono
-        font.pixelSize: 11
         elide: Text.ElideRight
-        renderType: Text.NativeRendering
 
         Behavior on color {
             ColorAnimation {

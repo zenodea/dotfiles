@@ -21,13 +21,11 @@ Rectangle {
         }
     }
 
-    Text {
+    Icon {
         anchors.centerIn: parent
         text: root.icon
         color: !root.enabled ? Theme.alpha(Theme.muted, 0.4) : area.containsMouse ? Theme.accent : Theme.fg
-        font.family: Metrics.iconFont
         font.pixelSize: root.size
-        renderType: Text.NativeRendering
 
         Behavior on color {
             ColorAnimation {

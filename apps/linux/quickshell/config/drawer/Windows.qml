@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Hyprland
 import qs.services
 import qs.style
+import qs.widgets
 
 Column {
     id: root
@@ -25,13 +26,10 @@ Column {
 
     spacing: 12
 
-    Text {
+    Label {
         visible: root.groups.length === 0
         text: "No open windows"
         color: Theme.muted
-        font.family: Theme.fontMono
-        font.pixelSize: 11
-        renderType: Text.NativeRendering
     }
 
     Repeater {
@@ -51,21 +49,17 @@ Column {
                 width: parent.width
                 spacing: 6
 
-                Text {
+                Label {
                     text: `WORKSPACE ${group.modelData.id}`
                     color: group.modelData.focused ? Theme.accent : Theme.muted
-                    font.family: Theme.fontMono
                     font.pixelSize: 9
                     font.letterSpacing: 1.2
-                    renderType: Text.NativeRendering
                 }
 
-                Text {
+                Label {
                     text: group.windows.length
                     color: Theme.alpha(Theme.muted, 0.6)
-                    font.family: Theme.fontMono
                     font.pixelSize: 9
-                    renderType: Text.NativeRendering
                 }
             }
 
@@ -115,25 +109,20 @@ Column {
                         anchors.rightMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
 
-                        Text {
+                        Label {
                             width: parent.width
                             text: row.modelData?.title || row.appClass
                             color: row.active ? Theme.accent : Theme.fg
-                            font.family: Theme.fontMono
-                            font.pixelSize: 11
                             elide: Text.ElideRight
-                            renderType: Text.NativeRendering
                         }
 
-                        Text {
+                        Label {
                             width: parent.width
                             visible: row.appClass !== ""
                             text: row.appClass
                             color: Theme.muted
-                            font.family: Theme.fontMono
                             font.pixelSize: 9
                             elide: Text.ElideRight
-                            renderType: Text.NativeRendering
                         }
                     }
 

@@ -45,14 +45,11 @@ Column {
         }
     }
 
-    Text {
+    Label {
         visible: opacity > 0
         opacity: root.recent.length === 0 ? 1 : 0
         text: "Nothing waiting"
         color: Theme.muted
-        font.family: Theme.fontMono
-        font.pixelSize: 11
-        renderType: Text.NativeRendering
 
         Behavior on opacity {
             NumberAnimation {
@@ -120,43 +117,35 @@ Column {
                         width: parent.width - 34
                         spacing: 1
 
-                        Text {
+                        Label {
                             width: parent.width
                             text: entry.modelData.appName
                             visible: text !== ""
                             color: entry.modelData.urgency === NotificationUrgency.Critical ? Theme.red : Theme.muted
-                            font.family: Theme.fontMono
                             font.pixelSize: 9
                             elide: Text.ElideRight
-                            renderType: Text.NativeRendering
                         }
 
-                        Text {
+                        Label {
                             width: parent.width
                             text: entry.modelData.summary
                             color: Theme.fgBright
-                            font.family: Theme.fontMono
-                            font.pixelSize: 11
                             font.bold: true
                             elide: Text.ElideRight
-                            renderType: Text.NativeRendering
                         }
 
-                        Text {
+                        Label {
                             width: parent.width
                             visible: text !== ""
                             text: entry.modelData.body
-                            color: Theme.fg
-                            font.family: Theme.fontMono
                             font.pixelSize: 10
                             wrapMode: Text.WordWrap
                             maximumLineCount: 2
                             elide: Text.ElideRight
-                            renderType: Text.NativeRendering
                         }
                     }
 
-                    Text {
+                    Icon {
                         anchors.right: parent.right
                         anchors.rightMargin: 8
                         anchors.top: parent.top
@@ -164,9 +153,7 @@ Column {
                         visible: rowHover.hovered
                         text: "󰅖"
                         color: closeHover.hovered ? Theme.red : Theme.muted
-                        font.family: Metrics.iconFont
                         font.pixelSize: 12
-                        renderType: Text.NativeRendering
 
                         HoverHandler {
                             id: closeHover

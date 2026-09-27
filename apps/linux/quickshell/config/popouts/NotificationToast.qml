@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Services.Notifications
 import qs.services
 import qs.style
+import qs.widgets
 
 Item {
     id: root
@@ -67,14 +68,12 @@ Item {
             width: parent.width - Metrics.popoutPadding * 2
             spacing: 10
 
-            Text {
+            Icon {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.glyph !== ""
                 text: root.glyph
                 color: Theme.accent
-                font.family: Metrics.iconFont
                 font.pixelSize: 24
-                renderType: Text.NativeRendering
             }
 
             Image {
@@ -94,43 +93,35 @@ Item {
                 width: parent.width - (root.glyph !== "" ? 34 : 0) - (root.image !== "" ? 44 : 0)
                 spacing: 2
 
-                Text {
+                Label {
                     width: parent.width
                     text: root.appName
                     visible: text !== ""
                     color: root.notif?.urgency === NotificationUrgency.Critical ? Theme.red : Theme.muted
-                    font.family: Theme.fontMono
                     font.pixelSize: 9
                     elide: Text.ElideRight
-                    renderType: Text.NativeRendering
                 }
 
-                Text {
+                Label {
                     id: summaryText
 
                     width: parent.width
                     text: root.summary
                     color: Theme.fgBright
-                    font.family: Theme.fontMono
                     font.pixelSize: 12
                     font.bold: true
                     elide: Text.ElideRight
-                    renderType: Text.NativeRendering
                 }
 
-                Text {
+                Label {
                     id: bodyText
 
                     width: parent.width
                     visible: text !== ""
                     text: root.body
-                    color: Theme.fg
-                    font.family: Theme.fontMono
-                    font.pixelSize: 11
                     wrapMode: Text.WordWrap
                     maximumLineCount: 3
                     elide: Text.ElideRight
-                    renderType: Text.NativeRendering
                 }
             }
         }

@@ -11,27 +11,21 @@ Item {
     implicitWidth: Math.max(Metrics.popoutMinWidth - Metrics.popoutPadding * 2, labelText.implicitWidth + valueText.implicitWidth + Metrics.sectionSpacing)
     implicitHeight: Math.max(labelText.implicitHeight, valueText.implicitHeight)
 
-    Text {
+    Label {
         id: labelText
 
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         text: root.label
         color: Theme.muted
-        font.family: Theme.fontMono
-        font.pixelSize: 11
-        renderType: Text.NativeRendering
     }
 
-    Text {
+    Label {
         id: valueText
 
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         text: root.value
         color: root.valueColour
-        font.family: Theme.fontMono
-        font.pixelSize: 11
-        renderType: Text.NativeRendering
     }
 }
