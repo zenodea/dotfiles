@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import qs.services
 import qs.style
+import qs.widgets
 
 Item {
     id: root
@@ -39,71 +40,26 @@ Item {
         width: Metrics.drawerWidth
         height: root.height
 
-        Row {
+        TabBar {
             id: tabs
 
             width: parent.width
-            height: 38
-
-            Repeater {
-                model: [
-                    {
-                        id: "dashboard",
-                        label: "Dashboard"
-                    },
-                    {
-                        id: "windows",
-                        label: "Windows"
-                    },
-                    {
-                        id: "clipboard",
-                        label: "Clipboard"
-                    }
-                ]
-
-                Rectangle {
-                    id: tab
-
-                    required property var modelData
-
-                    readonly property bool active: Panels.drawerTab === modelData.id
-
-                    width: tabs.width / 3
-                    height: tabs.height
-                    color: tabArea.containsMouse && !active ? Theme.alpha(Theme.fg, 0.07) : "transparent"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: tab.modelData.label
-                        color: tab.active ? Theme.accent : Theme.muted
-                        font.family: Theme.fontMono
-                        font.pixelSize: 11
-                        renderType: Text.NativeRendering
-
-                        Behavior on color {
-                            ColorAnimation {
-                                duration: Metrics.shortAnim
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        anchors.bottom: parent.bottom
-                        width: parent.width
-                        height: Metrics.borderWidth * 2
-                        color: Theme.accent
-                        visible: tab.active
-                    }
-
-                    MouseArea {
-                        id: tabArea
-
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: Panels.drawerTab = tab.modelData.id
-                    }
+            current: Panels.drawerTab
+            model: [
+                {
+                    id: "dashboard",
+                    label: "Dashboard"
+                },
+                {
+                    id: "windows",
+                    label: "Windows"
+                },
+                {
+                    id: "clipboard",
+                    label: "Clipboard"
                 }
-            }
+            ]
+            onPicked: id => Panels.drawerTab = id
         }
 
         Rectangle {
