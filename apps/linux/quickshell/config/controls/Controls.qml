@@ -82,7 +82,7 @@ Item {
                 y: Metrics.drawerPadding
                 width: parent.width - Metrics.drawerPadding * 2
                 height: parent.height - Metrics.drawerPadding * 2
-                active: root.shown
+                active: root.shown && root.visible
             }
         }
     }
