@@ -1,14 +1,13 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.controls
 import qs.drawer
 import qs.launcher
-import qs.modules
+import qs.bar
 import qs.popouts
 import qs.services
 import qs.style
@@ -31,7 +30,6 @@ PanelWindow {
     readonly property real innerBottom: height - Metrics.strip
     readonly property real innerWidth: innerRight - innerLeft
     readonly property real innerHeight: innerBottom - innerTop
-    readonly property real popoutRadius: Math.min(Metrics.frameRadius, Math.max(0, popout.height) / 2)
 
     onHasFullscreenChanged: {
         if (hasFullscreen) {
@@ -74,7 +72,7 @@ PanelWindow {
     }
 
     mask: Region {
-        item: root.hide > 0.5 ? null : bar
+        item: root.hide > 0.5 ? null : silhouette.bar
 
         regions: [
             Region {
@@ -102,27 +100,6 @@ PanelWindow {
                 item: toast.hitArea
             }
         ]
-    }
-
-    Timer {
-        id: leftDwell
-
-        interval: Metrics.edgeDwell
-        onTriggered: Panels.hoverOpenDrawer()
-    }
-
-    Timer {
-        id: rightDwell
-
-        interval: Metrics.edgeDwell
-        onTriggered: Panels.hoverOpenControls()
-    }
-
-    Timer {
-        id: bottomDwell
-
-        interval: Metrics.edgeDwell
-        onTriggered: Panels.hoverOpenLauncher()
     }
 
     HoverHandler {
@@ -172,218 +149,18 @@ PanelWindow {
             rotation: 270
         }
 
-        Item {
+        Silhouette {
+            id: silhouette
+
             anchors.fill: parent
-
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                blurMax: Metrics.shadowBlur
-                shadowColor: Qt.rgba(0, 0, 0, Metrics.shadowOpacity)
-            }
-
-            Rectangle {
-                id: bar
-
-                width: parent.width
-                height: Metrics.barHeight
-                color: Theme.bg
-
-                Behavior on color {
-                    ColorAnimation {
-                        duration: Metrics.animDuration
-                    }
-                }
-            }
-
-            Rectangle {
-                id: workspaceTab
-
-                x: workspaces.x + workspaces.tabX
-                y: root.innerTop - Metrics.seamOverlap
-                width: workspaces.tabWidth
-                height: Metrics.workspaceTab + Metrics.seamOverlap
-                bottomLeftRadius: Metrics.workspaceTab
-                bottomRightRadius: Metrics.workspaceTab
-                color: Theme.bg
-
-                Behavior on x {
-                    Ease {}
-                }
-            }
-
-            Fillet {
-                size: Metrics.workspaceTab
-                x: workspaceTab.x - Metrics.workspaceTab
-                y: root.innerTop
-                rotation: 90
-            }
-
-            Fillet {
-                size: Metrics.workspaceTab
-                x: workspaceTab.x + workspaceTab.width
-                y: root.innerTop
-            }
-
-            Rectangle {
-                y: root.innerTop
-                width: Metrics.strip
-                height: root.innerHeight
-                color: Theme.bg
-            }
-
-            Rectangle {
-                x: root.innerRight
-                y: root.innerTop
-                width: Metrics.strip
-                height: root.innerHeight
-                color: Theme.bg
-            }
-
-            Rectangle {
-                y: root.innerBottom
-                width: parent.width
-                height: Metrics.strip
-                color: Theme.bg
-            }
-
-            Fillet {
-                x: root.innerLeft
-                y: root.innerTop
-            }
-
-            Fillet {
-                x: root.innerRight - Metrics.frameRadius
-                y: root.innerTop
-                rotation: 90
-            }
-
-            Fillet {
-                x: root.innerRight - Metrics.frameRadius
-                y: root.innerBottom - Metrics.frameRadius
-                rotation: 180
-            }
-
-            Fillet {
-                x: root.innerLeft
-                y: root.innerBottom - Metrics.frameRadius
-                rotation: 270
-            }
-
-            Backing {
-                panel: popout
-                bottomLeftRadius: popout.x > 0 ? root.popoutRadius : 0
-                bottomRightRadius: popout.x + popout.width < parent.width ? root.popoutRadius : 0
-            }
-
-            Backing {
-                panel: drawer
-                seam: 0
-            }
-
-            Backing {
-                panel: controls
-                seam: 0
-            }
-
-            Backing {
-                panel: launcher
-                seam: 0
-            }
-
-            Backing {
-                panel: levels
-                bottomLeftRadius: Metrics.frameRadius
-            }
-
-            Backing {
-                panel: toast
-                bottomRightRadius: toast.radius
-            }
-
-            Fillet {
-                visible: popout.height > 0 && popout.x > 0
-                size: root.popoutRadius
-                x: popout.x - root.popoutRadius
-                y: popout.y
-                rotation: 90
-            }
-
-            Fillet {
-                visible: popout.height > 0 && popout.x + popout.width < parent.width
-                size: root.popoutRadius
-                x: popout.x + popout.width
-                y: popout.y
-            }
-
-            Fillet {
-                visible: drawer.width > 0
-                x: drawer.width
-                y: root.innerTop
-            }
-
-            Fillet {
-                visible: drawer.width > 0
-                x: drawer.width
-                y: root.innerBottom - Metrics.frameRadius
-                rotation: 270
-            }
-
-            Fillet {
-                visible: controls.width > 0
-                x: controls.x - Metrics.frameRadius
-                y: root.innerTop
-                rotation: 90
-            }
-
-            Fillet {
-                visible: controls.width > 0
-                x: controls.x - Metrics.frameRadius
-                y: root.innerBottom - Metrics.frameRadius
-                rotation: 180
-            }
-
-            Fillet {
-                visible: launcher.height > 0
-                x: root.innerLeft
-                y: launcher.y - Metrics.frameRadius
-                rotation: 270
-            }
-
-            Fillet {
-                visible: launcher.height > 0
-                x: root.innerRight - Metrics.frameRadius
-                y: launcher.y - Metrics.frameRadius
-                rotation: 180
-            }
-
-            Fillet {
-                visible: toast.width > 0
-                size: toast.radius
-                x: toast.width
-                y: toast.y
-            }
-
-            Fillet {
-                visible: toast.width > 0
-                size: toast.radius
-                x: root.innerLeft
-                y: toast.y + toast.height
-            }
-
-            Fillet {
-                visible: levels.width > 0
-                x: levels.x - Metrics.frameRadius
-                y: levels.y
-                rotation: 90
-            }
-
-            Fillet {
-                visible: levels.width > 0
-                x: root.innerRight - Metrics.frameRadius
-                y: levels.y + levels.height
-                rotation: 90
-            }
+            frame: root
+            workspaces: workspaces
+            popout: popout
+            drawer: drawer
+            controls: controls
+            launcher: launcher
+            levels: levels
+            toast: toast
         }
 
         Workspaces {
@@ -401,54 +178,10 @@ PanelWindow {
             screen: root.modelData
         }
 
-        Row {
+        StatusRow {
             anchors.right: parent.right
             anchors.rightMargin: Metrics.strip
-            height: Metrics.barHeight
-
-            AgentStatus {
-                screen: root.modelData
-            }
-
-            CapsLock {
-                screen: root.modelData
-            }
-
-            Mic {
-                screen: root.modelData
-            }
-
-            Volume {
-                screen: root.modelData
-            }
-
-            Backlight {
-                screen: root.modelData
-            }
-
-            Performance {
-                screen: root.modelData
-            }
-
-            VpnStatus {
-                screen: root.modelData
-            }
-
-            NetworkStatus {
-                screen: root.modelData
-            }
-
-            BluetoothStatus {
-                screen: root.modelData
-            }
-
-            NetGraph {
-                screen: root.modelData
-            }
-
-            Battery {
-                screen: root.modelData
-            }
+            screen: root.modelData
         }
 
         Popout {
@@ -490,71 +223,36 @@ PanelWindow {
             Keys.onEscapePressed: Panels.close()
         }
 
-        Item {
+        EdgeZone {
             id: leftEdge
 
             y: root.innerTop
             width: Metrics.strip
             height: root.innerHeight
-
-            HoverHandler {
-                onHoveredChanged: {
-                    Panels.drawerEdgePointer = hovered;
-                    if (hovered)
-                        leftDwell.restart();
-                    else
-                        leftDwell.stop();
-                }
-            }
+            onHoveredChanged: Panels.drawerEdgePointer = hovered
+            onDwelled: Panels.hoverOpenDrawer()
         }
 
-        Item {
+        EdgeZone {
             id: rightEdge
 
             x: root.innerRight
             y: root.innerTop
             width: Metrics.strip
             height: root.innerHeight
-
-            HoverHandler {
-                onHoveredChanged: {
-                    Panels.controlsEdgePointer = hovered;
-                    if (hovered)
-                        rightDwell.restart();
-                    else
-                        rightDwell.stop();
-                }
-            }
+            onHoveredChanged: Panels.controlsEdgePointer = hovered
+            onDwelled: Panels.hoverOpenControls()
         }
 
-        Item {
+        EdgeZone {
             id: bottomEdge
 
             x: root.innerLeft
             y: root.innerBottom
             width: root.innerWidth
             height: Metrics.strip
-
-            HoverHandler {
-                onHoveredChanged: {
-                    Panels.launcherEdgePointer = hovered;
-                    if (hovered)
-                        bottomDwell.restart();
-                    else
-                        bottomDwell.stop();
-                }
-            }
+            onHoveredChanged: Panels.launcherEdgePointer = hovered
+            onDwelled: Panels.hoverOpenLauncher()
         }
-    }
-
-    component Backing: Rectangle {
-        required property Item panel
-        property real seam: Metrics.seamOverlap
-
-        x: panel.x
-        y: panel.y - seam
-        width: panel.width
-        height: panel.height + seam
-        color: Theme.bg
     }
 }
