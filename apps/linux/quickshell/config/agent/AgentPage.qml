@@ -56,7 +56,7 @@ Item {
 
     function open(): void {
         Agent.restore();
-        composer.focusInput();
+        Qt.callLater(composer.focusInput);
     }
 
     onActiveChanged: {
