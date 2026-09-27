@@ -406,6 +406,10 @@ PanelWindow {
             anchors.rightMargin: Metrics.strip
             height: Metrics.barHeight
 
+            AgentStatus {
+                screen: root.modelData
+            }
+
             CapsLock {
                 screen: root.modelData
             }
