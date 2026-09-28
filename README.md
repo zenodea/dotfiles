@@ -111,7 +111,7 @@ Switching re-renders every app's config from its templates and reloads the
 apps that are running.
 
 Themed apps: hyprland, hyprlock, quickshell, waybar, fuzzel, rofi, gtk, vifm,
-sketchybar, borders, Alfred, Raycast, ghostty, tmux, nvim, zed, Firefox,
+sketchybar, borders, Alfred, Raycast, ghostty, tmux, herdr, nvim, zed, Firefox,
 Obsidian, and the wallpaper.
 
 Themes (each has a `-light` version): catppuccin-mocha, dracula, everforest,
@@ -219,6 +219,7 @@ dotfiles --sync                      # re-run install.sh
 ## Other apps
 
 - **tmux**: themed config plus git, popup and sessionizer scripts.
+- **herdr**: tmux-style keys (`ctrl+a` prefix), themed tab bar, git and sessionizer scripts.
 - **pi**: `apps/general/pi/` links extensions into `~/.pi/agent/extensions`
   and adds the packages in `packages.txt` to its settings.
 - **Raycast** (macOS): `apps/mac/raycast/extension/` is a Raycast extension for

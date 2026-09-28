@@ -1,5 +1,5 @@
-# common.sh — steps shared by the distro scripts. Arch only calls enable_services;
-# the rest covers what neither Fedora nor Debian packages.
+# common.sh — steps shared by the distro scripts. Arch only calls install_herdr and
+# enable_services; the rest covers what neither Fedora nor Debian packages.
 
 has() { command -v "$1" &> /dev/null; }
 
@@ -68,6 +68,13 @@ install_oh_my_zsh() {
     echo "==> Installing oh-my-zsh..."
     RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+}
+
+# herdr — no distro packages it, so use its own installer (lands in ~/.local/bin).
+install_herdr() {
+    has herdr && return 0
+    echo "==> Installing herdr..."
+    curl -fsSL https://herdr.dev/install.sh | sh
 }
 
 install_zed() {

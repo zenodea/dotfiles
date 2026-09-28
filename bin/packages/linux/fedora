@@ -143,6 +143,7 @@ install_commit_mono
 install_bibata
 install_oh_my_zsh
 install_zed
+install_herdr
 install_flatpaks
 
 enable_services

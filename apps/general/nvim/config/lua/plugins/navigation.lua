@@ -292,13 +292,29 @@ return {
       'TmuxNavigateRight',
       'TmuxNavigatePrevious',
     },
-    keys = {
-      { '<c-h>', '<cmd>TmuxNavigateLeft<cr>' },
-      { '<c-j>', '<cmd>TmuxNavigateDown<cr>' },
-      { '<c-k>', '<cmd>TmuxNavigateUp<cr>' },
-      { '<c-l>', '<cmd>TmuxNavigateRight<cr>' },
-      { '<c-\\>', '<cmd>TmuxNavigatePrevious<cr>' },
-    },
+    keys = (function()
+      -- Under herdr (and not tmux), step off the edge window into the next herdr pane.
+      local function navigate(dir, wincmd)
+        return function()
+          if vim.env.TMUX or not vim.env.HERDR_PANE_ID then
+            vim.cmd('TmuxNavigate' .. dir)
+            return
+          end
+          local win = vim.api.nvim_get_current_win()
+          vim.cmd('wincmd ' .. wincmd)
+          if vim.api.nvim_get_current_win() == win then
+            vim.system { vim.env.HERDR_BIN_PATH or 'herdr', 'pane', 'focus', '--direction', dir:lower(), '--pane', vim.env.HERDR_PANE_ID }
+          end
+        end
+      end
+      return {
+        { '<c-h>', navigate('Left', 'h') },
+        { '<c-j>', navigate('Down', 'j') },
+        { '<c-k>', navigate('Up', 'k') },
+        { '<c-l>', navigate('Right', 'l') },
+        { '<c-\\>', '<cmd>TmuxNavigatePrevious<cr>' },
+      }
+    end)(),
   },
   {
     'folke/flash.nvim',
