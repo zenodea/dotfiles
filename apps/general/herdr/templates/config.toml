@@ -92,6 +92,15 @@ previous_workspace = "prefix+("
 next_workspace = "prefix+)"
 detach = "prefix+d"
 
+# Inside the sidebar (prefix+w / prefix+s): ctrl+j/k walk the Spaces list and
+# ctrl+h/l move between panes, like everywhere else. Plain h/j/k/l and arrows still work.
+navigate_workspace_up = ["up", "ctrl+k"]
+navigate_workspace_down = ["down", "ctrl+j"]
+navigate_pane_left = ["h", "ctrl+h"]
+navigate_pane_down = "j"
+navigate_pane_up = "k"
+navigate_pane_right = ["l", "ctrl+l"]
+
 reload_config = "prefix+r"
 toggle_sidebar = "prefix+b"
 settings = "prefix+shift+s"
