@@ -1,0 +1,127 @@
+# herdr — laid out to feel like the tmux config next door.
+# tmux session → herdr workspace, window → tab, pane → pane.
+# Rendered by `dotfiles`; edits made in herdr's settings UI get overwritten.
+
+onboarding = false
+
+[theme]
+# Follow ghostty's ANSI palette, then pin the UI tokens to the dotfiles theme.
+name = "terminal"
+
+[theme.custom]
+panel_bg = "reset"
+accent = "#${ACCENT}"
+active_row_bg = "#${SURFACE}"
+selection_bg = "#${BG_ALT}"
+surface0 = "#${SURFACE}"
+surface1 = "#${BG_ALT}"
+overlay0 = "#${BORDER}"
+overlay1 = "#${MUTED}"
+text = "#${FG}"
+subtext0 = "#${MUTED}"
+mauve = "#${PURPLE}"
+blue = "#${BLUE}"
+green = "#${GREEN}"
+yellow = "#${YELLOW}"
+red = "#${RED}"
+peach = "#${ORANGE}"
+
+[ui]
+accent = "#${ACCENT}"
+tab_bar_position = "bottom"
+# tmux-style splitters: shared single-line dividers, no frame, no scrollbars
+pane_gaps = false
+pane_outer_borders = false
+pane_scrollbars = false
+# a collapsed sidebar disappears entirely, like tmux with no sidebar at all
+sidebar_collapsed_mode = "hidden"
+# tmux's prefix+c opens a window straight away
+prompt_new_tab_name = false
+tab_bar_right = [
+  { type = "zoom" },
+  { type = "command", command = "~/.config/herdr/scripts/git.sh", interval_seconds = 5, timeout_seconds = 2 },
+  { type = "datetime", format = "󰥔 %H:%M" },
+  { type = "datetime", format = " %a %d %b" },
+  { type = "command", command = "printf '󰇅 %s\\n' \"$(hostname -s)\"", interval_seconds = 3600, timeout_seconds = 2 },
+  { type = "text", text = "勢之" },
+]
+tab_bar_right_separator = " │ "
+
+# Stands in for tmux's activity/bell lights: a toast when a background agent
+# finishes or needs input.
+[ui.toast]
+delivery = "herdr"
+
+[keys]
+prefix = "ctrl+a"
+
+# splits: - side by side, _ stacked
+split_vertical = "prefix+minus"
+split_horizontal = "prefix+_"
+
+# ctrl+h/j/k/l is handled by zsh and nvim (they call `herdr pane focus`), since
+# herdr can't pass keys through to vim the way tmux's is_vim check did.
+# prefix+j/k/l belong to the popups below, so panes use arrows here.
+focus_pane_left = ["prefix+h", "prefix+left", "ctrl+alt+h"]
+focus_pane_down = ["prefix+down", "ctrl+alt+j"]
+focus_pane_up = ["prefix+up", "ctrl+alt+k"]
+focus_pane_right = ["prefix+right", "ctrl+alt+l"]
+cycle_pane_next = ["prefix+o", "prefix+tab"]
+last_pane = "prefix+semicolon"
+resize_pane_left = "prefix+ctrl+left"
+resize_pane_down = "prefix+ctrl+down"
+resize_pane_up = "prefix+ctrl+up"
+resize_pane_right = "prefix+ctrl+right"
+resize_mode = "prefix+shift+r"
+close_pane = "prefix+x"
+zoom = "prefix+z"
+copy_mode = "prefix+["
+
+# windows → tabs
+new_tab = "prefix+c"
+next_tab = "prefix+n"
+previous_tab = "prefix+p"
+switch_tab = "prefix+1..9"
+rename_tab = "prefix+comma"
+close_tab = ["prefix+ampersand", "prefix+shift+x"]
+
+# sessions → workspaces
+workspace_picker = ["prefix+s", "prefix+w"]
+rename_workspace = "prefix+$"
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
+detach = "prefix+d"
+
+reload_config = "prefix+r"
+toggle_sidebar = "prefix+b"
+settings = "prefix+shift+s"
+
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+command = "~/.config/herdr/scripts/sessionizer.sh"
+description = "sessionizer"
+width = "60%"
+height = "50%"
+
+[[keys.command]]
+key = "prefix+l"
+type = "popup"
+command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec lazygit"
+description = "lazygit"
+width = "90%"
+height = "90%"
+
+# Agents get a zoomed pane rather than a popup: a popup can't be hidden without
+# quitting, while a pane keeps running (and shows in the sidebar) when you leave it.
+[[keys.command]]
+key = "prefix+j"
+type = "pane"
+command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec codex"
+description = "codex"
+
+[[keys.command]]
+key = "prefix+k"
+type = "pane"
+command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec claude"
+description = "claude"

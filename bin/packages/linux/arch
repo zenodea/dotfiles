@@ -151,6 +151,7 @@ yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
 
 # ── Post-install ─────────────────────────────────────────────────────────────
 
+install_herdr
 enable_services
 
 echo "Done. Run ./install.sh next to link your dotfiles and render the theme."

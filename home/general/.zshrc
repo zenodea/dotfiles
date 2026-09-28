@@ -148,6 +148,22 @@ y() {
     rm -f -- "$tmp"
 }
 
+# herdr — ctrl+h/j/k/l moves between panes, like the tmux bindings did
+if [[ -n "$HERDR_PANE_ID" && -z "$TMUX" ]]; then
+    _herdr_focus() {
+        local dir
+        case "$WIDGET" in
+            *-h) dir=left ;; *-j) dir=down ;; *-k) dir=up ;; *-l) dir=right ;;
+        esac
+        herdr pane focus --direction "$dir" --pane "$HERDR_PANE_ID" > /dev/null 2>&1
+    }
+    for _k in h j k l; do
+        zle -N "herdr-focus-$_k" _herdr_focus
+        bindkey "^${(U)_k}" "herdr-focus-$_k"
+    done
+    unset _k
+fi
+
 # zoxide — frecency-based cd (z / zi)
 command -v zoxide > /dev/null 2>&1 && eval "$(zoxide init zsh)"
 

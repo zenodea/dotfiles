@@ -66,8 +66,9 @@ FORMULAE=(
     fzf
     zoxide
 
-    # Terminal multiplexer
+    # Terminal multiplexers
     tmux
+    herdr
 
     # Search
     ripgrep
