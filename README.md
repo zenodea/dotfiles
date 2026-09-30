@@ -76,8 +76,11 @@ installed and themed, and the `rofi-dotfiles` and `rofi-power` scripts in
 - **Control centre** (right): volume, brightness, Wi-Fi, Bluetooth, Mullvad,
   mic, power profile, charge limit, keep awake, night mode, screenshots and
   screen recording.
-- **Agent** (right, second tab): a Claude chat for the system, with saved
-  sessions and tool approvals in the panel.
+- **Agent** (right, second tab): a Claude or Codex chat for the system, with
+  saved sessions and tool approvals in the panel. `Ctrl P` attaches a
+  screenshot, `Ctrl H` opens the session history (type to search, `Ctrl R`
+  renames, `Ctrl D` deletes) and `Ctrl S` the settings: agent, model, effort,
+  permissions, MCP servers and usage.
 - **Lock screen**: the frame's sides close in over the desktop, then the clock,
   weather, battery and password field fade in. hypridle and the session page
   lock through it too.

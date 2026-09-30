@@ -7,8 +7,17 @@ Item {
     id: root
 
     property bool active: false
-    property bool picking: false
+    property string overlay: ""
+    property string doomed: ""
+    property string renaming: ""
+    property string draft: ""
+    property string query: ""
+    property bool stashed: false
     property string flash: ""
+
+    readonly property bool picking: overlay === "sessions"
+    readonly property bool configuring: overlay === "settings"
+    readonly property bool confirming: doomed !== ""
 
     readonly property int lineStep: 60
     readonly property real pageStep: list.height / 2
@@ -20,23 +29,66 @@ Item {
 
     function submit(text: string): void {
         Agent.send(text);
+        overlay = "";
         list.stick = true;
     }
 
     function scroll(delta: real): void {
-        list.scroll(delta);
+        if (configuring)
+            settings.scroll(delta);
+        else
+            list.scroll(delta);
     }
 
     function newChat(): void {
         Agent.reset();
-        picking = false;
+        overlay = "";
         say("new thread");
     }
 
     function togglePicker(): void {
-        picking = !picking && Agent.sessions.length > 0;
+        overlay = !picking && Agent.sessions.length > 0 ? "sessions" : "";
         if (picking)
             picker.currentIndex = Math.max(Agent.sessions.findIndex(s => s.id === Agent.sessionId), 0);
+    }
+
+    function startRename(id: string): void {
+        const session = id === "" ? picker.current : Agent.sessions.find(s => s.id === id);
+        if (!session)
+            return;
+        query = composer.text;
+        renaming = session.id;
+        composer.setText(session.title, true);
+        composer.focusInput();
+    }
+
+    function commitRename(): void {
+        AgentStore.rename(renaming, composer.text);
+        cancelRename();
+    }
+
+    function cancelRename(): void {
+        renaming = "";
+        composer.setText(query, false);
+    }
+
+    function askDelete(): void {
+        doomed = picker.current?.id ?? "";
+    }
+
+    function cancelDelete(): void {
+        doomed = "";
+    }
+
+    function confirmDelete(): void {
+        Agent.forget(doomed);
+        doomed = "";
+        if (Agent.sessions.length === 0)
+            overlay = "";
+    }
+
+    function toggleSettings(): void {
+        overlay = configuring ? "" : "settings";
     }
 
     function movePicker(delta: int): void {
@@ -48,8 +100,12 @@ Item {
     }
 
     function dismiss(): void {
-        if (picking)
-            picking = false;
+        if (confirming)
+            cancelDelete();
+        else if (renaming !== "")
+            cancelRename();
+        else if (overlay !== "")
+            overlay = "";
         else
             Panels.close();
     }
@@ -59,6 +115,18 @@ Item {
         Qt.callLater(composer.focusInput);
     }
 
+    onOverlayChanged: {
+        doomed = "";
+        renaming = "";
+        if (picking) {
+            draft = composer.text;
+            stashed = true;
+            composer.setText("", false);
+        } else if (stashed) {
+            stashed = false;
+            composer.setText(draft, false);
+        }
+    }
     onActiveChanged: {
         if (active)
             open();
@@ -83,22 +151,34 @@ Item {
         }
     }
 
+    Connections {
+        target: Attachments
+
+        function onAdded(): void {
+            root.say("attached");
+        }
+
+        function onFailed(why: string): void {
+            root.say(why);
+        }
+    }
+
     Label {
-        visible: !Agent.available
+        visible: !Agent.available && root.overlay === ""
         width: parent.width
         wrapMode: Text.WordWrap
-        text: "Claude Code is not installed.\n\ncurl -fsSL https://claude.ai/install.sh | bash"
+        text: `${Agent.label} is not installed.\n\n${Agent.backend.installHint}`
         color: Theme.muted
         font.pixelSize: 13
     }
 
     Label {
-        visible: Agent.available && Agent.messages.count === 0 && !root.picking
+        visible: Agent.available && Agent.messages.count === 0 && root.overlay === ""
         anchors.centerIn: list
         width: list.width
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        text: "Ask Claude to do something on this machine."
+        text: `Ask ${Agent.label} to do something on this machine.\n\n^P attach screen · ^V paste image\n^H history · ^S settings`
         color: Theme.alpha(Theme.muted, 0.7)
         font.pixelSize: 13
     }
@@ -106,7 +186,7 @@ Item {
     MessageList {
         id: list
 
-        visible: Agent.available && !root.picking
+        visible: Agent.available && root.overlay === ""
         width: parent.width
         height: queue.y - Metrics.gap
         onReturnFocus: composer.focusInput()
@@ -118,11 +198,31 @@ Item {
         visible: root.picking
         width: parent.width
         height: status.y - Metrics.gap
+        query: root.renaming !== "" ? root.query : composer.text
+        onRenaming: id => root.startRename(id)
         onPicked: id => {
-            root.picking = false;
+            root.overlay = "";
             Agent.resume(id);
             list.stick = true;
         }
+        onDoomed: id => root.doomed = id
+    }
+
+    ConfirmCard {
+        visible: root.confirming && root.picking
+        anchors.fill: picker
+        title: "Delete this session?"
+        detail: Agent.sessions.find(s => s.id === root.doomed)?.title ?? ""
+        onConfirmed: root.confirmDelete()
+        onCancelled: root.cancelDelete()
+    }
+
+    SettingsPage {
+        id: settings
+
+        visible: root.configuring
+        width: parent.width
+        height: status.y - Metrics.gap
     }
 
     QueueStack {
@@ -136,11 +236,18 @@ Item {
     StatusLine {
         id: status
 
-        visible: Agent.available
-        y: composer.y - height - Metrics.gap
+        y: attached.y - height - Metrics.gap
         width: parent.width
         flash: root.flash
         onSessionsClicked: root.togglePicker()
+        onSettingsClicked: root.toggleSettings()
+    }
+
+    AttachRow {
+        id: attached
+
+        y: composer.y - height - (visible ? Metrics.gap : 0)
+        width: parent.width
     }
 
     Composer {

@@ -6,7 +6,17 @@ import qs.widgets
 ListView {
     id: root
 
+    property string query: ""
+
+    readonly property var shown: {
+        const words = query.toLowerCase().split(/\s+/).filter(w => w !== "");
+        return Agent.sessions.filter(s => words.every(w => s.title.toLowerCase().includes(w)));
+    }
+    readonly property var current: shown[currentIndex]
+
     signal picked(string id)
+    signal doomed(string id)
+    signal renaming(string id)
 
     function ago(ms: real): string {
         const m = Math.floor((Date.now() - ms) / 60000);
@@ -24,20 +34,19 @@ ListView {
     }
 
     function pickCurrent(): void {
-        const session = Agent.sessions[currentIndex];
-        if (session)
-            picked(session.id);
+        if (current)
+            picked(current.id);
     }
 
     clip: true
     spacing: 2
     boundsBehavior: Flickable.StopAtBounds
-    model: visible ? Agent.sessions : []
+    model: visible ? shown : []
     highlightMoveDuration: 0
 
     header: SectionHeader {
         height: 28
-        text: "SESSIONS  · ^J ^K ⏎ · esc"
+        text: root.count === 0 ? "SESSIONS  · no matches" : "SESSIONS  · ^J ^K ⏎ · ^R rename · ^D delete"
     }
 
     delegate: Rectangle {
@@ -56,13 +65,17 @@ ListView {
             visible: session.current
         }
 
+        HoverHandler {
+            id: hover
+        }
+
         Label {
             id: when
 
-            anchors.right: parent.right
-            anchors.rightMargin: 8
+            anchors.right: remove.visible ? edit.left : parent.right
+            anchors.rightMargin: remove.visible ? 4 : 8
             anchors.verticalCenter: parent.verticalCenter
-            text: session.modelData.id === Agent.sessionId ? "open" : root.ago(session.modelData.updated)
+            text: (session.modelData.provider === "codex" ? "codex · " : "") + (session.modelData.id === Agent.sessionId ? "open" : root.ago(session.modelData.updated))
             color: Theme.muted
             font.pixelSize: 12
         }
@@ -88,6 +101,29 @@ ListView {
                 root.currentIndex = session.index;
                 root.pickCurrent();
             }
+        }
+
+        IconButton {
+            id: edit
+
+            anchors.right: remove.left
+            anchors.verticalCenter: parent.verticalCenter
+            visible: hover.hovered
+            icon: "󰏫"
+            size: 14
+            onClicked: root.renaming(session.modelData.id)
+        }
+
+        IconButton {
+            id: remove
+
+            anchors.right: parent.right
+            anchors.rightMargin: 4
+            anchors.verticalCenter: parent.verticalCenter
+            visible: hover.hovered
+            icon: "󰆴"
+            size: 14
+            onClicked: root.doomed(session.modelData.id)
         }
     }
 }
