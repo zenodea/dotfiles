@@ -11,6 +11,6 @@ BarButton {
     shown: waiting || Agent.busy
     icon: "󰚩"
     iconColour: waiting ? Theme.yellow : Theme.accent
-    title: waiting ? "Claude is waiting for you" : "Claude is working"
+    title: waiting ? `${Agent.label} is waiting for you` : `${Agent.label} is working`
     onClicked: Panels.toggleControls("agent")
 }

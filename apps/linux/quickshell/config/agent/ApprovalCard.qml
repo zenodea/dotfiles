@@ -12,6 +12,7 @@ Rectangle {
     required property string callId
 
     readonly property bool pending: phase === "pending"
+    readonly property var verdicts: Agent.lasting(callId) ? ["allow", "always", "deny"] : ["allow", "deny"]
 
     property int choice: 0
 
@@ -26,11 +27,11 @@ Rectangle {
         enabled: Agent.activeId === root.callId
 
         function onNavKey(delta: int): void {
-            root.choice = Math.max(0, Math.min(1, root.choice + delta));
+            root.choice = Math.max(0, Math.min(root.verdicts.length - 1, root.choice + delta));
         }
 
         function onEnterKey(): void {
-            Agent.decide(root.callId, root.choice === 0);
+            Agent.decide(root.callId, root.verdicts[root.choice]);
         }
     }
 
@@ -64,15 +65,23 @@ Rectangle {
             PillButton {
                 icon: "󰄬"
                 label: "Allow ^Y"
-                active: root.choice === 0
-                onClicked: Agent.decide(root.callId, true)
+                active: root.verdicts[root.choice] === "allow"
+                onClicked: Agent.decide(root.callId, "allow")
+            }
+
+            PillButton {
+                visible: root.verdicts.length > 2
+                icon: "󰄭"
+                label: "Always ^A"
+                active: root.verdicts[root.choice] === "always"
+                onClicked: Agent.decide(root.callId, "always")
             }
 
             PillButton {
                 icon: "󰅖"
                 label: "Deny ^N"
-                active: root.choice === 1
-                onClicked: Agent.decide(root.callId, false)
+                active: root.verdicts[root.choice] === "deny"
+                onClicked: Agent.decide(root.callId, "deny")
             }
         }
     }

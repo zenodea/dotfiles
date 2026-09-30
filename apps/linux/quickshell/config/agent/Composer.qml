@@ -8,8 +8,18 @@ Rectangle {
 
     required property Item page
 
+    property alias text: input.text
+
     function focusInput(): void {
         input.forceActiveFocus();
+    }
+
+    function setText(text: string, select: bool): void {
+        input.text = text;
+        if (select)
+            input.selectAll();
+        else
+            input.cursorPosition = text.length;
     }
 
     function prepend(text: string): void {
@@ -23,16 +33,41 @@ Rectangle {
         const enter = (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier);
         const vertical = event.key === Qt.Key_J || event.key === Qt.Key_K;
         const down = event.key === Qt.Key_J ? 1 : -1;
+        const arrow = event.key === Qt.Key_Up || event.key === Qt.Key_Down;
 
-        if (event.key === Qt.Key_Up && !ctrl && input.text === "" && Agent.queue.count > 0) {
+        if (root.page.renaming !== "") {
+            if (!enter)
+                return false;
+            root.page.commitRename();
+        } else if (ctrl && event.key === Qt.Key_V) {
+            Attachments.clipboard();
+            return false;
+        } else if (root.page.confirming) {
+            if (enter || (ctrl && event.key === Qt.Key_Y))
+                root.page.confirmDelete();
+            else if (event.key === Qt.Key_Escape || (ctrl && event.key === Qt.Key_N))
+                root.page.cancelDelete();
+        } else if (root.page.picking && !ctrl && arrow) {
+            root.page.movePicker(event.key === Qt.Key_Down ? 1 : -1);
+        } else if (event.key === Qt.Key_Backspace && input.text === "" && !root.page.picking && Attachments.items.length > 0) {
+            Attachments.remove(Attachments.items.length - 1);
+        } else if (ctrl && event.key === Qt.Key_P) {
+            Attachments.screen();
+        } else if (event.key === Qt.Key_Up && !ctrl && input.text === "" && Agent.queue.count > 0) {
             input.text = Agent.popQueued();
             input.cursorPosition = input.text.length;
-        } else if (ctrl && event.key === Qt.Key_O) {
+        } else if (ctrl && (event.key === Qt.Key_H || event.key === Qt.Key_O)) {
             root.page.togglePicker();
+        } else if (ctrl && event.key === Qt.Key_S) {
+            root.page.toggleSettings();
         } else if (root.page.picking && enter) {
             root.page.pickSession();
         } else if (root.page.picking && ctrl && vertical) {
             root.page.movePicker(down);
+        } else if (root.page.picking && ctrl && event.key === Qt.Key_D) {
+            root.page.askDelete();
+        } else if (root.page.picking && ctrl && event.key === Qt.Key_R) {
+            root.page.startRename("");
         } else if (ctrl && event.key === Qt.Key_M) {
             Agent.cycleModel();
         } else if (enter) {
@@ -49,11 +84,11 @@ Rectangle {
         } else if (ctrl && event.key >= Qt.Key_1 && event.key <= Qt.Key_9 && Agent.pendingApprovals > 0) {
             Agent.optionKey(event.key - Qt.Key_0);
         } else if (ctrl && (event.key === Qt.Key_Y || event.key === Qt.Key_N) && Agent.pendingApprovals > 0) {
-            Agent.decideLatest(event.key === Qt.Key_Y);
+            Agent.decideLatest(event.key === Qt.Key_Y ? "allow" : "deny");
+        } else if (ctrl && event.key === Qt.Key_A && Agent.pendingApprovals > 0) {
+            Agent.decideLatest("always");
         } else if (ctrl && event.key === Qt.Key_N) {
             root.page.newChat();
-        } else if (ctrl && event.key === Qt.Key_H) {
-            Panels.controlsTab = "controls";
         } else if (ctrl && vertical) {
             root.page.scroll(down * root.page.lineStep);
         } else if (ctrl && (event.key === Qt.Key_D || event.key === Qt.Key_U)) {
@@ -99,7 +134,7 @@ Rectangle {
 
             Label {
                 visible: input.text === ""
-                text: Agent.busy ? "Queue a follow-up…" : "Ask Claude…"
+                text: root.page.renaming !== "" ? "Rename session…" : root.page.picking ? "Search sessions…" : Agent.busy ? "Queue a follow-up…" : `Ask ${Agent.label}…`
                 color: Theme.alpha(Theme.muted, 0.7)
                 font: input.font
             }

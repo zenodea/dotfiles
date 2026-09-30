@@ -41,7 +41,7 @@ Item {
                 spacing: 5
 
                 Label {
-                    text: Osd.muted ? "muted" : `${Math.round(Osd.level * 100)}%`
+                    text: (Osd.muted ? "muted · " : "") + `${Math.round(Osd.level * 100)}%`
                     color: Theme.fgBright
                     font.pixelSize: 14
                     font.bold: true
@@ -53,9 +53,9 @@ Item {
                     color: Theme.alpha(Theme.fg, 0.15)
 
                     Rectangle {
-                        width: parent.width * (Osd.muted ? 0 : Math.max(0, Math.min(1, Osd.level)))
+                        width: parent.width * Math.max(0, Math.min(1, Osd.level))
                         height: parent.height
-                        color: Theme.accent
+                        color: Osd.muted ? Theme.muted : Theme.accent
 
                         Behavior on width {
                             NumberAnimation {

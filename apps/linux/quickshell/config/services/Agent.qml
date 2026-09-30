@@ -2,40 +2,51 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import qs.services
-import "agent.js" as AgentJs
 
 Singleton {
     id: root
 
-    readonly property bool available: claudePath !== ""
-    readonly property bool running: proc.running
+    readonly property var backends: ({
+            claude,
+            codex
+        })
+    readonly property var providers: Object.keys(backends)
+    readonly property string provider: providers.includes(AgentStore.provider) ? AgentStore.provider : "claude"
+    readonly property var backend: backends[provider]
+    readonly property string label: backend.label
+
+    readonly property bool available: backend.available
+    readonly property bool running: backend.running
     readonly property bool shown: Panels.controls && Panels.controlsTab === "agent"
 
-    readonly property string home: Quickshell.env("HOME")
     readonly property string workDir: `${AgentStore.stateDir}/agent`
-    readonly property string transcriptDir: `${home}/.claude/projects/${workDir.replace(/[^A-Za-z0-9]/g, "-")}`
 
-    readonly property var models: AgentStore.models
+    readonly property var models: backend.models
+    readonly property var efforts: backend.efforts
+    readonly property var modes: backend.modes
+    readonly property string model: AgentStore.setup.model
+    readonly property string effort: AgentStore.setup.effort
+    readonly property string mode: modes.some(m => m.id === AgentStore.setup.mode) ? AgentStore.setup.mode : "ask"
+    readonly property string modeNote: backend.note
+    readonly property string setup: `${model}|${effort}|${mode}`
+    readonly property bool stale: runningSetup !== setup
     readonly property int idleMinutes: 15
 
     property bool busy: false
     property bool thinking: false
-    property string error: ""
     property int pendingApprovals: 0
     property string activeId: ""
 
-    // Hyprland's session PATH may lack ~/.local/bin, where the native installer puts claude
     readonly property string pathPrefix: 'export PATH="$HOME/.local/bin:$PATH"; '
-    property string claudePath: ""
 
     readonly property string sessionId: AgentStore.last
     readonly property var sessions: AgentStore.sessions
-    readonly property string model: AgentStore.model
-    property string runningModel: ""
-    property real usage5h: -1
-    property real usage7d: -1
+    property string runningSetup: ""
+
+    property real contextUsed: -1
+    property real contextMax: 0
+    property string spend: ""
 
     signal optionKey(int number)
     signal submitKey
@@ -45,49 +56,34 @@ Singleton {
 
     readonly property string systemPrompt: "You are running inside a Quickshell side panel on the user's Arch Linux + Hyprland desktop, acting as an agent for their operating system. Replies render in a narrow panel: keep them short. Their home directory is ~ and their dotfiles live in ~/dotfiles; your working directory is only a scratch space."
 
-    // each entry: role (user | assistant | tool | approval | question | error), text, detail, phase, callId
     readonly property ListModel messages: ListModel {}
-
-    // messages typed while Claude is busy; each is sent when the current turn ends
     readonly property ListModel queue: ListModel {}
 
     property var approvals: ({})
     property int streamIndex: -1
-    property int seq: 0
-    property bool stopping: false
-    property bool ready: false
     property bool restartQueued: false
-    property var outbox: []
     property string pendingTitle: ""
     property bool restored: false
 
     function start(): void {
         if (!available)
             return;
-        if (proc.running) {
-            if (stopping)
+        if (backend.running) {
+            if (backend.stopping)
                 restartQueued = true;
             return;
         }
-        error = "";
-        stopping = false;
-        const args = [claudePath, "-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--include-partial-messages", "--permission-prompt-tool", "stdio", "--disallowedTools", "EnterPlanMode,ExitPlanMode,EnterWorktree,ExitWorktree", "--append-system-prompt", systemPrompt];
-        if (model !== "default")
-            args.push("--model", model);
-        if (sessionId)
-            args.push("--resume", sessionId);
-        runningModel = model;
-        proc.command = ["sh", "-c", pathPrefix + 'mkdir -p "$0" && cd "$0" && exec "$@"', workDir].concat(args);
-        proc.running = true;
+        runningSetup = setup;
+        backend.start({
+            model,
+            effort,
+            mode,
+            sessionId
+        });
     }
 
     function stop(): void {
-        if (!proc.running)
-            return;
-        stopping = true;
-        ready = false;
-        outbox = [];
-        proc.running = false;
+        backend.stop();
     }
 
     function restore(): void {
@@ -95,7 +91,7 @@ Singleton {
             return;
         restored = true;
         if (messages.count === 0 && sessionId)
-            transcript.path = `${transcriptDir}/${sessionId}.jsonl`;
+            backend.restore(sessionId);
     }
 
     function send(text: string): void {
@@ -115,23 +111,17 @@ Singleton {
         start();
         if (!sessionId)
             pendingTitle = message;
-        push("user", message, "", "", "");
+        const files = Attachments.take();
+        const notes = files.map(f => f.note).join("\n");
+        push("user", files.length > 0 ? `${message}\n${files.map(f => `󰋩 ${f.label}`).join("  ")}` : message, "", "", "");
         busy = true;
         idle.stop();
-        write({
-            type: "user",
-            message: {
-                role: "user",
-                content: message
-            }
-        });
+        backend.send(notes ? `${notes}\n\n${message}` : message, files);
     }
 
     function abort(): void {
         if (busy)
-            control({
-                subtype: "interrupt"
-            });
+            backend.interrupt();
         returnQueue();
     }
 
@@ -167,6 +157,20 @@ Singleton {
         busy = false;
         thinking = false;
         streamIndex = -1;
+        contextUsed = -1;
+        contextMax = 0;
+        spend = "";
+    }
+
+    function setContext(used: real, max: real): void {
+        contextUsed = used;
+        contextMax = max;
+    }
+
+    function count(tokens: real): string {
+        if (tokens >= 1000000)
+            return `${(tokens / 1000000).toFixed(1)}M`;
+        return tokens >= 1000 ? `${Math.round(tokens / 1000)}k` : String(tokens);
     }
 
     function reset(): void {
@@ -180,89 +184,99 @@ Singleton {
             return;
         stop();
         clearView();
+        AgentStore.setProvider(sessions.find(s => s.id === id)?.provider ?? "claude");
         AgentStore.setLast(id);
-        transcript.path = "";
-        transcript.path = `${transcriptDir}/${id}.jsonl`;
+        backend.restore(id);
+    }
+
+    function setProvider(name: string): bool {
+        if (name === provider)
+            return true;
+        if (busy || pendingApprovals > 0 || !backends[name]?.available)
+            return false;
+        reset();
+        AgentStore.setProvider(name);
+        return true;
     }
 
     function cycleModel(): void {
         setModel(models[(models.indexOf(model) + 1) % models.length]);
     }
 
-    function setModel(name: string): bool {
-        if (!AgentStore.setModel(name))
+    function configure(key: string, value: string, options: var): bool {
+        if (!options.includes(value))
             return false;
-        if (proc.running && !busy && pendingApprovals === 0)
+        AgentStore.configure(key, value);
+        if (backend.running && !busy && pendingApprovals === 0)
             stop();
         return true;
     }
 
-    function decide(requestId: string, allow: bool): void {
-        const input = approvals[requestId];
-        if (input === undefined)
+    function setModel(name: string): bool {
+        if (!configure("model", name, models))
+            return false;
+        if (!efforts.includes(effort))
+            AgentStore.configure("effort", "default");
+        return true;
+    }
+
+    function setEffort(name: string): bool {
+        return configure("effort", name, efforts);
+    }
+
+    function setMode(name: string): bool {
+        return configure("mode", name, modes.map(m => m.id));
+    }
+
+    function forget(id: string): void {
+        const session = sessions.find(s => s.id === id);
+        if (!session)
             return;
+        if (id === sessionId)
+            reset();
+        backends[session.provider ?? "claude"].forget(id);
+        AgentStore.forget(id);
+    }
+
+    function lasting(requestId: string): bool {
+        return approvals[requestId]?.lasting === true;
+    }
+
+    function settle(requestId: string, phase: string): bool {
+        if (approvals[requestId] === undefined)
+            return false;
         delete approvals[requestId];
         pendingApprovals = Math.max(pendingApprovals - 1, 0);
         Qt.callLater(refreshActive);
-        for (let i = messages.count - 1; i >= 0; i--) {
-            if (messages.get(i).callId === requestId) {
-                messages.setProperty(i, "phase", allow ? "allowed" : "denied");
-                break;
-            }
-        }
-        write({
-            type: "control_response",
-            response: {
-                subtype: "success",
-                request_id: requestId,
-                response: allow ? {
-                    behavior: "allow",
-                    updatedInput: input
-                } : {
-                    behavior: "deny",
-                    message: "The user denied this from the panel."
-                }
-            }
-        });
+        setEntry(requestId, false, "phase", phase);
+        return true;
+    }
+
+    function decide(requestId: string, verdict: string): void {
+        if (verdict === "always" && !lasting(requestId))
+            return;
+        if (settle(requestId, verdict === "deny" ? "denied" : "allowed"))
+            backend.decide(requestId, verdict);
     }
 
     function answer(requestId: string, answers: var): void {
-        const input = approvals[requestId];
-        if (input === undefined)
+        if (!settle(requestId, "answered"))
             return;
-        delete approvals[requestId];
-        pendingApprovals = Math.max(pendingApprovals - 1, 0);
-        Qt.callLater(refreshActive);
-        const summary = Object.values(answers).join(" · ");
-        for (let i = messages.count - 1; i >= 0; i--) {
-            if (messages.get(i).callId === requestId) {
-                messages.setProperty(i, "phase", "answered");
-                messages.setProperty(i, "text", summary);
-                break;
-            }
-        }
-        write({
-            type: "control_response",
-            response: {
-                subtype: "success",
-                request_id: requestId,
-                response: {
-                    behavior: "allow",
-                    updatedInput: Object.assign({}, input, {
-                        answers
-                    })
-                }
-            }
-        });
+        setEntry(requestId, false, "text", Object.values(answers).join(" · "));
+        backend.answer(requestId, answers);
     }
 
-    function decideLatest(allow: bool): void {
+    function dropRequest(requestId: string): void {
+        settle(requestId, "denied");
+    }
+
+    function decideLatest(verdict: string): void {
         if (activeId === "")
             return;
-        if (allow && approvals[activeId]?.questions !== undefined)
+        if (verdict !== "deny" && approvals[activeId]?.role === "question")
             submitKey();
         else
-            decide(activeId, allow);
+            decide(activeId, verdict);
     }
 
     function refreshActive(): void {
@@ -276,22 +290,6 @@ Singleton {
         activeId = "";
     }
 
-    function control(request: var): void {
-        write({
-            type: "control_request",
-            request_id: `qs-${++seq}`,
-            request
-        });
-    }
-
-    function write(payload: var): void {
-        const line = JSON.stringify(payload) + "\n";
-        if (ready)
-            proc.write(line);
-        else
-            outbox = outbox.concat([line]);
-    }
-
     function push(role: string, text: string, detail: string, phase: string, callId: string): void {
         messages.append({
             role,
@@ -302,143 +300,129 @@ Singleton {
         });
     }
 
-    function findTool(id: string): int {
-        for (let i = messages.count - 1; i >= 0; i--)
-            if (messages.get(i).role === "tool" && messages.get(i).callId === id)
-                return i;
-        return -1;
+    function setEntry(id: string, tool: bool, key: string, value: string): void {
+        for (let i = messages.count - 1; i >= 0; i--) {
+            const m = messages.get(i);
+            if (m.callId === id && (m.role === "tool") === tool) {
+                messages.setProperty(i, key, value);
+                return;
+            }
+        }
+    }
+
+    function addTool(id: string, name: string, detail: string): void {
+        push("tool", name, detail, "running", id);
     }
 
     function markTool(id: string, failed: bool): void {
-        const i = findTool(id);
-        if (i >= 0)
-            messages.setProperty(i, "phase", failed ? "error" : "done");
+        setEntry(id, true, "phase", failed ? "error" : "done");
+    }
+
+    function setToolDetail(id: string, detail: string): void {
+        setEntry(id, true, "detail", detail);
+    }
+
+    function beginText(): void {
+        push("assistant", "", "", "", "");
+        streamIndex = messages.count - 1;
+    }
+
+    function appendText(delta: string): void {
+        if (streamIndex >= 0)
+            messages.setProperty(streamIndex, "text", messages.get(streamIndex).text + delta);
+    }
+
+    function endText(text: string): void {
+        if (text !== "" && streamIndex >= 0)
+            messages.setProperty(streamIndex, "text", text);
+        streamIndex = -1;
+    }
+
+    function request(requestId: string, role: string, title: string, detail: string, lasting: bool): void {
+        approvals[requestId] = {
+            role,
+            lasting
+        };
+        pendingApprovals++;
+        push(role, title, detail, "pending", requestId);
+        notify(role === "question" ? "Has a question for you" : `Wants to run ${title}`);
+        refreshActive();
     }
 
     function notify(body: string): void {
         if (!shown)
-            Notices.show("Claude", body, "󰚩");
+            Notices.show(label, body, "󰚩");
     }
 
-    function remember(): void {
-        if (sessionId) {
-            AgentStore.remember(sessionId, pendingTitle);
-            pendingTitle = "";
-        }
+    function sessionStarted(id: string): void {
+        if (id !== sessionId)
+            remember(id);
     }
 
-    function handleSubagent(event: var): void {
-        if (event.type !== "assistant")
+    function remember(id: string): void {
+        if (id === "")
             return;
-        const row = findTool(event.parent_tool_use_id);
-        if (row < 0)
+        AgentStore.remember(id, pendingTitle);
+        pendingTitle = "";
+    }
+
+    function rest(): void {
+        idle.restart();
+    }
+
+    function turnEnded(failed: bool, message: string): void {
+        busy = false;
+        thinking = false;
+        streamIndex = -1;
+        if (failed)
+            push("error", message, "", "", "");
+        remember(sessionId);
+        if (stale && pendingApprovals === 0)
+            stop();
+        if (queue.count > 0 && !failed) {
+            const next = queue.get(0).text;
+            queue.remove(0);
+            Qt.callLater(dispatch, next);
+        } else {
+            returnQueue();
+            notify(failed ? "Stopped with an error" : "Finished");
+            idle.restart();
+        }
+    }
+
+    function exited(from: var, code: int, crashed: bool): void {
+        if (from !== backend)
             return;
-        for (const block of event.message?.content ?? [])
-            if (block.type === "tool_use")
-                messages.setProperty(row, "detail", `↳ ${block.name} ${AgentJs.describe(block.input)}`);
-    }
-
-    function handle(event: var): void {
-        if (event.parent_tool_use_id) {
-            handleSubagent(event);
-            return;
+        busy = restartQueued;
+        thinking = false;
+        streamIndex = -1;
+        for (const id of Object.keys(approvals))
+            setEntry(id, false, "phase", "denied");
+        approvals = {};
+        pendingApprovals = 0;
+        activeId = "";
+        idle.stop();
+        if (crashed) {
+            push("error", `${label} exited (${code})${from.error ? `: ${from.error}` : ""}. Send a message to restart.`, "", "", "");
+            notify("Crashed");
+            returnQueue();
         }
-        switch (event.type) {
-        case "system":
-            if (event.subtype === "init" && event.session_id && event.session_id !== sessionId) {
-                AgentStore.remember(event.session_id, pendingTitle);
-                pendingTitle = "";
-            }
-            break;
-        case "rate_limit_event":
-            {
-                const windows = event.rate_limit_info?.unifiedWindows ?? {};
-                if (windows.five_hour?.utilization !== undefined)
-                    usage5h = windows.five_hour.utilization;
-                if (windows.seven_day?.utilization !== undefined)
-                    usage7d = windows.seven_day.utilization;
-                break;
-            }
-        case "stream_event":
-            {
-                const e = event.event ?? {};
-                if (e.type === "content_block_start") {
-                    const kind = e.content_block?.type;
-                    thinking = kind === "thinking";
-                    if (kind === "text") {
-                        push("assistant", "", "", "", "");
-                        streamIndex = messages.count - 1;
-                    }
-                } else if (e.type === "content_block_delta" && e.delta?.type === "text_delta" && streamIndex >= 0) {
-                    messages.setProperty(streamIndex, "text", messages.get(streamIndex).text + e.delta.text);
-                }
-                break;
-            }
-        case "assistant":
-            streamIndex = -1;
-            for (const block of event.message?.content ?? [])
-                if (block.type === "tool_use" && block.name !== "AskUserQuestion")
-                    push("tool", block.name, AgentJs.describe(block.input), "running", block.id);
-            break;
-        case "user":
-            for (const block of event.message?.content ?? [])
-                if (block.type === "tool_result")
-                    markTool(block.tool_use_id, block.is_error === true);
-            break;
-        case "control_request":
-            if (event.request?.subtype === "can_use_tool") {
-                const req = event.request;
-                approvals[event.request_id] = req.input;
-                pendingApprovals++;
-                if (req.tool_name === "AskUserQuestion") {
-                    push("question", "", JSON.stringify(req.input?.questions ?? []), "pending", event.request_id);
-                    notify("Has a question for you");
-                } else {
-                    push("approval", req.display_name ?? req.tool_name, AgentJs.describe(req.input), "pending", event.request_id);
-                    notify(`Wants to run ${req.display_name ?? req.tool_name}`);
-                }
-                refreshActive();
-            }
-            break;
-        case "result":
-            busy = false;
-            thinking = false;
-            streamIndex = -1;
-            if (event.is_error)
-                push("error", String(event.result ?? event.subtype ?? "Request failed"), "", "", "");
-            remember();
-            if (runningModel !== model && pendingApprovals === 0)
-                stop();
-            if (queue.count > 0 && !event.is_error) {
-                const next = queue.get(0).text;
-                queue.remove(0);
-                Qt.callLater(dispatch, next);
-            } else {
-                returnQueue();
-                notify(event.is_error ? "Stopped with an error" : "Finished");
-                idle.restart();
-            }
-            break;
+        if (restartQueued) {
+            restartQueued = false;
+            Qt.callLater(start);
         }
     }
 
-    Process {
-        running: true
-        command: ["sh", "-c", root.pathPrefix + "command -v claude"]
+    ClaudeBackend {
+        id: claude
 
-        stdout: StdioCollector {
-            onStreamFinished: root.claudePath = text.trim()
-        }
+        host: root
     }
 
-    FileView {
-        id: transcript
+    CodexBackend {
+        id: codex
 
-        onLoaded: {
-            if (root.messages.count === 0)
-                for (const e of AgentJs.replay(text()))
-                    root.messages.append(e);
-        }
+        host: root
     }
 
     Timer {
@@ -448,63 +432,6 @@ Singleton {
         onTriggered: {
             if (!root.busy && root.pendingApprovals === 0)
                 root.stop();
-        }
-    }
-
-    Process {
-        id: proc
-
-        stdinEnabled: true
-
-        onStarted: {
-            root.ready = true;
-            for (const line of root.outbox)
-                proc.write(line);
-            root.outbox = [];
-        }
-
-        stdout: SplitParser {
-            onRead: line => {
-                if (!line)
-                    return;
-                try {
-                    root.handle(JSON.parse(line));
-                } catch (e) {}
-            }
-        }
-
-        stderr: SplitParser {
-            onRead: line => {
-                if (line.trim())
-                    root.error = line.trim();
-            }
-        }
-
-        onExited: code => {
-            const crashed = !root.stopping && code !== 0;
-            root.busy = false;
-            root.thinking = false;
-            root.streamIndex = -1;
-            for (const id of Object.keys(root.approvals)) {
-                for (let i = root.messages.count - 1; i >= 0; i--)
-                    if (root.messages.get(i).callId === id)
-                        root.messages.setProperty(i, "phase", "denied");
-            }
-            root.approvals = {};
-            root.pendingApprovals = 0;
-            root.activeId = "";
-            root.stopping = false;
-            root.ready = false;
-            idle.stop();
-            if (crashed) {
-                root.push("error", `Claude exited (${code})${root.error ? `: ${root.error}` : ""}. Send a message to restart.`, "", "", "");
-                root.notify("Crashed");
-                root.returnQueue();
-            }
-            if (root.restartQueued) {
-                root.restartQueued = false;
-                root.start();
-            }
         }
     }
 }

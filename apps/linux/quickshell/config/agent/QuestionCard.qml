@@ -30,7 +30,6 @@ Rectangle {
     property int cursor: 0
     property int editing: -1
 
-    // one row per option, one per Other field, and a final Submit row when needed
     readonly property var rows: {
         const out = [];
         questions.forEach((q, qi) => {
@@ -279,7 +278,7 @@ Rectangle {
             PillButton {
                 icon: "󰅖"
                 label: "Skip ^N"
-                onClicked: Agent.decide(root.callId, false)
+                onClicked: Agent.decide(root.callId, "deny")
             }
         }
     }
