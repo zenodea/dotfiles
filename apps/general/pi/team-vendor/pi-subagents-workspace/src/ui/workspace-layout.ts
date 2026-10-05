@@ -320,7 +320,8 @@ export function sidebarLine(text: string, width: number): string {
 /** A one-row label/rule without extra helper text or vertical padding. */
 export function sidebarHeading(text: string, width: number): string {
   const remaining = width - visibleWidth(text);
-  return sidebarLine(remaining > 0 ? `${text} ${"─".repeat(remaining - 1)}` : text, width);
+  // The rule is faint so the label, not the line, is what the eye lands on.
+  return sidebarLine(remaining > 0 ? `${text} \x1b[2m${"─".repeat(remaining - 1)}\x1b[22m` : text, width);
 }
 
 /** Rows the dock takes at rest: spacer, three-row editor, footer. */

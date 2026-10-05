@@ -1,0 +1,74 @@
+{
+  "$schema": "https://raw.githubusercontent.com/gotgenes/pi-packages/main/packages/pi-permission-system/schemas/permissions.schema.json",
+
+  "debugLog": false,
+  "permissionReviewLog": true,
+  "yoloMode": false,
+
+  "authorizerChain": ["classifier"],
+
+  "permission": {
+    "*": "allow",
+
+    "path": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "~/.ssh/*": "deny",
+      "~/.aws/*": "deny",
+      "~/.gnupg/*": "deny"
+    },
+
+    "external_directory": {
+      "*": "ask",
+      "~/*": "allow",
+      "/tmp/*": "allow",
+      "/private/tmp/*": "allow",
+      "/var/folders/*": "allow",
+      "/private/var/folders/*": "allow"
+    },
+
+    "mcp": "ask",
+
+    "bash": {
+      "*": "ask",
+
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "ls": "allow",
+      "ls *": "allow",
+      "tree *": "allow",
+      "stat *": "allow",
+      "file *": "allow",
+      "wc *": "allow",
+      "du *": "allow",
+      "df *": "allow",
+      "grep *": "allow",
+      "rg *": "allow",
+      "find *": "allow",
+      "fd *": "allow",
+      "diff *": "allow",
+      "pwd": "allow",
+      "whoami": "allow",
+      "hostname": "allow",
+      "uname *": "allow",
+      "date": "allow",
+      "ps *": "allow",
+      "which *": "allow",
+      "type *": "allow",
+      "git status": "allow",
+      "git status *": "allow",
+      "git diff": "allow",
+      "git diff *": "allow",
+      "git log": "allow",
+      "git log *": "allow",
+      "git show *": "allow",
+      "git blame *": "allow",
+      "git ls-files *": "allow",
+      "git branch": "allow",
+      "git remote -v": "allow"
+    }
+  }
+}

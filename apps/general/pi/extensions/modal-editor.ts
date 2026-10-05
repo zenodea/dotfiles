@@ -14,7 +14,8 @@
  *               ctrl+y / ctrl+e one line; with an empty prompt, j k gg G
  *               scroll the transcript too
  *
- * The terminal's own cursor shows the mode: a bar in insert, a block in normal.
+ * pi's working indicator is drawn on the top border, so nothing moves when a
+ * turn starts. The terminal's own cursor shows the mode: a bar in insert, a block in normal.
  * Also draws the status line from footer.ts into the bottom border.
  */
 
@@ -23,7 +24,6 @@ import { CustomEditor, type ExtensionAPI } from "@earendil-works/pi-coding-agent
 import { CURSOR_MARKER, matchesKey, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 const STATUS_LINE = Symbol.for("dotfiles.pi.status-line");
-const TIGHTENED = Symbol.for("dotfiles.pi.tightened-spacer");
 
 // DECSCUSR cursor shapes (steady), and the reset to the terminal's default.
 const CURSOR_SHAPE = { insert: "\x1b[6 q", normal: "\x1b[2 q", visual: "\x1b[2 q", vline: "\x1b[2 q" };
@@ -93,6 +93,8 @@ const OPERATORS: Record<string, string[]> = {
 const MOVES = new Set(["h", "j", "k", "l", "w", "b", "e", "0", "^", "$", "g", "gg", "G"]);
 
 const MODE_LABEL = { insert: " INSERT ", normal: " NORMAL ", visual: " VISUAL ", vline: " V-LINE " };
+// Theme colour each mode's label is filled with.
+const MODE_COLOR = { insert: "success", normal: "accent", visual: "syntaxKeyword", vline: "syntaxKeyword" } as const;
 
 type Position = { line: number; col: number };
 
@@ -252,6 +254,12 @@ class ModalEditor extends CustomEditor {
 		}
 	}
 
+	// A filled block in the mode's colour: bold, with the colour as the background.
+	private paintLabel(label: string): string {
+		const theme = uiTheme?.();
+		return theme ? theme.fg(MODE_COLOR[this.mode], `\x1b[1;7m${label}\x1b[22;27m`) : label;
+	}
+
 	private send(keys: string[]): void {
 		for (const key of keys) super.handleInput(key);
 	}
@@ -380,31 +388,7 @@ class ModalEditor extends CustomEditor {
 		}
 	}
 
-	// pi keeps a one-row spacer between the working indicator and the editor and
-	// has no setting for it. Find that spacer's container (the sibling before the
-	// editor's, after the status container) and drop its blank row while the
-	// indicator is showing. Relies on pi's layout order; a no-op if that changes.
-	private tightened = false;
-	private tightenWorkingIndicator(): void {
-		if (this.tightened) return;
-		const siblings = (this.tui as any).children as any[] | undefined;
-		const index = siblings?.findIndex((child) => child?.children?.includes(this)) ?? -1;
-		if (!siblings || index < 2) return;
-		this.tightened = true;
-
-		const status = siblings[index - 2];
-		const spacer = siblings[index - 1];
-		if (spacer[TIGHTENED] || typeof spacer.render !== "function") return;
-		spacer[TIGHTENED] = true;
-		const render = spacer.render.bind(spacer);
-		spacer.render = (width: number): string[] => {
-			const lines: string[] = render(width);
-			return lines[0]?.trim() === "" && status.children?.length > 0 ? lines.slice(1) : lines;
-		};
-	}
-
 	render(width: number): string[] {
-		this.tightenWorkingIndicator();
 		const lines = super.render(width);
 		if (lines.length === 0) return lines;
 		if (hardwareCursor) this.syncCursor(lines);
@@ -428,14 +412,17 @@ class ModalEditor extends CustomEditor {
 			const room = width - label.length - 4;
 			const fits = status.find((text) => visibleWidth(text) <= room);
 			const left = fits ?? truncateToWidth(status[status.length - 1]!, room, "…");
-			lines[last] = `${rule(1)} ${left} ${rule(room - visibleWidth(left) + 1)}${label}`;
+			lines[last] = `${rule(1)} ${left} ${rule(room - visibleWidth(left) + 1)}${this.paintLabel(label)}`;
 			return lines;
 		}
 
-		lines[last] = truncateToWidth(border, width - label.length, "") + label;
+		lines[last] = truncateToWidth(border, width - label.length, "") + this.paintLabel(label);
 		return lines;
 	}
 }
+
+// The current UI theme, read on each paint so a theme switch shows at once.
+let uiTheme: (() => { fg(color: string, text: string): string }) | undefined;
 
 // Whether this session switched the terminal's cursor on; false leaves pi's drawn cursor alone.
 let hardwareCursor = false;
@@ -444,6 +431,7 @@ export default function (pi: ExtensionAPI) {
 	let restore: (() => void) | undefined;
 
 	pi.on("session_start", (_event, ctx) => {
+		uiTheme = () => ctx.ui.theme;
 		ctx.ui.setEditorComponent((tui, theme, kb) => {
 			const host = tui as any;
 			if (typeof host.setShowHardwareCursor === "function" && typeof host.terminal?.write === "function") {
@@ -456,7 +444,8 @@ export default function (pi: ExtensionAPI) {
 					hardwareCursor = false;
 				};
 			}
-			return new ModalEditor(tui, theme, kb);
+			// Draw pi's working indicator on the top border instead of on a row of its own.
+			return new ModalEditor(tui, theme, kb, { embedWorkingStatus: true });
 		});
 	});
 

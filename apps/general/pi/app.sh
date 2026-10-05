@@ -1,5 +1,9 @@
+# Pi — the palette renders as a pi theme named "dotfiles", which pi hot-reloads
+# from ~/.pi/agent/themes, so a running session re-themes itself.
+
 render() {
   local agent_dir="$HOME/.pi/agent"
+  generate theme.json "$agent_dir/themes/dotfiles.json"
   local src="$APP_DIR/extensions"
   local dst="$agent_dir/extensions"
   local packages="$APP_DIR/packages.txt"
@@ -50,12 +54,17 @@ for package in packages:
 
 data["packages"] = existing
 
+# Follow the dotfiles palette (themes/dotfiles.json, rendered above).
+if data.get("theme") != "dotfiles":
+    data["theme"] = "dotfiles"
+    changed = True
+
 if changed or not settings_path.exists():
     tmp_path = settings_path.with_suffix(settings_path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(data, indent=2) + "\n")
     os.replace(tmp_path, settings_path)
 PY
-    note "ensured: ~/.pi/agent/settings.json packages"
+    note "ensured: ~/.pi/agent/settings.json packages, theme"
   fi
 
   # Keybindings: ctrl+h/j/k/l move through pi's lists and the session tree.
@@ -65,6 +74,18 @@ PY
     ln -s "$keys" "$keys_target"
     note "linked: ~/.pi/agent/keybindings.json"
   fi
+
+  # Permission policy and its model judge. Seeded once, not linked: both
+  # extensions rewrite their own config (toggling yolo, picking a judge model).
+  local policy
+  for policy in "$APP_DIR"/permissions/*.json; do
+    [[ -f "$policy" ]] || continue
+    local policy_target="$agent_dir/extensions/$(basename "$policy" .json)/config.json"
+    [[ -e "$policy_target" ]] && continue
+    mkdir -p "$(dirname "$policy_target")"
+    cp "$policy" "$policy_target"
+    note "seeded: $(pretty "$policy_target")"
+  done
 
   # Local forks: link each into ~/.pi/agent/team-vendor, where settings.json
   # expects them, and install runtime deps on a machine that has none yet.
