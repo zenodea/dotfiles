@@ -8,6 +8,7 @@ nvim.log
 apps/linux/vifm/config/vifminfo.json
 # lazygit writes its runtime state next to config.yml, i.e. into the repo.
 apps/general/lazygit/config/state.yml
+apps/general/lazygit/config/github_pull_requests.json
 
 # Zed's local prompt store — binary, rewritten on every session
 apps/general/zed/config/prompts/
@@ -30,3 +31,6 @@ apps/linux/waybar/config/style.css
 apps/mac/raycast/theme.json
 apps/mac/sketchybar/config/colors.sh
 apps/mac/sketchybar/config/sketchybarrc
+
+# Vendored pi packages install their runtime deps in place.
+apps/general/pi/team-vendor/*/node_modules/

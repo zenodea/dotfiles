@@ -32,10 +32,20 @@ existing = data.get("packages", [])
 if not isinstance(existing, list):
     raise SystemExit(f"{settings_path}: packages must be a list")
 
+# npm:@scope/name@1.2.3 and npm:@scope/name are the same package, so a pin on
+# either side must not add a second entry.
+def name(package):
+    if isinstance(package, str) and package.startswith("npm:"):
+        head, sep, _ = package[5:].partition("@")
+        return package[:5] + head
+    return package
+
+present = {name(package) for package in existing}
 changed = False
 for package in packages:
-    if package not in existing:
+    if name(package) not in present:
         existing.append(package)
+        present.add(name(package))
         changed = True
 
 data["packages"] = existing
@@ -48,10 +58,44 @@ PY
     note "ensured: ~/.pi/agent/settings.json packages"
   fi
 
+  # Keybindings: ctrl+h/j/k/l move through pi's lists and the session tree.
+  local keys="$APP_DIR/keybindings.json" keys_target="$agent_dir/keybindings.json"
+  if [[ -f "$keys" && "$(readlink "$keys_target" 2>/dev/null)" != "$keys" ]]; then
+    [[ -e "$keys_target" || -L "$keys_target" ]] && mv "$keys_target" "$keys_target.bak"
+    ln -s "$keys" "$keys_target"
+    note "linked: ~/.pi/agent/keybindings.json"
+  fi
+
+  # Local forks: link each into ~/.pi/agent/team-vendor, where settings.json
+  # expects them, and install runtime deps on a machine that has none yet.
+  local item name target
+  for item in "$APP_DIR/team-vendor"/*/; do
+    [[ -d "$item" ]] || continue
+    item="${item%/}"
+    name="$(basename "$item")"
+    target="$agent_dir/team-vendor/$name"
+    mkdir -p "$agent_dir/team-vendor"
+
+    if [[ -L "$target" ]]; then
+      [[ "$(readlink "$target")" == "$item" ]] || { rm "$target" && ln -s "$item" "$target"; }
+    else
+      [[ -e "$target" ]] && mv "$target" "$target.bak"
+      ln -s "$item" "$target"
+      note "linked: ~/.pi/agent/team-vendor/$name"
+    fi
+
+    if [[ ! -d "$item/node_modules" ]] && have npm; then
+      if (cd "$item" && npm ci --omit=dev >/dev/null 2>&1); then
+        note "installed deps: team-vendor/$name"
+      else
+        note "npm ci failed: team-vendor/$name"
+      fi
+    fi
+  done
+
   [[ -d "$src" ]] || return 0
   mkdir -p "$dst"
 
-  local item name target
   for item in "$src"/*; do
     [[ -e "$item" ]] || continue
     name="$(basename "$item")"
