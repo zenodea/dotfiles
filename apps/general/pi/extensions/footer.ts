@@ -30,27 +30,20 @@ export default function (pi: ExtensionAPI) {
 			const sep = theme.fg("dim", " │ ");
 
 			let contextCache: { at: number; usage: ReturnType<typeof ctx.getContextUsage> } | undefined;
-			let totals: { leaf: string | null; input: number; output: number; cost: number } | undefined;
+			let totals: { leaf: string | null; cost: number } | undefined;
 
 			const statusLine = (): string[] => {
-				// Drawn on every frame; the totals only change when the leaf moves.
+				// Drawn on every frame; the total only changes when the leaf moves.
 				const leaf = ctx.sessionManager.getLeafId();
 				if (!totals || totals.leaf !== leaf) {
-					totals = { leaf, input: 0, output: 0, cost: 0 };
+					totals = { leaf, cost: 0 };
 					for (const entry of ctx.sessionManager.getBranch()) {
 						if (entry.type === "message" && entry.message.role === "assistant") {
-							const message = entry.message as AssistantMessage;
-							totals.input += message.usage.input;
-							totals.output += message.usage.output;
-							totals.cost += message.usage.cost.total;
+							totals.cost += (entry.message as AssistantMessage).usage.cost.total;
 						}
 					}
 				}
-				const { input, output, cost } = totals;
-				const stats: string[] = [];
-				if (input) stats.push(`↑${formatTokens(input)}`);
-				if (output) stats.push(`↓${formatTokens(output)}`);
-				if (cost) stats.push(`$${cost.toFixed(3)}`);
+				const stats = totals.cost ? [`$${totals.cost.toFixed(3)}`] : [];
 
 				// Estimating context walks the session; once a second is plenty for a status line.
 				if (!contextCache || Date.now() - contextCache.at > 1000) contextCache = { at: Date.now(), usage: ctx.getContextUsage() };
@@ -60,13 +53,26 @@ export default function (pi: ExtensionAPI) {
 				const context = `${percent === null ? "?" : `${percent.toFixed(1)}%`}/${formatTokens(contextWindow)}`;
 				const contextColor = (percent ?? 0) > 90 ? "error" : (percent ?? 0) > 70 ? "warning" : "dim";
 
-				const statuses = Array.from(footerData.getExtensionStatuses().entries())
+				const colored = Array.from(footerData.getExtensionStatuses().entries())
 					.sort(([a], [b]) => a.localeCompare(b))
-					.map(([, text]) => text.replace(/[\r\n\t]/g, " ").replace(/ +/g, " ").trim())
-					.filter(Boolean)
+					.map(([key, text]) => [key, text.replace(/[\r\n\t]/g, " ").replace(/ +/g, " ").trim()] as const)
+					// The classifier labels its judge "judge:provider/model"; the model is enough.
+					.map(([key, text]) => [key, text.replace(/\bjudge:(?:[^/\s]+\/)?/, "")] as const)
+					.filter(([, text]) => text)
 					// Statuses that bring no colour of their own: the permission
 					// system's "yolo" is a warning, anything else stays quiet.
-					.map((text) => (text.includes("\x1b[") ? text : theme.fg(text === "yolo" ? "warning" : "dim", text)));
+					.map(([key, text]) => [key, text.includes("\x1b[") ? text : theme.fg(text === "yolo" ? "warning" : "dim", text)] as const);
+				// The permission system and its judge are one subject: one segment,
+				// judge first, dot-separated, ahead of the other statuses.
+				const isPermission = (key: string) => key.includes("permission");
+				const permission = colored
+					.filter(([key]) => isPermission(key))
+					.sort(([a], [b]) => Number(b.includes("classifier")) - Number(a.includes("classifier")))
+					.map(([, text]) => text);
+				const statuses = [
+					...(permission.length ? [permission.join(theme.fg("dim", " · "))] : []),
+					...colored.filter(([key]) => !isPermission(key)).map(([, text]) => text),
+				];
 
 				const rest = [
 					[stats.length ? theme.fg("dim", stats.join(" ")) : "", theme.fg(contextColor, context)]
@@ -80,11 +86,7 @@ export default function (pi: ExtensionAPI) {
 					const level = pi.getThinkingLevel() || "off";
 					model += level === "off" ? " • thinking off" : ` • ${level}`;
 				}
-				const withProvider =
-					footerData.getAvailableProviderCount() > 1 && ctx.model ? `(${ctx.model.provider}) ${model}` : model;
-
-				// Widest first: the editor falls back to the one without the provider.
-				return [withProvider, model].map((text) => [theme.fg("dim", text), ...rest].join(sep));
+				return [[theme.fg("dim", model), ...rest].join(sep)];
 			};
 			(globalThis as any)[STATUS_LINE] = statusLine;
 

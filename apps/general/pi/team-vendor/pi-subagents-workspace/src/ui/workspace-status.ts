@@ -271,7 +271,17 @@ export class WorkspaceStatus {
       this.collapsed, this.now, section).map(row => {
       const text = visibleWidth(row.text) > width ? truncateToWidth(row.text, width) : row.text;
       if (row.section) this.hits.set(section, visibleWidth(text));
-      return row.section ? sidebarHeading(theme.bold(text), width) : sidebarLine(theme.fg(row.color ?? "muted", text), width);
+      if (!row.section) return sidebarLine(theme.fg(row.color ?? "muted", text), width);
+      // Git's counts carry their usual colours; the rest of a heading is bold.
+      const heading = row.section !== "git" ? theme.bold(text) : text
+        .split(" · ")
+        .map(part => /^\d+ changed$/.test(part) ? theme.fg("warning", part)
+          : /^\d+ new$/.test(part) ? theme.fg("success", part)
+          : /^↑\d+$/.test(part) ? theme.fg("accent", part)
+          : part === "clean" ? theme.fg("dim", part)
+          : theme.bold(part))
+        .join(theme.fg("dim", " · "));
+      return sidebarHeading(heading, width);
     });
     // One slot per width, so the heading's ask does not evict the body's.
     if (this.painted.size > 16) this.painted.clear();
