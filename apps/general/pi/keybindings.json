@@ -1,0 +1,7 @@
+{
+  "tui.select.up": ["up", "ctrl+k"],
+  "tui.select.down": ["down", "ctrl+j"],
+  "app.tree.foldOrUp": ["ctrl+left", "alt+left", "ctrl+h"],
+  "app.tree.unfoldOrDown": ["ctrl+right", "alt+right", "ctrl+l"],
+  "app.tree.filter.labeledOnly": "alt+l"
+}
