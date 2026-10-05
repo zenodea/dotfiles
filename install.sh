@@ -4,6 +4,7 @@
 # Layout:
 #   apps/<general|mac|linux>/<name>/config/  → $HOME/.config/<name>
 #   home/<general|mac|linux>/<path>          → $HOME/<path>
+#   skills/<name>/                           → each agent harness's skills dir
 #
 # general/ applies everywhere; mac/ and linux/ only on that OS.
 #
@@ -116,11 +117,46 @@ print(json.load(open(sys.argv[1])).get('current', ''))" "$json" 2> /dev/null)"
     done
 }
 
+# skills/<name>/ → the skills dir of every harness (Claude Code, Codex, pi).
+# All three read the same SKILL.md format, so one copy serves them all. Each
+# skill is linked on its own because those dirs also hold skills that other
+# tools install. A dir without a SKILL.md is skipped.
+skill_dests() {
+    echo "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
+    echo "${CODEX_HOME:-$HOME/.codex}/skills"
+    echo "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/skills"
+}
+
+link_skills() {
+    local src="$DOTFILES_DIR/skills" dest skill entry
+    [ -d "$src" ] || return 0
+
+    while IFS= read -r dest; do
+        for skill in "$src"/*/; do
+            [ -f "$skill/SKILL.md" ] || continue
+            link "${skill%/}" "$dest/$(basename "$skill")"
+        done
+
+        # A skill deleted from the repo leaves a dangling link behind.
+        for entry in "$dest"/*; do
+            [ -L "$entry" ] && [ ! -e "$entry" ] || continue
+            case "$(readlink "$entry")" in "$src"/*) ;; *) continue ;; esac
+            if [ "$CHECK" = 1 ]; then
+                warn "$entry is stale (run: dotfiles --sync)"
+            else
+                rm "$entry"
+                echo "  removed stale: $entry"
+            fi
+        done
+    done < <(skill_dests)
+}
+
 link_all() {
     link_apps general
     link_apps "$PLATFORM"
     link_home general
     link_home "$PLATFORM"
+    link_skills
     [ "$PLATFORM" = "mac" ] && link_alfred_workflows
     link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
 }
