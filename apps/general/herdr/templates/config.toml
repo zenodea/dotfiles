@@ -80,7 +80,7 @@ copy_mode = "prefix+["
 # windows → tabs
 new_tab = "prefix+c"
 next_tab = "prefix+n"
-previous_tab = "prefix+p"
+previous_tab = "prefix+shift+p"
 switch_tab = "prefix+1..9"
 rename_tab = "prefix+comma"
 close_tab = ["prefix+ampersand", "prefix+shift+x"]
@@ -134,3 +134,61 @@ key = "prefix+k"
 type = "pane"
 command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec claude"
 description = "claude"
+
+# Shepherd (the herdr plugin): m for mobile.
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "shepherd.open"
+description = "shepherd"
+
+[[keys.command]]
+key = "prefix+shift+m"
+type = "plugin_action"
+command = "shepherd.pair"
+description = "shepherd: pair a phone"
+
+# graphdiff (the herdr plugin): g for graph. Opens the review page for this pane's repo.
+[[keys.command]]
+key = "prefix+g"
+type = "plugin_action"
+command = "graphdiff.open"
+description = "graphdiff"
+
+# graphdiff in the terminal: the same map as a herdr overlay.
+[[keys.command]]
+key = "prefix+shift+g"
+type = "plugin_action"
+command = "graphdiff.tui"
+description = "graphdiff in the terminal"
+
+# fence (the herdr plugin): p for pen. The pen window for the space you're in;
+# previous_tab moved to prefix+shift+p to make room.
+[[keys.command]]
+key = "prefix+p"
+type = "plugin_action"
+command = "fence.open"
+description = "fence: this space's pen"
+
+# cloudsheep (~/Work/cloudsheep): u for the VM picker, shift+u toggles notifications.
+[[keys.command]]
+key = "prefix+u"
+type = "popup"
+command = "~/Work/cloudsheep/herdr/cloudsheep-pick.sh"
+description = "cloudsheep"
+width = "70%"
+height = "60%"
+
+# shift+u: start/stop background notifications (job done, lease expiring)
+[[keys.command]]
+key = "prefix+shift+u"
+type = "shell"
+command = "~/Work/cloudsheep/herdr/cloudsheep-watch.sh toggle"
+description = "cloudsheep: toggle watch"
+
+# file-tree-herdr (~/file-tree-herdr): e for explorer. Toggles the git-aware file tree split.
+[[keys.command]]
+key = "prefix+e"
+type = "plugin_action"
+command = "file-tree-herdr.open"
+description = "file tree"

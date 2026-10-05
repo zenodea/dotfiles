@@ -1,0 +1,7 @@
+# Herdr plugins managed by dotfiles: <plugin_id> <owner/repo[/subdir]>
+# Missing ones are installed with `herdr plugin install`. ~/.config/herdr/plugins.json
+# is herdr's own registry (absolute paths, per machine), so it isn't tracked.
+fence zenodea/fence
+file-tree-herdr zenodea/file-tree-herdr
+graphdiff zenodea/graphdiff
+shepherd zenodea/shepherd
