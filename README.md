@@ -45,6 +45,7 @@ apps/<general|mac|linux>/<name>/
     config/       static config, symlinked to ~/.config/<name>
 
 home/<general|mac|linux>/    mirrors $HOME (.zshrc, scripts/, …)
+skills/<name>/SKILL.md       agent skills, symlinked into Claude Code, Codex and pi
 themes/<name>.sh             palettes
 fonts/<name>.sh              mono fonts
 fonts/text/<name>.sh         proportional fonts
@@ -225,6 +226,10 @@ dotfiles --sync                      # re-run install.sh
 - **herdr**: tmux-style keys (`ctrl+a` prefix), themed tab bar, git and sessionizer scripts.
 - **pi**: `apps/general/pi/` links extensions into `~/.pi/agent/extensions`
   and adds the packages in `packages.txt` to its settings.
+- **Agent skills**: each `skills/<name>/` with a `SKILL.md` is symlinked into
+  `~/.claude/skills`, `~/.codex/skills` and `~/.pi/agent/skills`. Add a
+  folder, run `dotfiles --sync`. Skills other tools put in those directories
+  are left alone, and links to skills deleted from the repo are removed.
 - **Raycast** (macOS): `apps/mac/raycast/extension/` is a Raycast extension for
   the `dotfiles` command: search themes and fonts, set wallpapers, random
   theme, toggle auto, maintenance. See its own README for development.
