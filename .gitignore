@@ -3,6 +3,7 @@ nvim.log
 
 # Machine-local: which appearance a manual theme pick is holding against.
 .auto-pin
+.current-theme
 # Machine-local: the wallpaper last set, for the launcher's marker.
 .current-wallpaper
 apps/linux/vifm/config/vifminfo.json
@@ -21,6 +22,7 @@ apps/general/zed/config/prompts/
 # ~/.config, so they have nothing here.)
 apps/general/nvim/config/lua/dotfiles/theme.lua
 apps/general/zed/config/settings.json
+apps/general/lazygit/config/config.yml
 apps/linux/hypr/config/hyprland.conf
 apps/linux/hypr/config/hyprlock.conf
 apps/linux/rofi/config/themes/current.rasi

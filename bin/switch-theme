@@ -140,6 +140,13 @@ if [[ -z "${MUTED:-}" ]]; then
 fi
 export MUTED
 
+FG_SOFT="$(printf '%02x%02x%02x' \
+    $(( (16#${FG:0:2} + 16#${MUTED:0:2}) / 2 )) \
+    $(( (16#${FG:2:2} + 16#${MUTED:2:2}) / 2 )) \
+    $(( (16#${FG:4:2} + 16#${MUTED:4:2}) / 2 )))"
+export FG_SOFT
+DERIVED+=(FG_SOFT)
+
 for _c in "${PALETTE[@]}"; do
     _hex="${!_c}"
     printf -v "${_c}_RGB" '%d, %d, %d' \
@@ -177,6 +184,9 @@ export FONT_SIZE="${FONT_SIZE:-14}"
 export FONT_CELL_HEIGHT="${FONT_CELL_HEIGHT:-0%}"
 export FONT_CELL_WIDTH="${FONT_CELL_WIDTH:-0%}"
 export FONT_LINE_HEIGHT="${FONT_LINE_HEIGHT:-1.4}" # zed buffer, as a multiplier
+FONT_FEATURES_JSON="{$(for _f in ${FONT_FEATURES:-}; do printf '"%s": true, ' "$_f"; done | sed 's/, $//')}"
+export FONT_FEATURES_JSON
+FONT_FIELDS+=(FONT_FEATURES_JSON)
 
 # --- template rendering ----------------------------------------------------
 
@@ -232,6 +242,13 @@ copy() {
     note "wrote: $(pretty "$output")"
 }
 
+link() {
+    [[ "$(readlink "$2" 2> /dev/null)" == "$1" ]] && return 0
+    [[ -e "$2" || -L "$2" ]] && mv "$2" "$2.bak"
+    ln -s "$1" "$2"
+    note "linked: $(pretty "$2")"
+}
+
 # --- run the apps ----------------------------------------------------------
 
 # Auto mode runs this on a timer while you also switch by hand, and two renders
@@ -255,7 +272,7 @@ echo "==> Switching to: $THEME"
 for _dir in general "$PLATFORM"; do
     for APP_DIR in "$APPS_DIR/$_dir"/*/; do
         APP_DIR="${APP_DIR%/}"
-        # Apps with no app.sh (lazygit, yazi) are static config only — nothing
+        # Apps with no app.sh (yazi) are static config only — nothing
         # to render, install.sh just symlinks them.
         [[ -f "$APP_DIR/app.sh" ]] || continue
         echo "  $(basename "$APP_DIR")"
