@@ -273,6 +273,7 @@
   "buffer_font_line_height": { "custom": ${FONT_LINE_HEIGHT} },
   "buffer_font_family": "${FONT_MONO_FAMILY}",
   "buffer_font_fallbacks": ["Symbols Nerd Font Mono"],
+  "buffer_font_features": ${FONT_FEATURES_JSON},
   "ui_font_family": "${FONT_TEXT_FAMILY}",
   "autosave": "on_focus_change",
   "theme": "${ZED_BASE}",
@@ -336,7 +337,7 @@
     "syntax": {
       "keyword": { "color": "#${PURPLE}" },
       "function": { "color": "#${BLUE}" },
-      "string": { "color": "#${GREEN}" },
+      "string": { "color": "#${GREEN}", "font_style": "italic" },
       "number": { "color": "#${ORANGE}" },
       "comment": { "color": "#${MUTED}", "font_style": "italic" },
       "type": { "color": "#${YELLOW}" },

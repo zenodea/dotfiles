@@ -9,6 +9,7 @@ background=#${BG}
 background-blur = 80
 window-padding-y = 6,0
 window-padding-balance = true
+macos-titlebar-style = hidden
 custom-shader = shaders/cursor_warp.glsl
 confirm-close-surface = false
 quit-after-last-window-closed = false
