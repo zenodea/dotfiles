@@ -1,0 +1,21 @@
+[color "decorate"]
+	HEAD = bold cyan italic
+	branch = bold green italic
+	remoteBranch = bold red italic
+	tag = bold yellow italic
+	stash = bold magenta italic
+[color "diff"]
+	func = italic
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	syntax-theme = dotfiles
+	navigate = true
+	line-numbers = true
+	file-style = bold italic
+	hunk-header-style = file line-number syntax italic
+[user]
+	name = Zeno de Angeli
+	email = 67063098+zenodea@users.noreply.github.com
