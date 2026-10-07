@@ -16,3 +16,27 @@ os:
   # Blocking by design — lazygit waits on this one (e.g. rewording a commit),
   # so it has to stay in the foreground rather than hand off and return.
   editAtLineAndWait: 'nvim +{{line}} -- {{filename}}'
+
+git:
+  diffRenderers:
+    - type: stdinFilter
+      command: delta --paging=never
+
+gui:
+  theme:
+    activeBorderColor: ['#${ACCENT}', bold]
+    inactiveBorderColor: ['#${BORDER}']
+    searchingActiveBorderColor: ['#${YELLOW}', bold]
+    optionsTextColor: ['#${MUTED}']
+    selectedLineBgColor: ['#${BG_ALT}']
+    inactiveViewSelectedLineBgColor: ['#${SURFACE}']
+    cherryPickedCommitFgColor: ['#${BLUE}']
+    cherryPickedCommitBgColor: ['#${BG_ALT}']
+    markedBaseCommitFgColor: ['#${YELLOW}']
+    markedBaseCommitBgColor: ['#${BG_ALT}']
+    unstagedChangesColor: ['#${RED}']
+    defaultFgColor: ['#${FG}']
+  nerdFontsVersion: "3"
+  showNumstatInFilesView: true
+  showDivergenceFromBaseBranch: arrowAndNumber
+  showRandomTip: false

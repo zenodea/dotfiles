@@ -69,6 +69,9 @@ PACKAGES=(
     fzf
     zoxide
 
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+
     # Terminal multiplexer
     tmux
 
@@ -109,6 +112,8 @@ PACKAGES=(
     # Git tooling
     git
     lazygit
+    git-delta
+    bat
     gh
 
     # Shell

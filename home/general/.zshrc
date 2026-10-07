@@ -69,7 +69,7 @@ ZSH_THEME="gnzh"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git sudo extract colored-man-pages copybuffer)
 
 source $ZSH/oh-my-zsh.sh
 export PATH=$HOME/.local/lib/node_modules/.bin:$PATH
@@ -136,7 +136,6 @@ if command -v dotfiles > /dev/null 2>&1; then
     compdef _dotfiles_cli dotfiles
 fi
 
-
 # yazi — quit with q and the shell cd's to where you browsed
 y() {
     local tmp cwd
@@ -164,9 +163,94 @@ if [[ -n "$HERDR_PANE_ID" && -z "$TMUX" ]]; then
     unset _k
 fi
 
+stopherdr() {
+    herdr server stop
+    local session="$HOME/.config/herdr/session.json"
+    [[ -f "$session" ]] && mv "$session" "$session.bak"
+}
+
+alias lg="lazygit"
+alias gundo="git reset --soft HEAD~1"
+
+gac() {
+    [[ -z "$*" ]] && { echo "usage: gac <message>" >&2; return 1; }
+    git add -A && git commit -m "$*"
+}
+
+gcof() {
+    local branch
+    branch=$(git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads |
+        fzf --preview 'git log --oneline --color=always -20 {}') || return
+    git checkout "$branch"
+}
+
+glf() {
+    local hash
+    hash=$(git log --oneline --color=always |
+        fzf --ansi --no-sort --preview 'git show --color=always {1}' |
+        awk '{print $1}') || return
+    [[ -z "$hash" ]] && return
+    if command -v pbcopy > /dev/null; then
+        printf %s "$hash" | pbcopy
+    elif command -v wl-copy > /dev/null; then
+        printf %s "$hash" | wl-copy
+    fi
+    echo "$hash"
+}
+
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,italic"
+for _f in /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+    /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh \
+    /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh; do
+    [[ -f "$_f" ]] && { source "$_f"; break; }
+done
+unset _f
+
 # zoxide — frecency-based cd (z / zi)
 command -v zoxide > /dev/null 2>&1 && eval "$(zoxide init zsh)"
+
+if command -v fzf > /dev/null 2>&1; then
+    if fzf --zsh > /dev/null 2>&1; then
+        source <(fzf --zsh)
+    else
+        for _f in /usr/share/fzf/key-bindings.zsh /usr/share/doc/fzf/examples/key-bindings.zsh; do
+            [[ -f "$_f" ]] && { source "$_f"; break; }
+        done
+        unset _f
+    fi
+fi
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+for _f in /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+    /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
+    /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; do
+    [[ -f "$_f" ]] && { source "$_f"; break; }
+done
+unset _f
+if (( ${+ZSH_HIGHLIGHT_STYLES} )); then
+    ZSH_HIGHLIGHT_STYLES[command]="fg=blue"
+    ZSH_HIGHLIGHT_STYLES[builtin]="fg=blue"
+    ZSH_HIGHLIGHT_STYLES[alias]="fg=blue"
+    ZSH_HIGHLIGHT_STYLES[function]="fg=blue"
+    ZSH_HIGHLIGHT_STYLES[precommand]="fg=blue,italic"
+    ZSH_HIGHLIGHT_STYLES[reserved-word]="fg=magenta"
+    ZSH_HIGHLIGHT_STYLES[unknown-token]="fg=red"
+    ZSH_HIGHLIGHT_STYLES[single-quoted-argument]="fg=green,italic"
+    ZSH_HIGHLIGHT_STYLES[double-quoted-argument]="fg=green,italic"
+    ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]="fg=green,italic"
+    ZSH_HIGHLIGHT_STYLES[rc-quote]="fg=green,italic"
+    ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]="fg=cyan,italic"
+    ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]="fg=cyan,italic"
+    ZSH_HIGHLIGHT_STYLES[back-dollar-quoted-argument]="fg=cyan,italic"
+    ZSH_HIGHLIGHT_STYLES[single-quoted-argument-unclosed]="fg=red,italic"
+    ZSH_HIGHLIGHT_STYLES[double-quoted-argument-unclosed]="fg=red,italic"
+    ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument-unclosed]="fg=red,italic"
+    ZSH_HIGHLIGHT_STYLES[single-hyphen-option]="fg=yellow"
+    ZSH_HIGHLIGHT_STYLES[double-hyphen-option]="fg=yellow"
+    ZSH_HIGHLIGHT_STYLES[commandseparator]="fg=8"
+    ZSH_HIGHLIGHT_STYLES[redirection]="fg=8"
+    ZSH_HIGHLIGHT_STYLES[comment]="fg=8,italic"
+fi

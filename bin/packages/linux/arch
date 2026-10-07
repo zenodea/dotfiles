@@ -66,6 +66,9 @@ PACMAN_PACKAGES=(
     fzf
     zoxide
 
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+
     # Terminal multiplexer
     tmux
 
@@ -109,6 +112,8 @@ PACMAN_PACKAGES=(
     # Git tooling
     git
     lazygit
+    git-delta
+    bat
     github-cli
 
     # Shell
@@ -133,7 +138,6 @@ PACMAN_PACKAGES=(
     discord
     spotify-launcher
 )
-
 
 echo "==> Installing pacman packages..."
 sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"

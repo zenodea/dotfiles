@@ -53,6 +53,8 @@ FORMULAE=(
     # Git tooling
     git
     lazygit
+    git-delta
+    bat
 
     # File managers
     vifm
@@ -65,6 +67,9 @@ FORMULAE=(
     fd
     fzf
     zoxide
+
+    zsh-autosuggestions
+    zsh-syntax-highlighting
 
     # Terminal multiplexers
     tmux
