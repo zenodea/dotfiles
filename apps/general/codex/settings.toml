@@ -1,0 +1,11 @@
+approvals_reviewer = "auto_review"
+model = "gpt-6.1-sol"
+
+[tui]
+vim_mode_default = true
+status_line = ["model-with-reasoning", "git-branch", "context-used", "estimated-thread-cost", "approval-mode"]
+status_line_use_colors = true
+terminal_title = ["run-state", "project-name"]
+show_tooltips = false
+animations = false
+theme = "dotfiles"

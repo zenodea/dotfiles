@@ -115,8 +115,8 @@ Switching re-renders every app's config from its templates and reloads the
 apps that are running.
 
 Themed apps: hyprland, hyprlock, quickshell, waybar, fuzzel, rofi, gtk, vifm,
-sketchybar, borders, Alfred, Raycast, ghostty, tmux, herdr, nvim, zed, Firefox,
-Obsidian, and the wallpaper.
+sketchybar, borders, Alfred, Raycast, ghostty, tmux, herdr, pi, Claude Code,
+Codex, lazygit, delta, nvim, zed, Firefox, Obsidian, and the wallpaper.
 
 Themes (each has a `-light` version): catppuccin-mocha, dracula, everforest,
 github, gruvbox, gruvbox-material, monaspace, nightfox, night-owl, nord,
@@ -220,12 +220,57 @@ dotfiles --save [msg]                # add, commit, push
 dotfiles --sync                      # re-run install.sh
 ```
 
+## Agent harnesses
+
+I use three coding agents: [pi](https://pi.dev), Claude Code and Codex. pi is
+the one I shape, because an extension can change anything in it. The other two
+only have settings, so they are configured to get as close to pi as those
+settings allow. `apps/general/pi/` is the reference; `claude/` and `codex/`
+approximate it. When I change how I want an agent to behave, I change pi first
+and then mirror what the others can express.
+
+What I'm after, in every harness:
+
+- **One quiet line of status.** Model and effort, context used, permission
+  state, active mode. Nothing I don't read: no vendor names, no token counters,
+  no path I already know.
+- **Nothing moves.** The line I type on stays where it is. The working
+  indicator sits on the editor border, the completion list opens above the
+  prompt at a fixed height, and sidebar headings stay put.
+- **Keyboard first, vim everywhere.** A modal prompt, `ctrl+h/j/k/l` in every
+  list, and keys to scroll the transcript and jump back to my last message.
+- **Replies shaped for attention.** Result first, progress restated, one next
+  step, no tangents. One rules file, `pi/rules/adhd.md`, feeds all three.
+- **A judge instead of yolo or prompts.** Fixed rules settle the obvious cases,
+  a small model reviews the rest, and I'm asked only about what's left.
+- **Themed like everything else.** The harness follows the dotfiles palette.
+- **Merge, never overwrite.** Orca, Superset and herdr write hooks into the
+  same config files, so each `app.sh` sets its own keys and leaves the rest.
+- **Small and mine.** A fifty-line extension beats a plugin I don't control.
+  Forks I depend on live in the repo (`pi/team-vendor/`).
+
+How far each one gets:
+
+| | pi | Claude Code | Codex |
+|---|---|---|---|
+| Status line | `extensions/footer.ts`, drawn on the editor border | `statusline.sh` | `tui.status_line` items |
+| Vim prompt | `extensions/modal-editor.ts`: motions, visual mode, transcript scrolling, `[` `]` between my messages | built-in vim mode | built-in vim mode |
+| `ctrl+h/j/k/l` in lists | `keybindings.json` | `keybindings.json` (`ctrl+j/k`) | built in |
+| Reply style | `/adhd` toggle | `ADHD` output style, switch with `/config` | block in `AGENTS.md`, always on |
+| Permissions | policy plus a Haiku judge, `permissions/` | built-in auto mode, same deny rules | `approvals_reviewer = "auto_review"` |
+| Theme | rendered from the palette | custom theme rendered from the palette | syntax theme rendered from the palette |
+| Working indicator with time and tokens, sidebar, completion box, cursor shape | yes | no | no |
+
+Each harness also gets the shared skills in `skills/`.
+
 ## Other apps
 
 - **tmux**: themed config plus git, popup and sessionizer scripts.
 - **herdr**: tmux-style keys (`ctrl+a` prefix), themed tab bar, git and sessionizer scripts.
-- **pi**: `apps/general/pi/` links extensions into `~/.pi/agent/extensions`
-  and adds the packages in `packages.txt` to its settings.
+- **pi, Claude Code, Codex**: see [Agent harnesses](#agent-harnesses).
+  `apps/general/pi/` links its extensions, rules, keybindings and vendored
+  forks into `~/.pi/agent` and adds the packages in `packages.txt`;
+  `claude/` and `codex/` merge their settings into `~/.claude` and `~/.codex`.
 - **Agent skills**: each `skills/<name>/` with a `SKILL.md` is symlinked into
   `~/.claude/skills`, `~/.codex/skills` and `~/.pi/agent/skills`. Add a
   folder, run `dotfiles --sync`. Skills other tools put in those directories

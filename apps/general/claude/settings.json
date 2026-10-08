@@ -1,0 +1,23 @@
+{
+  "editorMode": "vim",
+  "outputStyle": "ADHD",
+  "maxProseWidth": 100,
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working",
+      "Reading",
+      "Thinking",
+      "Writing",
+      "Checking"
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)"
+    ]
+  }
+}
