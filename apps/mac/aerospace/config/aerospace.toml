@@ -1,6 +1,9 @@
 # AeroSpace — tiling window manager.
 # Commands: https://nikitabobko.github.io/AeroSpace/commands
 
+config-version = 2
+persistent-workspaces = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "S"]
+
 after-startup-command = []
 
 start-at-login = true
@@ -48,33 +51,44 @@ preset = 'qwerty'
 # the bare number at the end is the fallback for anything unlisted.
 # Tune per monitor: too small = windows cover the bar, too big = dead strip.
 [gaps]
-inner.horizontal = 6
-inner.vertical = 6
-outer.left = 6
-outer.bottom = 6
+inner.horizontal = 3
+inner.vertical = 3
+outer.left = 3
+outer.bottom = 3
 outer.top = [
-  { monitor.'built-in' = 8 }, # notch strip already reserves space; raise to ~42 if the bar gets covered
+  { monitor.'built-in' = 3 }, # notch strip already reserves space; raise to ~42 if the bar gets covered
   { monitor.'msi' = 38 },     # MSI MP275
   42,                         # any other monitor
 ]
 outer.right = 6
 
 # Pin workspaces to monitors so alt-N always lands on the same screen and
-# workspaces stop migrating when monitors reconnect. Patterns are
-# case-insensitive substrings of the monitor names, currently:
-#   'Built-in Retina Display', 'DELL S2725QC', 'LG ULTRAGEAR'
-# Uncomment and adjust to taste:
-#[workspace-to-monitor-force-assignment]
-#    1 = 'dell'
-#    2 = 'dell'
-#    3 = 'dell'
-#    4 = 'dell'
-#    5 = 'ultragear'
-#    6 = 'ultragear'
-#    7 = 'ultragear'
-#    8 = 'built-in'
-#    9 = 'built-in'
-#    0 = 'built-in'
+# workspaces stop migrating when monitors reconnect.
+[workspace-to-monitor-force-assignment]
+1 = ['dell', 'msi', 'ultragear', 'main']
+2 = ['dell', 'msi', 'ultragear', 'main']
+3 = ['dell', 'msi', 'ultragear', 'main']
+4 = ['dell', 'msi', 'ultragear', 'main']
+5 = ['dell', 'msi', 'ultragear', 'main']
+6 = ['dell', 'msi', 'ultragear', 'main']
+7 = ['dell', 'msi', 'ultragear', 'main']
+8 = ['dell', 'msi', 'ultragear', 'main']
+9 = ['dell', 'msi', 'ultragear', 'main']
+0 = ['built-in', 'main']
+
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+[[on-window-detected]]
+if.app-id = 'com.apple.calculator'
+run = 'layout floating'
+[[on-window-detected]]
+if.app-id = 'com.apple.ActivityMonitor'
+run = 'layout floating'
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+if.window-title-regex-substring = ' Info$'
+run = 'layout floating'
 
 # 'main' binding mode — must always be present.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -96,8 +110,13 @@ alt-shift-l = 'move right'
 alt-minus = 'resize smart -50'
 alt-equal = 'resize smart +50'
 
-alt-f = 'fullscreen'
-alt-shift-f = 'layout floating tiling'
+alt-shift-f = 'fullscreen'
+alt-f = 'layout floating tiling'
+
+alt-shift-q = 'close'
+
+alt-s = 'workspace S'
+alt-shift-s = 'move-node-to-workspace S'
 
 # Launchers go through `open`: on macOS `ghostty -e` won't start the
 # emulator from the CLI and the `+new-window` IPC is GTK-only.
