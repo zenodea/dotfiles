@@ -21,7 +21,16 @@
 
 import { spawn } from "node:child_process";
 import { CustomEditor, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { CURSOR_MARKER, matchesKey, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import {
+	CURSOR_MARKER,
+	isKeyRelease,
+	type KeyId,
+	matchesKey,
+	truncateToWidth,
+	type TuiMouseEvent,
+	visibleWidth,
+} from "@earendil-works/pi-tui";
+import { liveTheme, startsUserMessage, transcript } from "./lib/live.ts";
 
 const STATUS_LINE = Symbol.for("dotfiles.pi.status-line");
 
@@ -113,7 +122,7 @@ function copyToClipboard(text: string, write: (sequence: string) => void): void 
 }
 
 // Transcript scrolling, in viewport fractions (or single lines).
-const SCROLLS: [key: string, pages: number, lines: number][] = [
+const SCROLLS: [key: KeyId, pages: number, lines: number][] = [
 	["ctrl+u", -0.5, 0],
 	["ctrl+d", 0.5, 0],
 	["ctrl+b", -1, 0],
@@ -239,6 +248,9 @@ class ModalEditor extends CustomEditor {
 	// terminal's cursor switched on instead (see the factory below), drop that
 	// cell's highlight and set the shape for the mode.
 	private syncCursor(lines: string[]): void {
+		const host = this.tui as any;
+		if (host.getShowHardwareCursor?.() === false) host.setShowHardwareCursor?.(true);
+
 		const index = lines.findIndex((line) => line.includes(CURSOR_MARKER));
 		if (index === -1) return;
 		const line = lines[index]!;
@@ -256,8 +268,8 @@ class ModalEditor extends CustomEditor {
 
 	// A filled block in the mode's colour: bold, with the colour as the background.
 	private paintLabel(label: string): string {
-		const theme = uiTheme?.();
-		return theme ? theme.fg(MODE_COLOR[this.mode], `\x1b[1;7m${label}\x1b[22;27m`) : label;
+		const theme = liveTheme();
+		return theme ? theme.fg(MODE_COLOR[this.mode], `\x1b[1;3;7m${label}\x1b[22;23;27m`) : label;
 	}
 
 	private send(keys: string[]): void {
@@ -270,6 +282,22 @@ class ModalEditor extends CustomEditor {
 		const view = tui.getPrimaryScrollView?.();
 		if (!view) return;
 		tui.scrollBy?.(lines + Math.trunc(pages * Math.max(2, view.viewportHeight)));
+	}
+
+	private jumpToUserMessage(direction: -1 | 1): void {
+		const tui = this.tui as any;
+		const found = transcript(tui);
+		const background = liveTheme()?.getBgAnsi("userMessageBg");
+		if (!found || !background) return tui.scrollToPrompt?.(direction);
+		const { view, rows } = found;
+
+		for (let row = view.scrollTop + direction; row >= 0 && row < rows.length; row += direction) {
+			if (!startsUserMessage(rows[row], background)) continue;
+			view.scrollTo(row, { disableFollow: true });
+			this.tui.requestRender();
+			return;
+		}
+		if (direction === 1) this.scrollTranscriptTo("end");
 	}
 
 	private scrollTranscriptTo(edge: "start" | "end"): void {
@@ -289,7 +317,7 @@ class ModalEditor extends CustomEditor {
 			return;
 		}
 
-		if ((command === "v" || command === "V") && !empty) {
+		if (command === "v" || command === "V") {
 			this.anchor = this.getCursor();
 			this.mode = command === "v" ? "visual" : "vline";
 			return;
@@ -315,6 +343,8 @@ class ModalEditor extends CustomEditor {
 		}
 
 		if (empty && (command === "j" || command === "k")) return this.scrollTranscript(0, command === "j" ? 1 : -1);
+
+		if (command === "[" || command === "]") return this.jumpToUserMessage(command === "[" ? -1 : 1);
 
 		if (command === "dd" || command === "cc") {
 			this.send([KEY.lineStart, KEY.deleteToEnd]);
@@ -388,14 +418,34 @@ class ModalEditor extends CustomEditor {
 		}
 	}
 
+	private listHeight(): number {
+		return ((this as any).autocompleteMaxVisible ?? 5) + 1;
+	}
+
 	render(width: number): string[] {
+		const lines = this.renderEditor(width);
+		const list = (this as any).renderedAutocompleteHeight ?? 0;
+		if (list <= 0 || list >= lines.length) return lines;
+		const editorRows = lines.length - list;
+		const padding = Array.from({ length: Math.max(0, this.listHeight() - list) }, () => " ".repeat(width));
+		return [this.borderColor("─".repeat(width)), ...lines.slice(editorRows), ...padding, ...lines.slice(0, editorRows)];
+	}
+
+	handleMouse(event: TuiMouseEvent): ReturnType<CustomEditor["handleMouse"]> {
+		const list = (this as any).renderedAutocompleteHeight ?? 0;
+		if (list <= 0) return super.handleMouse(event);
+		const editorRows = ((this as any).renderedVisibleLineCount ?? 0) + 2;
+		const above = 1 + Math.max(list, this.listHeight());
+		if (event.y >= above) return super.handleMouse({ ...event, y: event.y - above });
+		if (event.y >= 1 && event.y <= list) return super.handleMouse({ ...event, y: event.y - 1 + editorRows });
+		return undefined;
+	}
+
+	private renderEditor(width: number): string[] {
 		const lines = super.render(width);
 		if (lines.length === 0) return lines;
 		if (hardwareCursor) this.syncCursor(lines);
-		if (this.mode === "visual" || this.mode === "vline") {
-			if (this.getText() === "") this.mode = "normal";
-			else if (hardwareCursor) this.paintSelection(lines, width);
-		}
+		if ((this.mode === "visual" || this.mode === "vline") && hardwareCursor) this.paintSelection(lines, width);
 
 		// Add mode indicator to bottom border
 		const label = MODE_LABEL[this.mode];
@@ -421,37 +471,69 @@ class ModalEditor extends CustomEditor {
 	}
 }
 
-// The current UI theme, read on each paint so a theme switch shows at once.
-let uiTheme: (() => { fg(color: string, text: string): string }) | undefined;
-
 // Whether this session switched the terminal's cursor on; false leaves pi's drawn cursor alone.
 let hardwareCursor = false;
 
+const ASK_USER_BLOCKED = "rpiv:ask-user:blocked";
+const WHEEL = /^\x1b\[<(\d+);\d+;\d+[Mm]$/;
+const WHEEL_LINES = 3;
+const PAGE_OVERLAP = 4;
+
+function transcriptScroll(data: string, tui: any): number | undefined {
+	const wheel = WHEEL.exec(data);
+	if (wheel) {
+		const button = Number(wheel[1]);
+		if ((button & 64) === 0 || (button & 2) !== 0) return undefined;
+		return (button & 1) === 0 ? -WHEEL_LINES : WHEEL_LINES;
+	}
+	const page = Math.max(1, (tui.getPrimaryScrollView?.()?.viewportHeight ?? 10) - PAGE_OVERLAP);
+	if (matchesKey(data, "pageUp")) return -page;
+	if (matchesKey(data, "pageDown")) return page;
+	return undefined;
+}
+
 export default function (pi: ExtensionAPI) {
 	let restore: (() => void) | undefined;
+	let asking = false;
+	let editorTui: any;
+	let stopScrollListener: (() => void) | undefined;
+
+	pi.events.on(ASK_USER_BLOCKED, (data: unknown) => {
+		asking = Boolean((data as { active?: unknown } | undefined)?.active);
+	});
 
 	pi.on("session_start", (_event, ctx) => {
-		uiTheme = () => ctx.ui.theme;
+		stopScrollListener?.();
+		stopScrollListener = ctx.ui.onTerminalInput((data) => {
+			if (!asking || !editorTui) return undefined;
+			const delta = transcriptScroll(data, editorTui);
+			if (delta === undefined) return undefined;
+			if (!isKeyRelease(data)) {
+				editorTui.scrollBy?.(delta);
+				editorTui.requestRender?.();
+			}
+			return { consume: true };
+		});
+
 		ctx.ui.setEditorComponent((tui, theme, kb) => {
+			editorTui = tui;
 			const host = tui as any;
 			if (typeof host.setShowHardwareCursor === "function" && typeof host.terminal?.write === "function") {
-				const previous = host.getShowHardwareCursor?.();
 				host.setShowHardwareCursor(true);
 				hardwareCursor = true;
-				restore = () => {
-					host.terminal.write(CURSOR_SHAPE_RESET);
-					if (typeof previous === "boolean") host.setShowHardwareCursor(previous);
-					hardwareCursor = false;
-				};
+				restore = () => host.terminal.write(CURSOR_SHAPE_RESET);
 			}
 			// Draw pi's working indicator on the top border instead of on a row of its own.
 			return new ModalEditor(tui, theme, kb, { embedWorkingStatus: true });
 		});
 	});
 
-	// Hand the terminal back with its own cursor shape.
-	pi.on("session_shutdown", () => {
-		restore?.();
+	pi.on("session_shutdown", (event) => {
+		if (event.reason === "quit") restore?.();
 		restore = undefined;
+		stopScrollListener?.();
+		stopScrollListener = undefined;
+		editorTui = undefined;
+		asking = false;
 	});
 }

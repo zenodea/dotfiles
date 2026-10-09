@@ -21,6 +21,10 @@ function formatTokens(count: number): string {
 }
 
 const STATUS_LINE = Symbol.for("dotfiles.pi.status-line");
+const EDITOR_VIEW_EVENT = "subagents:editor-view";
+const EDITOR_VIEW_REQUEST_EVENT = "subagents:editor-view:request";
+const EDITOR_STATUS_REQUEST_EVENT = "subagents:editor-status:request";
+type ViewedAgent = { id: string; modelId?: string; modelName?: string; thinkingLevel?: string };
 
 export default function (pi: ExtensionAPI) {
 	pi.on("session_start", async (_event, ctx) => {
@@ -31,26 +35,39 @@ export default function (pi: ExtensionAPI) {
 
 			let contextCache: { at: number; usage: ReturnType<typeof ctx.getContextUsage> } | undefined;
 			let totals: { leaf: string | null; cost: number } | undefined;
+			let viewedAgent: ViewedAgent | null = null;
+			type AgentStatus = { cost: number; usage?: ReturnType<typeof ctx.getContextUsage>; contextWindow?: number; reasoning?: boolean };
+			let agentStatus: { at: number; value?: AgentStatus } | undefined;
 
 			const statusLine = (): string[] => {
-				// Drawn on every frame; the total only changes when the leaf moves.
-				const leaf = ctx.sessionManager.getLeafId();
-				if (!totals || totals.leaf !== leaf) {
-					totals = { leaf, cost: 0 };
-					for (const entry of ctx.sessionManager.getBranch()) {
-						if (entry.type === "message" && entry.message.role === "assistant") {
-							totals.cost += (entry.message as AssistantMessage).usage.cost.total;
+				let cost: number | undefined;
+				let usage: ReturnType<typeof ctx.getContextUsage>;
+				if (viewedAgent) {
+					if (!agentStatus || Date.now() - agentStatus.at > 1000) {
+						const snapshot: typeof agentStatus = { at: Date.now() };
+						pi.events.emit(EDITOR_STATUS_REQUEST_EVENT, { agentId: viewedAgent.id, respond: (value: AgentStatus) => { snapshot.value = value; } });
+						agentStatus = snapshot;
+					}
+					cost = agentStatus.value?.cost;
+					usage = agentStatus.value?.usage;
+				} else {
+					const leaf = ctx.sessionManager.getLeafId();
+					if (!totals || totals.leaf !== leaf) {
+						totals = { leaf, cost: 0 };
+						for (const entry of ctx.sessionManager.getBranch()) {
+							if (entry.type === "message" && entry.message.role === "assistant") {
+								totals.cost += (entry.message as AssistantMessage).usage.cost.total;
+							}
 						}
 					}
+					cost = totals.cost;
+					if (!contextCache || Date.now() - contextCache.at > 1000) contextCache = { at: Date.now(), usage: ctx.getContextUsage() };
+					usage = contextCache.usage;
 				}
-				const stats = totals.cost ? [`$${totals.cost.toFixed(3)}`] : [];
-
-				// Estimating context walks the session; once a second is plenty for a status line.
-				if (!contextCache || Date.now() - contextCache.at > 1000) contextCache = { at: Date.now(), usage: ctx.getContextUsage() };
-				const usage = contextCache.usage;
-				const contextWindow = usage?.contextWindow ?? ctx.model?.contextWindow ?? 0;
+				const stats = [cost === undefined ? "$?" : `$${cost.toFixed(3)}`];
+				const contextWindow = usage?.contextWindow ?? (viewedAgent ? agentStatus?.value?.contextWindow : ctx.model?.contextWindow) ?? 0;
 				const percent = usage?.percent ?? null;
-				const context = `${percent === null ? "?" : `${percent.toFixed(1)}%`}/${formatTokens(contextWindow)}`;
+				const context = `${percent === null ? "?" : `${percent.toFixed(1)}%`}/${viewedAgent && !contextWindow ? "?" : formatTokens(contextWindow)}`;
 				const contextColor = (percent ?? 0) > 90 ? "error" : (percent ?? 0) > 70 ? "warning" : "dim";
 
 				const colored = Array.from(footerData.getExtensionStatuses().entries())
@@ -81,17 +98,33 @@ export default function (pi: ExtensionAPI) {
 					...statuses,
 				];
 
-				let model = ctx.model?.id || "no-model";
-				if (ctx.model?.reasoning) {
-					const level = pi.getThinkingLevel() || "off";
+				let model = viewedAgent ? viewedAgent.modelId || viewedAgent.modelName || "unknown-model" : ctx.model?.id || "no-model";
+				if (viewedAgent ? agentStatus?.value?.reasoning !== false : ctx.model?.reasoning) {
+					const level = viewedAgent ? viewedAgent.thinkingLevel ?? "thinking ?" : pi.getThinkingLevel() || "off";
 					model += level === "off" ? " • thinking off" : ` • ${level}`;
 				}
-				return [[theme.fg("dim", model), ...rest].join(sep)];
+				return [theme.italic([theme.fg("dim", model), ...rest].join(sep))];
 			};
 			(globalThis as any)[STATUS_LINE] = statusLine;
+			const unsubscribe = pi.events.on(EDITOR_VIEW_EVENT, (value) => {
+				if (!value || typeof value !== "object") return;
+				const update = value as { version?: number; agent?: ViewedAgent | null };
+				if (update.version !== 1 || update.agent === undefined) return;
+				const next = update.agent;
+				if (next !== null && (typeof next !== "object" || typeof next.id !== "string"
+					|| [next.modelId, next.modelName, next.thinkingLevel].some(field => field !== undefined && typeof field !== "string"))) return;
+				if (JSON.stringify(next) === JSON.stringify(viewedAgent)) return;
+				viewedAgent = next ? { ...next } : null;
+				agentStatus = undefined;
+				contextCache = undefined;
+				totals = undefined;
+				_tui.requestRender();
+			});
+			pi.events.emit(EDITOR_VIEW_REQUEST_EVENT, { version: 1 });
 
 			return {
 				dispose() {
+					unsubscribe();
 					// A newer session's footer may already have replaced it.
 					if ((globalThis as any)[STATUS_LINE] === statusLine) delete (globalThis as any)[STATUS_LINE];
 				},

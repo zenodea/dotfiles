@@ -1,0 +1,206 @@
+diff -ruN a/src/authority/permission-prompt-component.ts b/src/authority/permission-prompt-component.ts
+--- a/src/authority/permission-prompt-component.ts
++++ b/src/authority/permission-prompt-component.ts
+@@ -17,6 +17,7 @@
+   type RenderBudget,
+   renderPromptDialog,
+ } from "#src/presentation/dialog-renderer";
++import { highlightCommandSyntax } from "#src/presentation/command-syntax";
+ import { fitLinesToWidth } from "#src/presentation/line-fitting";
+ import {
+   type PromptNotice,
+@@ -284,6 +285,7 @@
+       this.payload,
+       this.expanded ? completeViewBudget(width) : { ...this.budget, width },
+       (text) => this.theme.fg("warning", text),
++      highlightCommandSyntax,
+     );
+   }
+ 
+diff -ruN a/src/presentation/command-syntax.ts b/src/presentation/command-syntax.ts
+--- a/src/presentation/command-syntax.ts
++++ b/src/presentation/command-syntax.ts
+@@ -0,0 +1,56 @@
++import { getLanguageFromPath, highlightCode } from "@earendil-works/pi-coding-agent";
++
++export function highlightCommandSyntax(command: string): string[] {
++  const out: string[] = [];
++  const lines = command.split("\n");
++  let shell: string[] = [];
++  const flushShell = (): void => {
++    if (shell.length) out.push(...highlightCode(shell.join("\n"), "bash"));
++    shell = [];
++  };
++
++  for (let i = 0; i < lines.length; i++) {
++    const line = lines[i] ?? "";
++    shell.push(line);
++    const match = HEREDOC.exec(line);
++    if (!match) continue;
++
++    const tag = match[2];
++    let end = i + 1;
++    while (end < lines.length && lines[end]?.trim() !== tag) end++;
++    flushShell();
++    const body = lines.slice(i + 1, end);
++    if (body.length) {
++      out.push(
++        ...highlightCode(
++          body.join("\n"),
++          heredocLanguage(line.slice(0, match.index)),
++        ),
++      );
++    }
++    if (end < lines.length) shell.push(lines[end] ?? "");
++    i = end;
++  }
++  flushShell();
++  return out;
++}
++
++const HEREDOC = /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/;
++
++const INTERPRETERS: [RegExp, string][] = [
++  [/\b(python[0-9.]*|uv run|ipython)\b/, "python"],
++  [/\b(node|bun|deno|tsx)\b/, "javascript"],
++  [/\bruby\b/, "ruby"],
++  [/\bperl\b/, "perl"],
++  [/\b(psql|sqlite3|duckdb|mysql)\b/, "sql"],
++  [/\b(bash|sh|zsh)\b/, "bash"],
++];
++
++function heredocLanguage(opener: string): string | undefined {
++  const target = />\s*([^\s<>|;&]+)/.exec(opener)?.[1];
++  if (/\b(cat|tee)\b/.test(opener) && target) return getLanguageFromPath(target);
++  for (const [pattern, lang] of INTERPRETERS) {
++    if (pattern.test(opener)) return lang;
++  }
++  return undefined;
++}
+diff -ruN a/src/presentation/dialog-renderer.ts b/src/presentation/dialog-renderer.ts
+--- a/src/presentation/dialog-renderer.ts
++++ b/src/presentation/dialog-renderer.ts
+@@ -23,6 +23,7 @@
+   payload: PromptPayload,
+   budget: DialogBudget,
+   paint: HighlightPaint = plainText,
++  syntax?: CommandSyntax,
+ ): DialogView {
+   const core = coreFacts(payload).map((fact) =>
+     capField(fact, budget.fieldMaxWidth),
+@@ -34,6 +35,7 @@
+     [...core, ...evidence],
+     flaggedElements(payload),
+     paint,
++    syntax,
+   ).map((block) => fitLinesToWidth(block, budget.width));
+   const fitted = fitToRows(
+     blocks.slice(0, core.length).flat(),
+@@ -101,6 +103,11 @@
+  */
+ export type HighlightPaint = (text: string) => string;
+ 
++export type CommandSyntax = (command: string) => string[];
++
++const MARK_OPEN = "\x1b[1;4m";
++const MARK_CLOSE = "\x1b[22;24m";
++
+ /** What a renderer produced, and whether it had to leave anything out. */
+ export interface DialogView {
+   /** Wrapped to the budget's width: each entry is one visual row. */
+@@ -288,10 +295,19 @@
+   facts: readonly Fact[],
+   flagged: readonly string[],
+   paint: HighlightPaint,
++  syntax?: CommandSyntax,
+ ): string[][] {
+   const width = Math.max(0, ...facts.map((fact) => fact.label.length));
+   const indent = " ".repeat(width + 3);
+   return facts.map((fact) => {
++    if (syntax && fact.label === "command") {
++      const lines = syntaxLines(fact.text, flagged, syntax);
++      if (lines) {
++        return lines.map((line, index) =>
++          index === 0 ? `${fact.label.padEnd(width)} : ${line}` : indent + line,
++        );
++      }
++    }
+     // A fact that *is* the flagged element paints whole; any other line paints
+     // the whole-token occurrences of it, so `ls` stays plain inside `lsof`.
+     const highlight = flagged.includes(fact.text)
+@@ -305,6 +321,75 @@
+           : indent + highlight(line),
+       );
+   });
++}
++
++function syntaxLines(
++  text: string,
++  flagged: readonly string[],
++  syntax: CommandSyntax,
++): string[] | undefined {
++  const plain = text.split("\n");
++  const coloured = syntax(text);
++  if (
++    coloured.length !== plain.length ||
++    coloured.some((line, index) => stripAnsi(line) !== plain[index])
++  ) {
++    return undefined;
++  }
++  const needles = flagged.filter((needle) => needle !== text);
++  return coloured.map((line, index) =>
++    markRanges(line, tokenRanges(plain[index] ?? "", needles)),
++  );
++}
++
++const ANSI = /\x1b\[[0-9;]*m/g;
++
++function stripAnsi(text: string): string {
++  return text.replace(ANSI, "");
++}
++
++function tokenRanges(
++  line: string,
++  needles: readonly string[],
++): [number, number][] {
++  const ranges: [number, number][] = [];
++  for (const needle of needles) {
++    if (needle === "" || needle.includes("\n")) continue;
++    for (
++      let at = line.indexOf(needle);
++      at !== -1;
++      at = line.indexOf(needle, at + needle.length)
++    ) {
++      const end = at + needle.length;
++      if (
++        !TOKEN_CHARACTER.test(line[at - 1] ?? " ") &&
++        !TOKEN_CHARACTER.test(line[end] ?? " ")
++      ) {
++        ranges.push([at, end]);
++      }
++    }
++  }
++  return ranges;
++}
++
++function markRanges(line: string, ranges: readonly [number, number][]): string {
++  if (ranges.length === 0) return line;
++  let out = "";
++  let visible = 0;
++  for (let i = 0; i < line.length; ) {
++    const escape = /^\x1b\[[0-9;]*m/.exec(line.slice(i));
++    if (escape) {
++      out += escape[0];
++      i += escape[0].length;
++      continue;
++    }
++    if (ranges.some(([start]) => start === visible)) out += MARK_OPEN;
++    out += line[i];
++    i++;
++    visible++;
++    if (ranges.some(([, end]) => end === visible)) out += MARK_CLOSE;
++  }
++  return out;
+ }
+ 
+ /** Characters a path, command, or target may contain, so a match is a whole token. */

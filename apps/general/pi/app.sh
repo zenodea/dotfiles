@@ -59,12 +59,49 @@ if data.get("theme") != "dotfiles":
     data["theme"] = "dotfiles"
     changed = True
 
+for key, value in {"defaultProvider": "openai", "defaultModel": "gpt-6.1-sol"}.items():
+    if key not in data:
+        data[key] = value
+        changed = True
+levels = data.setdefault("modelThinkingLevels", {})
+for key, value in {"openai/gpt-6.1-sol": "xhigh", "openai/gpt-6-luna": "max"}.items():
+    if key not in levels:
+        levels[key] = value
+        changed = True
+enabled = data.setdefault("enabledModels", [])
+for model in ("openai/gpt-6.1-sol", "openai/gpt-6-luna"):
+    if model not in enabled:
+        enabled.append(model)
+        changed = True
+
 if changed or not settings_path.exists():
     tmp_path = settings_path.with_suffix(settings_path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(data, indent=2) + "\n")
     os.replace(tmp_path, settings_path)
 PY
-    note "ensured: ~/.pi/agent/settings.json packages, theme"
+    note "ensured: ~/.pi/agent/settings.json packages, theme, models"
+  fi
+
+  local patch_file pkg_dir
+  for patch_file in "$APP_DIR"/patches/*.patch; do
+    [[ -f "$patch_file" ]] || continue
+    pkg_dir="$agent_dir/npm/node_modules/@gotgenes/$(basename "$patch_file" .patch)"
+    [[ -d "$pkg_dir" ]] || continue
+    if (cd "$pkg_dir" && patch -p1 -R --dry-run -s -f <"$patch_file" >/dev/null 2>&1); then
+      continue
+    elif (cd "$pkg_dir" && patch -p1 --dry-run -s -f <"$patch_file" >/dev/null 2>&1); then
+      (cd "$pkg_dir" && patch -p1 -s -f <"$patch_file" >/dev/null)
+      note "patched: $(pretty "$pkg_dir")"
+    else
+      note "patch no longer applies: $(basename "$patch_file")"
+    fi
+  done
+
+  if [[ "$(readlink "$agent_dir/rules" 2>/dev/null)" != "$APP_DIR/rules" ]]; then
+    [[ -e "$agent_dir/rules" || -L "$agent_dir/rules" ]] && mv "$agent_dir/rules" "$agent_dir/rules.bak"
+    mkdir -p "$agent_dir"
+    ln -s "$APP_DIR/rules" "$agent_dir/rules"
+    note "linked: ~/.pi/agent/rules"
   fi
 
   # Keybindings: ctrl+h/j/k/l move through pi's lists and the session tree.

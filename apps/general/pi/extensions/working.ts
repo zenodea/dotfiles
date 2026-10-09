@@ -51,7 +51,7 @@ export default function (pi: ExtensionAPI) {
 		if (!ctx.hasUI || !startedAt) return;
 		const up = done.up + live.up;
 		const down = done.down + live.down;
-		ctx.ui.setWorkingMessage(`${formatElapsed(Date.now() - startedAt)} · ↑${formatTokens(up)} · ↓${formatTokens(down)}`);
+		ctx.ui.setWorkingMessage(ctx.ui.theme.italic(`${formatElapsed(Date.now() - startedAt)} · ↑${formatTokens(up)} · ↓${formatTokens(down)}`));
 	};
 
 	const stop = (ctx: ExtensionContext) => {
