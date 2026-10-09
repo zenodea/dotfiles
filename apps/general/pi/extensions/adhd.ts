@@ -13,35 +13,19 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type ExtensionAPI, type ExtensionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
 
-const RULES = `## Reply style: ADHD mode
+const RULES_FILE = join(getAgentDir(), "rules", "adhd.md");
 
-The user has ADHD and loses the thread in long or loosely shaped replies. These
-rules shape every reply addressed to the user for the whole session. They do not
-apply to tool inputs, code, or briefs written for other agents.
-
-1. First line: the result, or the decision you need from the user. No preamble
-   ("Let me", "Sure", "Great question") and no announcement of what you are
-   about to do.
-2. Multi-step work: keep the todo list current, one item in progress at a time,
-   and let it carry the plan instead of narrating the plan in prose.
-3. Restate where we are whenever a reply closes a step: "Step 3 of 5 done:
-   schema updated. Next: backfill." The user cannot hold this between messages.
-4. Show finished work concretely: what works now and how to see it.
-5. One thing at a time. Finish the current issue, then offer any second issue
-   as a single separate line at the end. No "by the way" asides.
-6. Errors: state the cause and the fix, plainly. No "uh oh", no apology.
-7. End with at most one concrete next step. If the user has to do something,
-   it is one action they can start now. No recap of what was just said and no
-   "let me know if" closer.
-8. Keep real uncertainty: if you have not verified something, say so in a few
-   words. Being direct is not a reason to sound surer than you are.
-
-Exceptions: when asked to explain or walk through something, explain fully,
-under headers the user can skim back to. Before anything destructive, confirm
-first. After three failed attempts at the same fix, stop, name the assumption
-that may be wrong, and ask one diagnostic question.`;
+function loadRules(): string | undefined {
+	try {
+		return readFileSync(RULES_FILE, "utf8").trim() || undefined;
+	} catch {
+		return undefined;
+	}
+}
 
 const STATE_FILE = join(getAgentDir(), "adhd.json");
+
+const REMINDER = "<reminder>ADHD reply style is on: follow the <adhd> section of the system prompt.</reminder>";
 
 function load(): boolean {
 	try {
@@ -70,12 +54,23 @@ export default function (pi: ExtensionAPI) {
 				// Still applies to this session; it just won't be remembered.
 			}
 			showStatus(ctx);
-			ctx.ui.notify(enabled ? "ADHD mode on (from your next message)" : "ADHD mode off", "info");
+			if (enabled && !loadRules()) ctx.ui.notify(`ADHD mode on, but ${RULES_FILE} is missing: run dotfiles --sync`, "warning");
+			else ctx.ui.notify(enabled ? "ADHD mode on (from your next message)" : "ADHD mode off", "info");
 		},
 	});
 
+	pi.on("context", async (event, ctx) => {
+		if (!enabled || !ctx.hasUI || !loadRules()) return;
+		for (const message of event.messages) {
+			if (message.role !== "user") continue;
+			if (typeof message.content === "string") message.content = `${message.content}\n\n${REMINDER}`;
+			else message.content = [...message.content, { type: "text", text: REMINDER }];
+		}
+	});
+
 	pi.on("before_agent_start", async (event) => {
-		if (enabled) event.systemPromptOptions.sections.adhd = RULES;
+		const rules = enabled ? loadRules() : undefined;
+		if (rules) event.systemPromptOptions.sections.adhd = rules;
 		else delete event.systemPromptOptions.sections.adhd;
 	});
 }
