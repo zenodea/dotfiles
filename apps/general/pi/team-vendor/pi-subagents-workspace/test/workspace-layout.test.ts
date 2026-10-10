@@ -62,9 +62,8 @@ describe("WorkspaceLayout", () => {
     layout.attach(tui);
     const columns = node(node(tui.layoutRoot).entries![0].component).entries!;
     const panel = node(columns[1].component).entries!;
-    // 40 rows less a five-row dock: a fixed 2/5 slot, two rows for Git, and the last one flexes.
-    expect(panel.map(entry => entry.basis)).toEqual([14, 2, 0]);
-    expect(panel.map(entry => entry.grow)).toEqual([0, 0, 1]);
+    expect(panel.map(entry => entry.basis)).toEqual([14, 0, 2]);
+    expect(panel.map(entry => entry.grow)).toEqual([0, 1, 0]);
     const slot = node(panel[0].component).entries!;
     expect(slot[0].component).toBe(sidebar);
     const filler = slot[1].component as Component;
@@ -166,13 +165,13 @@ describe("WorkspaceLayout", () => {
 
   it.each([80, 160])("reserves three content-independent slots through overflow, collapse and resize at %i columns", columns => {
     const { tui, transcript } = fixture(columns);
-    const labels = ["Agents", "Git", "Todos"];
+    const labels = ["Agents", "Todos", "Git"];
     const bodies: string[][] = [[], [], []];
     const scrollers = labels.map((label, index) => new WorkspaceScrollView({
       render: width => [sidebarHeading(label, width), ...bodies[index].map(line => sidebarLine(line, width))],
       invalidate: () => {},
     }, { follow: "none", primary: false, overscroll: "contain" }));
-    const [tree, git, todos] = scrollers;
+    const [tree, todos, git] = scrollers;
     const layout = new WorkspaceLayout(tree, todos, git);
     expect(layout.isSidebarVisible).toBe(false);
     expect(layout.attach(tui)).toBe(true);
@@ -182,7 +181,7 @@ describe("WorkspaceLayout", () => {
     const panel = node(node(node(tui.layoutRoot).entries![0].component).entries![1].component).entries!;
     expect(panel.map(entry => node(entry.component).entries![0].component)).toEqual(scrollers);
     expect(panel.map(({ basis, grow, minSize }) => ({ basis, grow, minSize }))).toEqual([
-      { basis: 14, grow: 0, minSize: 1 }, { basis: 2, grow: 0, minSize: 1 }, { basis: 0, grow: 1, minSize: 1 },
+      { basis: 14, grow: 0, minSize: 1 }, { basis: 0, grow: 1, minSize: 1 }, { basis: 2, grow: 0, minSize: 1 },
     ]);
     const frame = () => renderLayoutFrame(tui.layoutRoot as Component, columns, tui.terminal.rows, () => {});
     const bounds = () => {

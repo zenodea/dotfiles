@@ -29,10 +29,12 @@ peach = "#${ORANGE}"
 [ui]
 accent = "#${ACCENT}"
 tab_bar_position = "bottom"
-# tmux-style splitters: shared single-line dividers, no frame, no scrollbars
+# shared single-line dividers with a frame around the pane area, no scrollbars
 pane_gaps = false
-pane_outer_borders = false
+pane_outer_borders = true
+pane_borders = "always"
 pane_scrollbars = false
+show_agent_labels_on_pane_borders = true
 # a collapsed sidebar disappears entirely, like tmux with no sidebar at all
 sidebar_collapsed_mode = "hidden"
 # tmux's prefix+c opens a window straight away
@@ -115,11 +117,9 @@ height = "50%"
 
 [[keys.command]]
 key = "prefix+l"
-type = "popup"
-command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec lazygit"
+type = "pane"
+command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; herdr pane rename \"$HERDR_PANE_ID\" lazygit >/dev/null 2>&1; exec lazygit"
 description = "lazygit"
-width = "90%"
-height = "90%"
 
 # Agents get a zoomed pane rather than a popup: a popup can't be hidden without
 # quitting, while a pane keeps running (and shows in the sidebar) when you leave it.
@@ -169,26 +169,3 @@ key = "prefix+p"
 type = "plugin_action"
 command = "fence.open"
 description = "fence: this space's pen"
-
-# cloudsheep (~/Work/cloudsheep): u for the VM picker, shift+u toggles notifications.
-[[keys.command]]
-key = "prefix+u"
-type = "popup"
-command = "~/Work/cloudsheep/herdr/cloudsheep-pick.sh"
-description = "cloudsheep"
-width = "70%"
-height = "60%"
-
-# shift+u: start/stop background notifications (job done, lease expiring)
-[[keys.command]]
-key = "prefix+shift+u"
-type = "shell"
-command = "~/Work/cloudsheep/herdr/cloudsheep-watch.sh toggle"
-description = "cloudsheep: toggle watch"
-
-# file-tree-herdr (~/file-tree-herdr): e for explorer. Toggles the git-aware file tree split.
-[[keys.command]]
-key = "prefix+e"
-type = "plugin_action"
-command = "file-tree-herdr.open"
-description = "file tree"

@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services
 import qs.style
 
 Rectangle {
@@ -11,7 +12,19 @@ Rectangle {
 
     signal clicked
 
+    property bool navigable: true
+    readonly property bool focused: Nav.current === root
+
     implicitHeight: 30
+    border.width: focused ? Metrics.borderWidth : 0
+    border.color: Theme.accent
+
+    function activate(): void {
+        root.clicked();
+    }
+
+    Component.onCompleted: Nav.register(root)
+    Component.onDestruction: Nav.unregister(root)
     color: active ? Theme.alpha(Theme.accent, 0.15) : area.containsMouse ? Theme.alpha(Theme.fg, 0.07) : "transparent"
 
     Behavior on color {

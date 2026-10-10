@@ -13,6 +13,7 @@ Item {
 
     readonly property bool shown: Panels.drawer && Panels.screen?.name === screen?.name
     readonly property alias hitArea: hitArea
+    readonly property bool navScope: true
 
     y: Metrics.barHeight
     width: shown ? Metrics.drawerWidth : 0

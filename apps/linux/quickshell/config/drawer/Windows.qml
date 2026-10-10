@@ -73,10 +73,22 @@ Column {
 
                     readonly property string appClass: modelData?.wayland?.appId || modelData?.lastIpcObject?.class || ""
                     readonly property bool active: modelData?.address === Hyprland.activeToplevel?.address
+                    readonly property bool focused: Nav.current === row
 
                     width: group.width
                     height: 40
                     color: active ? Theme.alpha(Theme.accent, 0.12) : rowHover.hovered ? Theme.alpha(Theme.fg, 0.07) : "transparent"
+                    border.width: focused ? Metrics.borderWidth : 0
+                    border.color: Theme.accent
+
+                    function activate(): void {
+                        Hyprland.dispatch(`workspace ${group.modelData.id}`);
+                        Hyprland.dispatch(`focuswindow address:${root.addressOf(row.modelData)}`);
+                        Panels.close();
+                    }
+
+                    Component.onCompleted: Nav.register(row)
+                    Component.onDestruction: Nav.unregister(row)
 
                     Behavior on color {
                         ColorAnimation {
@@ -129,11 +141,7 @@ Column {
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
-                        onClicked: {
-                            Hyprland.dispatch(`workspace ${group.modelData.id}`);
-                            Hyprland.dispatch(`focuswindow address:${root.addressOf(row.modelData)}`);
-                            Panels.close();
-                        }
+                        onClicked: row.activate()
                     }
                 }
             }

@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services
 import qs.style
 
 Item {
@@ -11,8 +12,18 @@ Item {
     signal toggled
 
     property real progress: checked ? 1 : 0
+    property bool navigable: true
+    readonly property bool focused: Nav.current === root
 
     implicitHeight: 34
+
+    function activate(): void {
+        if (root.enabled)
+            root.toggled();
+    }
+
+    Component.onCompleted: Nav.register(root)
+    Component.onDestruction: Nav.unregister(root)
 
     Behavior on progress {
         Morph {
@@ -25,6 +36,8 @@ Item {
         anchors.leftMargin: -6
         anchors.rightMargin: -6
         color: area.containsMouse && root.enabled ? Theme.alpha(Theme.fg, 0.05) : "transparent"
+        border.width: root.focused ? Metrics.borderWidth : 0
+        border.color: Theme.accent
 
         Behavior on color {
             ColorAnimation {

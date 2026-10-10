@@ -576,8 +576,75 @@ export default function (pi: ExtensionAPI) {
     };
   }
 
+  const ARCHIVED_RESULT_LIMIT = 16_000;
+  const ARCHIVED_DESCRIPTION_LIMIT = 2_000;
+  const archiveText = (value: string | undefined, label: string, path: string | undefined): string | undefined => {
+    if (value === undefined || value.length <= ARCHIVED_RESULT_LIMIT) return value;
+    const safePath = path?.slice(0, 2_000);
+    const note = safePath
+      ? `\n\n[Archived ${label} truncated; inspect ${safePath}]`
+      : `\n\n[Archived ${label} truncated; no transcript path was recorded.]`;
+    return `${value.slice(0, Math.max(0, ARCHIVED_RESULT_LIMIT - note.length))}${note}`;
+  };
+
+  function appendFinishedRecord(record: AgentRecord): void {
+    const root = currentCtx;
+    if (!root) return;
+    let rootSessionId: string;
+    try { rootSessionId = root.sessionManager.getSessionId(); }
+    catch { return; }
+    if (record.rootSessionId !== undefined && record.rootSessionId !== rootSessionId) return;
+
+    const session = record.session;
+    const model = session?.model;
+    let finalContextUsage: { tokens: number | null; contextWindow: number; percent: number | null } | undefined;
+    try {
+      const usage = session?.getContextUsage?.();
+      if (usage && (usage.tokens === null || Number.isFinite(usage.tokens))
+        && Number.isFinite(usage.contextWindow) && (usage.percent === null || Number.isFinite(usage.percent))) {
+        finalContextUsage = { tokens: usage.tokens, contextWindow: usage.contextWindow, percent: usage.percent };
+      }
+    } catch {}
+
+    const invocation = record.invocation || model || session?.thinkingLevel ? {
+      ...record.invocation,
+      modelId: model ? `${model.provider}/${model.id}` : record.invocation?.modelId,
+      modelName: model?.name ?? record.invocation?.modelName,
+      thinking: session?.thinkingLevel ?? record.invocation?.thinking,
+    } : undefined;
+    const transcriptPath = record.outputFile
+      ? `output transcript: ${record.outputFile}`
+      : record.sessionFile ? `session file: ${record.sessionFile}` : undefined;
+    pi.appendEntry("subagents:finished-record", {
+      version: 1,
+      id: record.id.slice(0, 512),
+      type: record.type.slice(0, 512),
+      handle: record.handle?.slice(0, 512),
+      alias: record.alias?.slice(0, 512),
+      description: record.description.slice(0, ARCHIVED_DESCRIPTION_LIMIT),
+      parentAgentId: record.parentAgentId?.slice(0, 512),
+      workflowId: record.workflowId?.slice(0, 512),
+      status: record.status,
+      startedAt: record.startedAt,
+      completedAt: record.completedAt ?? Date.now(),
+      toolUses: record.toolUses,
+      sessionFile: record.sessionFile?.slice(0, 4_000),
+      outputFile: record.outputFile?.slice(0, 4_000),
+      invocation,
+      lifetimeUsage: { ...record.lifetimeUsage },
+      compactionCount: record.compactionCount,
+      resultPreview: archiveText(record.result, "result preview", transcriptPath),
+      error: archiveText(record.error, "error", transcriptPath),
+      finalContextUsage,
+      finalContextWindow: model?.contextWindow,
+      finalReasoning: model?.reasoning,
+    });
+  }
+
   // Background completion: route through group join or send individual nudge
   const manager = new AgentManager((record) => {
+    appendFinishedRecord(record);
+
     // Owned children — nested, or a workflow's — report only through their
     // owner: the parent's scoped tools, or the workflow's card, notification
     // and dialog. Keep them out of top-level lifecycle, transcript,

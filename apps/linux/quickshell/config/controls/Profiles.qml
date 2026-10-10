@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import Quickshell.Services.UPower
+import qs.services
 import qs.style
 import qs.widgets
 
@@ -39,8 +40,18 @@ Row {
             required property var modelData
 
             readonly property bool active: PowerProfiles.profile === modelData.id
+            readonly property bool focused: Nav.current === segment
 
             visible: modelData.id !== PowerProfile.Performance || PowerProfiles.hasPerformanceProfile
+            border.width: focused ? Metrics.borderWidth : 0
+            border.color: Theme.accent
+
+            function activate(): void {
+                PowerProfiles.profile = segment.modelData.id;
+            }
+
+            Component.onCompleted: Nav.register(segment)
+            Component.onDestruction: Nav.unregister(segment)
             width: (profiles.width - (profiles.shown - 1)) / profiles.shown
             height: 30
             color: active ? Theme.alpha(Theme.accent, 0.22) : segmentArea.containsMouse ? Theme.alpha(Theme.fg, 0.09) : Theme.alpha(Theme.fg, 0.05)

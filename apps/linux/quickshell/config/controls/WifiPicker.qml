@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Networking
+import qs.services
 import qs.style
 import qs.widgets
 
@@ -90,12 +91,16 @@ Column {
                         if (visible)
                             forceActiveFocus();
                     }
-                    Keys.onEscapePressed: root.asking = ""
+                    Keys.onEscapePressed: {
+                        root.asking = "";
+                        Nav.refocus();
+                    }
                     onAccepted: {
                         if (text === "")
                             return;
                         entry.modelData.connectWithPsk(text);
                         root.asking = "";
+                        Nav.refocus();
                     }
 
                     Text {

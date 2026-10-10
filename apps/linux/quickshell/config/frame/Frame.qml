@@ -220,7 +220,12 @@ PanelWindow {
         Item {
             anchors.fill: parent
             focus: (Panels.drawer || Panels.controls) && Panels.launcher === ""
+            onActiveFocusChanged: {
+                if (activeFocus)
+                    Nav.keys = this;
+            }
             Keys.onEscapePressed: Panels.close()
+            Keys.onPressed: event => event.accepted = Nav.handle(event)
         }
 
         EdgeZone {

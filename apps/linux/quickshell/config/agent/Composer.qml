@@ -35,6 +35,12 @@ Rectangle {
         const down = event.key === Qt.Key_J ? 1 : -1;
         const arrow = event.key === Qt.Key_Up || event.key === Qt.Key_Down;
 
+        if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            Nav.cycleTab(event.key === Qt.Key_Tab ? 1 : -1);
+            Nav.refocus();
+            return true;
+        }
+
         if (root.page.renaming !== "") {
             if (!enter)
                 return false;

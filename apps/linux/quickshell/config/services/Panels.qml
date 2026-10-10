@@ -59,6 +59,7 @@ Singleton {
     }
 
     function toggleDrawer(tab: string): void {
+        Nav.reset();
         const wanted = tab || "dashboard";
         if (drawer && drawerTab === wanted) {
             drawer = false;
@@ -74,6 +75,7 @@ Singleton {
     }
 
     function toggleControls(tab: string): void {
+        Nav.reset();
         const wanted = tab || "controls";
         if (controls && controlsTab === wanted) {
             controls = false;
@@ -148,6 +150,7 @@ Singleton {
     }
 
     function close(): void {
+        Nav.reset();
         drawerClose.stop();
         launcherClose.stop();
         controlsClose.stop();

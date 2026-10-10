@@ -19,8 +19,10 @@ os:
 
 git:
   diffRenderers:
-    - type: stdinFilter
-      command: delta --paging=never
+    - name: delta
+      command: delta --paging=never --width={{width}} --max-line-length=$(({{width}}-16)) | sed "s/^---\$/$(printf '\033[2m'; printf '─%.0s' $(seq 1 {{width}}); printf '\033[0m')/"
+    - name: delta full
+      command: delta --paging=never --width={{width}} | sed "s/^---\$/$(printf '\033[2m'; printf '─%.0s' $(seq 1 {{width}}); printf '\033[0m')/"
 
 gui:
   theme:
@@ -40,3 +42,24 @@ gui:
   showNumstatInFilesView: true
   showDivergenceFromBaseBranch: arrowAndNumber
   showRandomTip: false
+  showCommandLog: false
+  showBottomLine: false
+  showPanelJumps: false
+  sidePanelWidth: 0.2
+  expandFocusedSidePanel: true
+  screenMode: normal
+  scrollHeight: 15
+
+keybinding:
+  universal:
+    jumpToBlock: ["<disabled>", "1", "2", "3", "4"]
+    cycleDiffRenderers: <c-f>
+  files:
+    findBaseCommitForFixup: <disabled>
+
+customCommands:
+  - key: U
+    context: commits
+    description: diff everything unpushed
+    command: git diff @{upstream}..HEAD
+    subprocess: true

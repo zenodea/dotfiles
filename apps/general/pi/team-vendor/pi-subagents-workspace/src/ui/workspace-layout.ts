@@ -1,4 +1,5 @@
 import { type Component, HStack, ScrollView, type TuiMouseEvent, truncateToWidth, VStack, visibleWidth } from "@earendil-works/pi-tui";
+import { installWorkspaceSelectionScope } from "./workspace-selection.js";
 
 const VIEWPORT_TUI = Symbol.for("@earendil-works/pi-tui/viewport");
 const LAYOUT_NODE = Symbol.for("@earendil-works/pi-tui/layout-node");
@@ -85,6 +86,7 @@ export class WorkspaceLayout {
   private selectedDocument: Component | undefined;
   private drawerOpen = false;
   private installedWide: boolean | undefined;
+  private selectionCleanup: (() => void) | undefined;
 
   constructor(private sidebar: Component, private todos?: Component, private git?: Component) {}
 
@@ -124,6 +126,7 @@ export class WorkspaceLayout {
         // workspace intact; retry on the next sync rather than exposing a split
         // ownership state.
         if (wide !== this.installedWide) this.installRoot();
+        this.ensureSelectionScope(tui);
         return true;
       }
     }
@@ -227,6 +230,8 @@ export class WorkspaceLayout {
   }
 
   private forget(): void {
+    this.selectionCleanup?.();
+    this.selectionCleanup = undefined;
     this.tui = undefined;
     this.nativeRoot = undefined;
     this.workspaceRoot = undefined;
@@ -239,6 +244,21 @@ export class WorkspaceLayout {
     this.installedWide = undefined;
   }
 
+  private ensureSelectionScope(tui: RuntimeViewportTui): void {
+    const cleanup = installWorkspaceSelectionScope(tui, () => {
+      const root = this.workspaceRoot;
+      const document = this.selectedDocument;
+      if (!root || !document || !this.tui || !isFullscreenViewport(this.tui)
+        || this.tui.layoutRoot !== root
+        || (this.tui.terminal.columns < WORKSPACE_WIDE_COLUMNS && this.drawerOpen)) return undefined;
+      return { root, document };
+    });
+    if (cleanup) {
+      this.selectionCleanup?.();
+      this.selectionCleanup = cleanup;
+    }
+  }
+
   private installRoot(): boolean {
     const tui = this.tui;
     const document = this.selectedDocument;
@@ -248,14 +268,10 @@ export class WorkspaceLayout {
     if (!tui || !document || !transcript || !dock || !rootOptions || !isFullscreenViewport(tui)) return false;
 
     const wide = tui.terminal.columns >= WORKSPACE_WIDE_COLUMNS;
-    // Reserve all three slots independently of content, providers and collapse.
-    // The first two get fixed heights from the terminal size and only the
-    // last one flexes, so a dock that grows or shrinks (working indicator,
-    // queued message, taller editor) never moves a heading.
     const sidebar = new SidebarStack(([
       [this.sidebar, "Agents"],
-      [this.git, "Git"],
       [this.todos, "Todos"],
+      [this.git, "Git"],
     ] as const).map(([component, label]) => ({
       component: new SidebarSection(component, label, () => tui.terminal.rows),
       basis: 0,
@@ -301,6 +317,7 @@ export class WorkspaceLayout {
       tui.setLayoutRoot(nextRoot);
       this.workspaceRoot = nextRoot;
       this.installedWide = wide;
+      this.ensureSelectionScope(tui);
       return true;
     } catch {
       return false;
@@ -326,8 +343,7 @@ export function sidebarHeading(text: string, width: number): string {
 
 /** Rows the dock takes at rest: spacer, three-row editor, footer. */
 const SIDEBAR_DOCK_ROWS = 5;
-/** Rows for every section but the last, given the sidebar's resting height. Git is its one-line summary plus a blank row. */
-const SIDEBAR_SIZES: ((height: number) => number)[] = [height => Math.floor(height * 2 / 5), () => 2];
+const SIDEBAR_SIZES: (((height: number) => number) | undefined)[] = [height => Math.floor(height * 2 / 5), undefined, () => 2];
 
 /** A VStack whose leading sections are sized from the terminal, not from the space left over. */
 class SidebarStack extends VStack {
@@ -354,13 +370,17 @@ class SidebarStack extends VStack {
 
 /** A bounded scroller plus painted slack; blank rows never become scrollback. */
 class SidebarSection extends VStack {
+  private headingRows: number;
+
   constructor(private content: Component | undefined, label: string, rows: () => number) {
     const heading = (content as (Component & { [SIDEBAR_HEADING]?: Component }) | undefined)?.[SIDEBAR_HEADING];
+    const fillsSlot = content instanceof SplitAgentsSidebar;
     super([
       ...(heading ? [{ component: heading, basis: "auto" as const, shrink: 0, minSize: 1 }] : []),
-      { component: content ?? { render: width => [sidebarHeading(` ${label}`, width)], invalidate: () => {} }, basis: "auto", shrink: 1, minSize: heading ? 0 : 1 },
-      { component: { render: width => Array.from({ length: rows() }, () => sidebarLine("", width)), invalidate: () => {} }, basis: 0, grow: 1, minSize: 0 },
+      { component: content ?? { render: width => [sidebarHeading(` ${label}`, width)], invalidate: () => {} }, basis: fillsSlot ? 0 : "auto", grow: fillsSlot ? 1 : 0, shrink: 1, minSize: heading ? 0 : 1 },
+      { component: { render: width => Array.from({ length: rows() }, () => sidebarLine("", width)), invalidate: () => {} }, basis: 0, grow: fillsSlot ? 0 : 1, minSize: 0 },
     ]);
+    this.headingRows = heading ? 1 : 0;
   }
 
   override handleMouse(event: TuiMouseEvent): ReturnType<VStack["handleMouse"]> {
@@ -368,6 +388,9 @@ class SidebarSection extends VStack {
     // Consume wheel input over the entire slot, including its painted slack.
     if (event.type !== "wheel") return undefined;
     if (this.content instanceof ScrollView) this.content.scrollBy(event.wheelDelta ?? 0);
+    else if (this.content && event.y >= this.headingRows) {
+      this.content.handleMouse?.({ ...event, y: event.y - this.headingRows, height: Math.max(0, event.height - this.headingRows) });
+    }
     return { handled: true, focus: false, target: {
       component: this, originX: event.screenX - event.x, originY: event.screenY - event.y, width: event.width, height: event.height,
     } };
@@ -398,6 +421,115 @@ export class WorkspaceScrollView extends ScrollView {
 }
 
 const SIDEBAR_HEADING = Symbol("sidebar-heading");
+
+type AgentsSidebarDocument = Component & { finishedLine(): number };
+type AgentSlice = "heading" | "live" | "finished-heading" | "finished";
+
+type AgentsSnapshot = { width: number; lines: string[]; finishedLine: number };
+
+class AgentsSliceSource {
+  private snapshot: AgentsSnapshot | undefined;
+
+  constructor(readonly document: AgentsSidebarDocument) {}
+
+  begin(width: number): AgentsSnapshot {
+    const lines = this.document.render(width);
+    const maximum = Math.max(1, lines.length - 1);
+    this.snapshot = { width, lines, finishedLine: Math.max(1, Math.min(maximum, this.document.finishedLine())) };
+    return this.snapshot;
+  }
+
+  current(width: number): AgentsSnapshot {
+    return this.snapshot?.width === width ? this.snapshot : this.begin(width);
+  }
+
+  logicalFinishedLine(): number {
+    return this.snapshot?.finishedLine ?? Math.max(1, this.document.finishedLine());
+  }
+
+  clear(): void { this.snapshot = undefined; }
+
+  bounds(slice: AgentSlice, width: number): { snapshot: AgentsSnapshot; start: number; end: number } {
+    const snapshot = slice === "heading" ? this.begin(width) : this.current(width);
+    if (slice === "heading") return { snapshot, start: 0, end: 1 };
+    if (slice === "live") return { snapshot, start: 1, end: snapshot.finishedLine };
+    if (slice === "finished-heading") return { snapshot, start: snapshot.finishedLine, end: snapshot.finishedLine + 1 };
+    return { snapshot, start: snapshot.finishedLine + 1, end: snapshot.lines.length };
+  }
+}
+
+function agentsSlice(source: AgentsSliceSource, slice: AgentSlice): Component {
+  return {
+    render(width: number): string[] {
+      const { snapshot, start, end } = source.bounds(slice, width);
+      return snapshot.lines.slice(start, end);
+    },
+    handleMouse(event: TuiMouseEvent) {
+      const { start, end } = source.bounds(slice, event.width);
+      if (event.y < 0 || event.y >= end - start) return undefined;
+      return source.document.handleMouse?.({ ...event, y: event.y + start });
+    },
+    invalidate(): void { source.clear(); },
+  };
+}
+
+export interface AgentsSidebarView extends Component {
+  ensureLogicalRowVisible(top: number, bottom: number): void;
+}
+
+class SplitAgentsSidebar extends VStack implements AgentsSidebarView {
+  constructor(
+    private source: AgentsSliceSource,
+    private liveScroll: WorkspaceScrollView,
+    private finishedScroll: WorkspaceScrollView,
+    finishedHeading: Component,
+  ) {
+    super([
+      { component: liveScroll, basis: 0, grow: 2, shrink: 1, minSize: 0 },
+      { component: finishedHeading, basis: "auto", grow: 0, shrink: 0, minSize: 1 },
+      { component: finishedScroll, basis: 0, grow: 3, shrink: 1, minSize: 0 },
+    ]);
+  }
+
+  ensureLogicalRowVisible(top: number, bottom: number): void {
+    const finishedLine = this.source.logicalFinishedLine();
+    if (top < finishedLine) this.ensureVisible(this.liveScroll, top - 1, bottom - 1);
+    else if (top > finishedLine) this.ensureVisible(this.finishedScroll, top - finishedLine - 1, bottom - finishedLine - 1);
+  }
+
+  override handleMouse(event: TuiMouseEvent): ReturnType<VStack["handleMouse"]> {
+    if (event.type !== "wheel") return super.handleMouse(event);
+    const separator = this.liveScroll.viewportHeight;
+    if (event.y < separator) this.liveScroll.scrollBy(event.wheelDelta ?? 0);
+    else if (event.y > separator) this.finishedScroll.scrollBy(event.wheelDelta ?? 0);
+    return { handled: true, focus: false, target: {
+      component: this, originX: event.screenX - event.x, originY: event.screenY - event.y, width: event.width, height: event.height,
+    } };
+  }
+
+  private ensureVisible(scroll: WorkspaceScrollView, top: number, bottom: number): void {
+    if (top < 0 || scroll.viewportHeight <= 0) return;
+    if (top < scroll.scrollTop) scroll.scrollTo(top, { disableFollow: true });
+    else if (bottom >= scroll.scrollTop + scroll.viewportHeight) {
+      scroll.scrollTo(bottom - scroll.viewportHeight + 1, { disableFollow: true });
+    }
+  }
+}
+
+export function createAgentsSidebarView(document: AgentsSidebarDocument): AgentsSidebarView {
+  const source = new AgentsSliceSource(document);
+  const heading = agentsSlice(source, "heading");
+  const liveScroll = new WorkspaceScrollView(agentsSlice(source, "live"), {
+    follow: "none", primary: false, overscroll: "contain", scrollbar: "auto",
+  });
+  const finishedHeading = agentsSlice(source, "finished-heading");
+  const finishedScroll = new WorkspaceScrollView(agentsSlice(source, "finished"), {
+    follow: "none", primary: false, overscroll: "contain", scrollbar: "auto",
+  });
+  const view = new SplitAgentsSidebar(source, liveScroll, finishedScroll, finishedHeading);
+  (view as AgentsSidebarView & { [SIDEBAR_HEADING]?: Component })[SIDEBAR_HEADING] = heading;
+  return view;
+}
 
 /**
  * Split a sidebar document into a fixed heading (its row 0) and a ScrollView

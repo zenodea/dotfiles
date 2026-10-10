@@ -153,6 +153,45 @@ export type MentionResolution =
   | { kind: "live"; record: AgentRecord }
   | { kind: "tombstone"; entry: AgentTombstone };
 
+export interface ArchivedContextUsage {
+  tokens: number | null;
+  contextWindow: number;
+  percent: number | null;
+}
+
+export interface ArchivedAgentRecord {
+  archived: true;
+  id: string;
+  type: SubagentType;
+  handle?: string;
+  alias?: string;
+  description: string;
+  status: Exclude<AgentRecord["status"], "queued" | "running">;
+  result?: string;
+  error?: string;
+  toolUses?: number;
+  startedAt: number;
+  completedAt: number;
+  outputFile?: string;
+  sessionFile?: string;
+  lifetimeUsage?: LifetimeUsage;
+  compactionCount?: number;
+  invocation?: AgentInvocation;
+  parentAgentId?: string;
+  workflowId?: string;
+  finalContextUsage?: ArchivedContextUsage;
+  finalContextWindow?: number;
+  finalReasoning?: boolean;
+  session?: undefined;
+  pendingSteers?: undefined;
+}
+
+export type AgentDisplayRecord = AgentRecord | ArchivedAgentRecord;
+
+export function isArchivedRecord(record: AgentDisplayRecord): record is ArchivedAgentRecord {
+  return "archived" in record && record.archived;
+}
+
 export interface AgentRecord {
   id: string;
   type: SubagentType;

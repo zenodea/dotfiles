@@ -91,6 +91,8 @@ Item {
         id: controlsTab
 
         Flickable {
+            readonly property bool navScope: true
+
             contentHeight: cards.implicitHeight + Metrics.drawerPadding * 2
             clip: true
             boundsBehavior: Flickable.StopAtBounds

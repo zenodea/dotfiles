@@ -54,7 +54,22 @@ Column {
             font.family: Theme.fontMono
             font.pixelSize: 11
             clip: true
-            Keys.onEscapePressed: Panels.close()
+            Keys.onEscapePressed: {
+                if (text !== "") {
+                    text = "";
+                    return;
+                }
+                Nav.refocus();
+            }
+            onAccepted: {
+                if (root.shown.length > 0)
+                    root.copy(root.shown[0]);
+            }
+            Component.onCompleted: Nav.searchField = search
+            Component.onDestruction: {
+                if (Nav.searchField === search)
+                    Nav.searchField = null;
+            }
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
@@ -82,10 +97,24 @@ Column {
             required property var modelData
 
             readonly property bool image: modelData.kind === "image"
+            readonly property bool focused: Nav.current === entry
 
             width: root.width
             height: entry.image ? 56 : 42
             color: rowHover.hovered ? Theme.alpha(Theme.accent, 0.12) : Theme.alpha(Theme.fg, 0.04)
+            border.width: focused ? Metrics.borderWidth : 0
+            border.color: Theme.accent
+
+            function activate(): void {
+                root.copy(entry.modelData);
+            }
+
+            function dismiss(): void {
+                root.forget(entry.modelData);
+            }
+
+            Component.onCompleted: Nav.register(entry)
+            Component.onDestruction: Nav.unregister(entry)
 
             Behavior on color {
                 ColorAnimation {

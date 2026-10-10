@@ -47,6 +47,15 @@ ShellRoot {
         function lock(): void {
             Lock.lock();
         }
+
+        function nav(key: string): string {
+            const handled = Nav.handle({
+                key: Qt["Key_" + key],
+                modifiers: 0
+            });
+            const c = Nav.current;
+            return handled ? (c ? `${c.label || c.icon || c.toString()}` : "none") : "unhandled";
+        }
     }
 
     WlSessionLock {

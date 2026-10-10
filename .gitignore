@@ -1,5 +1,6 @@
 .DS_Store
 nvim.log
+__pycache__/
 
 # Machine-local: which appearance a manual theme pick is holding against.
 .auto-pin
@@ -28,6 +29,8 @@ apps/linux/hypr/config/hyprlock.conf
 apps/linux/rofi/config/themes/current.rasi
 apps/linux/rofi/config/themes/power-menu.rasi
 apps/linux/rofi/config/themes/theme-picker.rasi
+apps/linux/rofi/config/themes/preview-picker.rasi
+apps/linux/rofi/config/themes/dotfiles-menu.rasi
 apps/linux/vifm/config/theme.vifm
 apps/linux/waybar/config/style.css
 apps/mac/raycast/theme.json
