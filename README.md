@@ -30,7 +30,9 @@ bin/install-packages   # optional: Arch, Fedora, Debian or Homebrew
 ```
 
 `install-packages` picks the script for your OS from `bin/packages/`. You can
-also run one of those directly.
+also run one of those directly. On Arch it asks before touching the AUR and
+defaults to no, fetching the cursor theme, oh-my-zsh and Commit Mono from
+upstream instead; pass `--aur` or `--no-aur` to skip the question.
 
 `install.sh` symlinks the configs and the `dotfiles` command, checks out the
 wallpapers submodule if it's missing, and renders the current theme. Any file

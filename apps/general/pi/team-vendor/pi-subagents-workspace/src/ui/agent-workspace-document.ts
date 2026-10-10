@@ -9,7 +9,7 @@ import {
   wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import { extractText } from "../context.js";
-import type { AgentRecord } from "../types.js";
+import { type AgentDisplayRecord, isArchivedRecord as isArchived } from "../types.js";
 import { getLifetimeCost, getLifetimeTotal } from "../usage.js";
 import { collapse } from "../workflow/progress.js";
 import type { WorkflowTask } from "../workflow/task.js";
@@ -38,7 +38,7 @@ function wrap(text: string, width: number): string[] {
   return wrapTextWithAnsi(clean(text), width).map(line => truncateToWidth(line, width));
 }
 
-function modelLabel(session: AgentSession | undefined, record: AgentRecord): string | undefined {
+function modelLabel(session: AgentSession | undefined, record: AgentDisplayRecord): string | undefined {
   const model = session?.model;
   if (model) return `${model.provider}/${model.id}`;
   const { modelId, modelName } = buildInvocationTags(record.invocation);
@@ -102,7 +102,7 @@ export class AgentWorkspaceDocument implements Component {
   private expanded = new Set<string>();
 
   constructor(
-    private record: AgentRecord,
+    private record: AgentDisplayRecord,
     _activity: () => AgentActivity | undefined,
     private tab: () => WorkspaceTab,
     private theme: () => Theme,
@@ -113,10 +113,14 @@ export class AgentWorkspaceDocument implements Component {
     private tui?: TUI,
   ) {}
 
-  setRecord(record: AgentRecord): void {
+  setRecord(record: AgentDisplayRecord): void {
     if (record === this.record) return;
     this.record = record;
-    this.native?.setRecord(record);
+    if (isArchived(record)) {
+      this.native?.dispose();
+      this.native = undefined;
+      this.session = undefined;
+    } else this.native?.setRecord(record);
     this.historyRevision++;
   }
 
@@ -146,7 +150,9 @@ export class AgentWorkspaceDocument implements Component {
     const lines = header.map(line => truncateToWidth(line, width));
     this.headerHeight = lines.length;
     if (tab === "activity") {
-      lines.push(...(this.native?.render(width) ?? wrap("Native activity requires the host TUI.", width)));
+      lines.push(...(isArchived(this.record) && !this.session
+        ? this.archivedActivity(width, theme)
+        : this.native?.render(width) ?? wrap("Native activity requires the host TUI.", width)));
     } else {
       this.renderedBody = this.cachedBody(width, theme, tab);
       lines.push(...this.renderedBody.lines);
@@ -193,13 +199,23 @@ export class AgentWorkspaceDocument implements Component {
 
   private bindSession(): void {
     this.session = this.record.session;
-    if (!this.native && this.tui) {
+    if (!isArchived(this.record) && !this.native && this.tui) {
       this.native = new NativeAgentActivity(this.record, this.tui, () => {
         this.historyRevision++;
         this.requestRender();
       });
     }
     this.native?.sync();
+  }
+
+  private archivedActivity(width: number, theme: Theme): string[] {
+    const lines = [theme.bold("Archived result"), theme.fg("dim", "Read-only saved completion preview; native turn history was not retained.")];
+    if (this.record.result?.trim()) lines.push("", ...wrap(this.record.result, width));
+    if (this.record.error?.trim()) lines.push("", theme.bold("Archived error"), ...wrap(this.record.error, width));
+    if (!this.record.result?.trim() && !this.record.error?.trim()) lines.push("", theme.fg("dim", "No saved result or error preview."));
+    if (this.record.outputFile) lines.push("", ...wrap(`Output transcript: ${this.record.outputFile}`, width));
+    if (this.record.sessionFile) lines.push(...wrap(`Session file: ${this.record.sessionFile}`, width));
+    return lines.flatMap(line => typeof line === "string" ? [truncateToWidth(line, width)] : []);
   }
 
   private cachedBody(width: number, theme: Theme, tab: WorkspaceTab): InspectorBody {
@@ -238,6 +254,9 @@ export class AgentWorkspaceDocument implements Component {
       this.record.lifetimeUsage?.input,
       this.record.lifetimeUsage?.output,
       this.record.lifetimeUsage?.cost,
+      isArchived(this.record) ? JSON.stringify(this.record.finalContextUsage) : "",
+      isArchived(this.record) ? this.record.finalContextWindow : "",
+      isArchived(this.record) ? this.record.finalReasoning : "",
     ].join("|");
   }
 
@@ -277,8 +296,14 @@ export class AgentWorkspaceDocument implements Component {
 
   private contextLines(body: InspectorBody): void {
     const session = this.session;
-    const stats = session?.getSessionStats();
-    const context = stats?.contextUsage ?? session?.getContextUsage();
+    const archived = isArchived(this.record) ? this.record : undefined;
+    let stats: ReturnType<AgentSession["getSessionStats"]> | undefined;
+    let liveContext: ReturnType<AgentSession["getContextUsage"]> | undefined;
+    try {
+      stats = session?.getSessionStats();
+      liveContext = stats?.contextUsage ?? session?.getContextUsage();
+    } catch {}
+    const context = liveContext ?? archived?.finalContextUsage;
     const lifetime = this.record.lifetimeUsage;
     const inherited = this.record.invocation?.inheritContext;
     body.fields([["Model", modelLabel(session, this.record)], ["Thinking", session?.thinkingLevel ?? this.record.invocation?.thinking]]);
@@ -286,13 +311,17 @@ export class AgentWorkspaceDocument implements Component {
     const usage = stats?.tokens ?? lifetime;
     if (usage) {
       body.heading("Usage");
-      const total = stats?.tokens.total ?? (lifetime ? getLifetimeTotal(lifetime) : 0);
-      const cost = stats?.cost ?? (lifetime ? getLifetimeCost(lifetime) : 0);
+      const total = stats?.tokens.total ?? getLifetimeTotal(lifetime);
+      const cost = stats?.cost ?? getLifetimeCost(lifetime);
       body.fields([["Input", formatCompactTokens(usage.input)], ["Output", formatCompactTokens(usage.output)], ["Total", `${formatCompactTokens(total)} tokens`]]);
       if (usage.cacheRead || usage.cacheWrite) body.fields([["Cache", `${formatCompactTokens(usage.cacheRead ?? 0)} read · ${formatCompactTokens(usage.cacheWrite)} write`]]);
       if (context?.tokens != null) body.fields([["Context", `${formatCompactTokens(context.tokens)} / ${formatCompactTokens(context.contextWindow)}${context.percent == null ? "" : ` (${context.percent.toFixed(1)}%)`}`]]);
-      if (cost > 0) body.fields([["Cost", formatCost(cost)]]);
+      if (cost > 0 || archived !== undefined) body.fields([["Cost", formatCost(cost)]]);
+    } else if (context?.tokens != null) {
+      body.heading("Usage");
+      body.fields([["Context", `${formatCompactTokens(context.tokens)} / ${formatCompactTokens(context.contextWindow)}${context.percent == null ? "" : ` (${context.percent.toFixed(1)}%)`}`]]);
     }
+    if (archived?.compactionCount !== undefined) body.fields([["Compactions", String(archived.compactionCount)]]);
     if (session?.systemPrompt?.trim()) body.disclosure("System prompt", () => body.text(session.systemPrompt, true));
   }
 }

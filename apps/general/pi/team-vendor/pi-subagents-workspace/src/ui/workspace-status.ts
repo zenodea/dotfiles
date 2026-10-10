@@ -257,7 +257,7 @@ export class WorkspaceStatus {
     // Every frame asks for every row (a dirty repo is hundreds), so repaint only
     // when something a row depends on moved. `lastPaint` is the row signature
     // `changed()` keeps; the heading and the body ask at different widths.
-    const key = `${this.root ? 1 : 0}:${this.lastPaint}`;
+    const key = `${this.root ? 1 : 0}:${[...this.collapsed].sort().join(",")}:${this.lastPaint}`;
     const slot = `${section}:${width}`;
     const cached = this.painted.get(slot);
     if (cached && cached.key === key && this.paintedTheme === theme) {

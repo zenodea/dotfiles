@@ -83,9 +83,30 @@ Column {
 
                     required property Notification modelData
 
+                    readonly property bool focused: Nav.current === entry
+
                     width: stack.width
                     height: layout.implicitHeight + 14
                     color: rowHover.hovered ? Theme.alpha(Theme.fg, 0.07) : "transparent"
+                    border.width: focused ? Metrics.borderWidth : 0
+                    border.color: Theme.accent
+
+                    function activate(): void {
+                        if (slideOut.running)
+                            return;
+                        const actions = entry.modelData.actions;
+                        if (actions.length > 0) {
+                            actions[0].invoke();
+                            Panels.close();
+                        }
+                    }
+
+                    function dismiss(): void {
+                        slideOut.start();
+                    }
+
+                    Component.onCompleted: Nav.register(entry)
+                    Component.onDestruction: Nav.unregister(entry)
 
                     Behavior on color {
                         ColorAnimation {
@@ -166,15 +187,7 @@ Column {
                     }
 
                     TapHandler {
-                        onTapped: {
-                            if (slideOut.running)
-                                return;
-                            const actions = entry.modelData.actions;
-                            if (actions.length > 0) {
-                                actions[0].invoke();
-                                Panels.close();
-                            }
-                        }
+                        onTapped: entry.activate()
                     }
                 }
             }

@@ -6,9 +6,25 @@ set -e
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-# ── Bootstrap yay (AUR helper) ───────────────────────────────────────────────
+# ── AUR opt-in ───────────────────────────────────────────────────────────────
 
-if ! has yay; then
+AUR=""
+for arg in "$@"; do
+    case "$arg" in
+        --aur) AUR=1 ;;
+        --no-aur) AUR=0 ;;
+        *) echo "usage: arch [--aur|--no-aur]" >&2; exit 1 ;;
+    esac
+done
+if [ -z "$AUR" ]; then
+    AUR=0
+    if [ -t 0 ]; then
+        read -r -p "Install AUR packages with yay? [y/N] " answer
+        case "$answer" in y|Y|yes|YES) AUR=1 ;; esac
+    fi
+fi
+
+if [ "$AUR" = 1 ] && ! has yay; then
     echo "==> Installing yay (AUR helper)..."
     sudo pacman -S --needed --noconfirm git base-devel
     tmp=$(mktemp -d)
@@ -150,8 +166,15 @@ AUR_PACKAGES=(
     otf-commit-mono      # font
 )
 
-echo "==> Installing AUR packages..."
-yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
+if [ "$AUR" = 1 ]; then
+    echo "==> Installing AUR packages..."
+    yay -S --needed --noconfirm "${AUR_PACKAGES[@]}"
+else
+    echo "==> Skipping AUR; fetching the same things from upstream..."
+    install_bibata
+    install_oh_my_zsh
+    install_commit_mono
+fi
 
 # ── Post-install ─────────────────────────────────────────────────────────────
 

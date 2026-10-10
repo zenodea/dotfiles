@@ -14,6 +14,20 @@
         "ctrl+j": "autocomplete:next",
         "ctrl+k": "autocomplete:previous"
       }
+    },
+    {
+      "context": "Chat",
+      "bindings": {
+        "ctrl+j": null
+      }
+    },
+    {
+      "context": "Scroll",
+      "bindings": {
+        "ctrl+k": "scroll:halfPageUp",
+        "ctrl+j": "scroll:halfPageDown"
+      }
     }
-  ]
+  ],
+  "$docs": "https://code.claude.com/docs/en/keybindings"
 }

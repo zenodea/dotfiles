@@ -14,8 +14,13 @@
 	syntax-theme = dotfiles
 	navigate = true
 	line-numbers = true
-	file-style = bold italic
-	hunk-header-style = file line-number syntax italic
+	file-style = italic
+	file-decoration-style = ol ul
+	hunk-header-style = line-number syntax italic
+	hunk-header-decoration-style = omit
+	commit-style = italic
+	minus-style = normal italic "#3f0001"
+	minus-emph-style = normal italic "#901011"
 [user]
 	name = Zeno de Angeli
 	email = 67063098+zenodea@users.noreply.github.com

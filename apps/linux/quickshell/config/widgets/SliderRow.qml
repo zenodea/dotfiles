@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services
 import qs.style
 
 Item {
@@ -14,7 +15,33 @@ Item {
     signal moved(real value)
     signal iconClicked
 
+    property bool navigable: true
+    readonly property bool focused: Nav.current === root
+
     implicitHeight: 20
+
+    function activate(): void {
+        root.iconClicked();
+    }
+
+    function adjust(delta: int): void {
+        if (root.adjustable)
+            root.moved(Math.max(0, Math.min(1, root.value + delta * 0.05)));
+    }
+
+    Component.onCompleted: Nav.register(root)
+    Component.onDestruction: Nav.unregister(root)
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.leftMargin: -6
+        anchors.rightMargin: -6
+        anchors.topMargin: -4
+        anchors.bottomMargin: -4
+        color: "transparent"
+        border.width: root.focused ? Metrics.borderWidth : 0
+        border.color: Theme.accent
+    }
 
     Icon {
         id: glyph

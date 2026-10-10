@@ -13,7 +13,8 @@ import {
   VStack,
 } from "@earendil-works/pi-tui";
 import type { AgentManager } from "../agent-manager.js";
-import type { AgentRecord } from "../types.js";
+import { type AgentDisplayRecord, type AgentInvocation, type AgentRecord, type ArchivedAgentRecord, type ArchivedContextUsage, isArchivedRecord as isArchivedDisplay } from "../types.js";
+import type { LifetimeUsage } from "../usage.js";
 import { buildPhaseGroups, collapse, displayState, type WorkflowAgentEntry } from "../workflow/progress.js";
 import type { WorkflowTask } from "../workflow/task.js";
 import {
@@ -26,7 +27,7 @@ import { AgentWorkspaceDocument, type WorkspaceTab } from "./agent-workspace-doc
 import { type WorkflowAgentRow, type WorkflowInlineActivation, workflowAgentRowLabel, workflowAgentRowMetadata, workflowAgentRows } from "./workflow-agent-rows.js";
 import { WORKFLOW_WORKSPACE_TABS, WorkflowWorkspaceDocument, type WorkflowWorkspaceTab } from "./workflow-workspace-document.js";
 import type { GitCommandRunner } from "./workspace-git.js";
-import { createAgentScrollView, createSidebarScrollView, sidebarHeading, WORKSPACE_SIDEBAR_COLUMNS, WORKSPACE_WIDE_COLUMNS, WorkspaceLayout, WorkspaceScrollView } from "./workspace-layout.js";
+import { type AgentsSidebarView, createAgentScrollView, createAgentsSidebarView, createSidebarScrollView, sidebarHeading, WORKSPACE_SIDEBAR_COLUMNS, WORKSPACE_WIDE_COLUMNS, WorkspaceLayout, WorkspaceScrollView } from "./workspace-layout.js";
 import { RELOAD_MAX_DRAFTS, type ReloadDraft, validateReloadData, type WorkspaceReloadData } from "./workspace-reload-state.js";
 import { type WorkspaceRootContext, WorkspaceStatus } from "./workspace-status.js";
 import { WorkspaceTodos } from "./workspace-todos.js";
@@ -34,11 +35,9 @@ import { WorkspaceTodos } from "./workspace-todos.js";
 const BRIDGE_WIDGET_KEY = "agent-workspace-bridge";
 const TICK_MS = 200;
 
-// Display-only, session-local contract. `agent: null` restores Main metadata;
-// absent agent fields mean unknown, never "inherit Main". No session objects
-// or usage totals cross the bus. Zentui requests a replay after subscribing.
 const EDITOR_VIEW_EVENT = "subagents:editor-view";
 const EDITOR_VIEW_REQUEST_EVENT = "subagents:editor-view:request";
+const EDITOR_STATUS_REQUEST_EVENT = "subagents:editor-status:request";
 type EditorView = {
   version: 1;
   agent: { id: string; modelId?: string; modelName?: string; provider?: string; thinkingLevel?: string } | null;
@@ -85,7 +84,133 @@ export type AgentWorkspaceUI = {
 };
 
 const FINISHED_KEY = "finished";
+const ARCHIVED_TEXT_LIMIT = 16_000;
+const TERMINAL_STATUSES = new Set<ArchivedAgentRecord["status"]>(["completed", "steered", "aborted", "stopped", "error"]);
 const isLiveStatus = (status: AgentRecord["status"]) => status === "running" || status === "queued";
+
+type RootSessionReader = {
+  getEntries(): unknown[];
+  getLeafId(): string | null;
+  getSessionId(): string;
+};
+type RootEntry = { id: string; parentId: string | null; type: string; customType?: string; data?: unknown };
+
+function sessionReader(value: object): RootSessionReader | undefined {
+  const reader = value as Partial<RootSessionReader>;
+  return typeof reader.getEntries === "function" && typeof reader.getLeafId === "function" && typeof reader.getSessionId === "function"
+    ? reader as RootSessionReader : undefined;
+}
+
+function plainEntry(value: unknown): RootEntry | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const entry = value as Record<string, unknown>;
+  if (typeof entry.id !== "string" || (entry.parentId !== null && typeof entry.parentId !== "string") || typeof entry.type !== "string") return undefined;
+  return { id: entry.id, parentId: entry.parentId, type: entry.type,
+    customType: typeof entry.customType === "string" ? entry.customType : undefined, data: entry.data };
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  const number = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function savedString(value: unknown, limit = 2_000): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value.slice(0, limit) : undefined;
+}
+
+function archivedText(value: unknown, label: string, outputFile?: string, sessionFile?: string): string | undefined {
+  if (typeof value !== "string") return undefined;
+  if (value.length <= ARCHIVED_TEXT_LIMIT) return value;
+  const path = outputFile ? `output transcript: ${outputFile}` : sessionFile ? `session file: ${sessionFile}` : undefined;
+  const note = path ? `\n\n[Archived ${label} truncated; inspect ${path}]`
+    : `\n\n[Archived ${label} truncated; no transcript path was recorded.]`;
+  return `${value.slice(0, Math.max(0, ARCHIVED_TEXT_LIMIT - note.length))}${note}`;
+}
+
+function savedUsage(value: unknown): LifetimeUsage | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Record<string, unknown>;
+  const input = finiteNumber(source.input);
+  const output = finiteNumber(source.output);
+  const cacheWrite = finiteNumber(source.cacheWrite);
+  if (input === undefined || output === undefined || cacheWrite === undefined || input < 0 || output < 0 || cacheWrite < 0) return undefined;
+  const usage: LifetimeUsage = { input, output, cacheWrite };
+  const cacheRead = finiteNumber(source.cacheRead);
+  const cost = finiteNumber(source.cost);
+  if (cacheRead !== undefined && cacheRead >= 0) usage.cacheRead = cacheRead;
+  if (cost !== undefined && cost >= 0) usage.cost = cost;
+  return usage;
+}
+
+function savedInvocation(value: unknown): AgentInvocation | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Record<string, unknown>;
+  const invocation: AgentInvocation = {};
+  for (const key of ["modelName", "modelId", "thinking", "requestedThinking", "requestedModel", "isolation"] as const) {
+    if (typeof source[key] === "string") (invocation as Record<string, unknown>)[key] = source[key];
+  }
+  for (const key of ["isolated", "inheritContext", "runInBackground"] as const) {
+    if (typeof source[key] === "boolean") (invocation as Record<string, unknown>)[key] = source[key];
+  }
+  const maxTurns = finiteNumber(source.maxTurns);
+  if (maxTurns !== undefined && maxTurns >= 0) invocation.maxTurns = maxTurns;
+  return Object.keys(invocation).length ? invocation : undefined;
+}
+
+function savedContext(value: unknown): ArchivedContextUsage | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const source = value as Record<string, unknown>;
+  const tokens = source.tokens === null ? null : finiteNumber(source.tokens);
+  const contextWindow = finiteNumber(source.contextWindow);
+  const percent = source.percent === null ? null : finiteNumber(source.percent);
+  if (tokens === undefined || contextWindow === undefined || percent === undefined || contextWindow < 0) return undefined;
+  return { tokens, contextWindow, percent };
+}
+
+function archivedRecord(entry: RootEntry): ArchivedAgentRecord | undefined {
+  if (entry.type !== "custom" || (entry.customType !== "subagents:finished-record" && entry.customType !== "subagents:record")
+    || !entry.data || typeof entry.data !== "object") return undefined;
+  const data = entry.data as Record<string, unknown>;
+  const id = savedString(data.id, 512);
+  const type = savedString(data.type, 512);
+  const description = typeof data.description === "string" ? data.description.slice(0, 2_000) : undefined;
+  const status = typeof data.status === "string" && TERMINAL_STATUSES.has(data.status as ArchivedAgentRecord["status"])
+    ? data.status as ArchivedAgentRecord["status"] : undefined;
+  const startedAt = finiteNumber(data.startedAt);
+  const completedAt = finiteNumber(data.completedAt);
+  if (!id || !type || description === undefined || !status || startedAt === undefined || completedAt === undefined) return undefined;
+  const outputFile = savedString(data.outputFile, 4_000);
+  const sessionFile = savedString(data.sessionFile, 4_000);
+  const resultValue = entry.customType === "subagents:finished-record" ? data.resultPreview : data.result;
+  const record: ArchivedAgentRecord = {
+    archived: true,
+    id,
+    type,
+    description,
+    status,
+    startedAt,
+    completedAt,
+    handle: savedString(data.handle, 512),
+    alias: savedString(data.alias, 512),
+    parentAgentId: savedString(data.parentAgentId, 512),
+    workflowId: savedString(data.workflowId, 512),
+    outputFile,
+    sessionFile,
+    result: archivedText(resultValue, "result preview", outputFile, sessionFile),
+    error: archivedText(data.error, "error", outputFile, sessionFile),
+    lifetimeUsage: savedUsage(data.lifetimeUsage),
+    invocation: savedInvocation(data.invocation),
+    finalContextUsage: savedContext(data.finalContextUsage),
+  };
+  const toolUses = finiteNumber(data.toolUses);
+  const compactionCount = finiteNumber(data.compactionCount);
+  const finalContextWindow = finiteNumber(data.finalContextWindow);
+  if (toolUses !== undefined && toolUses >= 0) record.toolUses = toolUses;
+  if (compactionCount !== undefined && compactionCount >= 0) record.compactionCount = compactionCount;
+  if (finalContextWindow !== undefined && finalContextWindow >= 0) record.finalContextWindow = finalContextWindow;
+  if (typeof data.finalReasoning === "boolean") record.finalReasoning = data.finalReasoning;
+  return record;
+}
 
 export interface AgentWorkspaceOptions {
   manager: AgentManager;
@@ -106,7 +231,7 @@ function draftKey(selection: WorkspaceSelection): string {
   return selection.kind === "main" ? "main" : `${selection.kind === "workflow-agent" ? "workflow" : selection.kind}:${selection.id}`;
 }
 
-function targetName(record: AgentRecord): string {
+function targetName(record: AgentDisplayRecord): string {
   const named = record.alias ?? record.handle;
   if (named) return `@${named}`;
   return record.parentAgentId ? `${record.type}:${record.id.slice(0, 8)}` : `@${record.id}`;
@@ -128,6 +253,10 @@ class WorkspaceSidebar implements Component {
     return this.workspace.renderSidebar(width);
   }
 
+  finishedLine(): number {
+    return this.workspace.finishedSidebarLine();
+  }
+
   handleMouse(event: { type: string; button: string; y: number }): { handled?: boolean; focus?: boolean } | undefined {
     if (event.type !== "click" || event.button !== "left") return undefined;
     return this.workspace.selectSidebarLine(event.y) ? { handled: true, focus: false } : undefined;
@@ -142,7 +271,7 @@ export class AgentWorkspace {
   private theme: Theme = { fg: (_color, text) => text, bold: text => text };
   private layout: WorkspaceLayout;
   private sidebar: WorkspaceSidebar;
-  private sidebarScroll: ScrollView;
+  private sidebarScroll: AgentsSidebarView;
   private todos: WorkspaceTodos;
   private status: WorkspaceStatus;
   private lastSidebarPaint: string | undefined;
@@ -177,15 +306,17 @@ export class AgentWorkspace {
   private stopArmedId: string | undefined;
   private steerDialogTargetId: string | undefined;
   private documents = new Map<string, { document: AgentWorkspaceDocument; scroll: ScrollView; metadataScroll: ScrollView }>();
+  private historyRoot: object | undefined;
+  private historyCache: { sessionId: string; leafId: string | null; records: ArchivedAgentRecord[]; byId: Map<string, ArchivedAgentRecord> } | undefined;
   private workflowDocuments = new Map<string, { document: WorkflowWorkspaceDocument; scroll: ScrollView; inlineScroll: ScrollView; inlineView: Component }>();
-  private unavailableDocument: Component = {
+  private unavailableDocument: Component = new WorkspaceScrollView({
     render: width => [truncateToWidth(this.theme.fg("dim", "This view is no longer retained. Select Main explicitly to return; your draft is kept here."), width)],
     invalidate: () => {},
-  };
+  }, { follow: "none", primary: true, overscroll: "contain", scrollbar: "auto" });
 
   constructor(private options: AgentWorkspaceOptions) {
     this.sidebar = new WorkspaceSidebar(this);
-    this.sidebarScroll = createSidebarScrollView(this.sidebar);
+    this.sidebarScroll = createAgentsSidebarView(this.sidebar);
     this.todos = new WorkspaceTodos(options.events);
     const todoScroll = createSidebarScrollView(this.todos);
     this.status = new WorkspaceStatus({
@@ -234,17 +365,80 @@ export class AgentWorkspace {
     this.ensureTimer();
   }
 
+  private archivedRecords(): readonly ArchivedAgentRecord[] {
+    const root = this.options.getRootContext?.();
+    const identity = root?.sessionManager;
+    if (identity !== this.historyRoot) {
+      this.historyRoot = identity;
+      this.historyCache = undefined;
+    }
+    if (!identity) return [];
+    const reader = sessionReader(identity);
+    if (!reader) return [];
+    let sessionId: string;
+    let leafId: string | null;
+    try {
+      sessionId = reader.getSessionId();
+      leafId = reader.getLeafId();
+    } catch { return []; }
+    if (this.historyCache?.sessionId === sessionId && this.historyCache.leafId === leafId) return this.historyCache.records;
+
+    let values: unknown[];
+    try { values = reader.getEntries(); }
+    catch { return []; }
+    const entries = values.map(plainEntry).filter((entry): entry is RootEntry => entry !== undefined);
+    const byEntryId = new Map(entries.map(entry => [entry.id, entry]));
+    const branchIds = new Set<string>();
+    let cursor = leafId;
+    while (cursor && !branchIds.has(cursor)) {
+      branchIds.add(cursor);
+      cursor = byEntryId.get(cursor)?.parentId ?? null;
+    }
+    const selected = new Map<string, { record: ArchivedAgentRecord; rich: boolean }>();
+    entries.forEach(entry => {
+      if (!branchIds.has(entry.id)) return;
+      const record = archivedRecord(entry);
+      if (!record) return;
+      const rich = entry.customType === "subagents:finished-record";
+      const previous = selected.get(record.id);
+      const pairedLegacy = !rich && previous?.rich
+        && record.startedAt === previous.record.startedAt && record.completedAt === previous.record.completedAt;
+      if (!previous || rich || !pairedLegacy) selected.set(record.id, { record, rich });
+    });
+    const records = [...selected.values()].map(item => item.record).sort((a, b) => a.startedAt - b.startedAt);
+    this.historyCache = { sessionId, leafId, records, byId: new Map(records.map(record => [record.id, record])) };
+    return records;
+  }
+
+  private displayRecord(id: string): AgentDisplayRecord | undefined {
+    const live = this.options.manager.getRecord(id);
+    if (live) return live;
+    this.archivedRecords();
+    return this.historyCache?.byId.get(id);
+  }
+
+  private displayRecords(): AgentDisplayRecord[] {
+    const merged = new Map<string, AgentDisplayRecord>();
+    for (const record of this.archivedRecords()) merged.set(record.id, record);
+    for (const record of this.options.manager.listAgents()) merged.set(record.id, record);
+    return [...merged.values()];
+  }
+
   refresh(observeStatus = true): void {
     if (!this.enabled || !this.tui) return;
     const before = this.layout.attached;
     if (this.tui.mode === "fullscreen") {
-      const records = this.options.manager.listAgents();
-      const retained = new Set(records.map(record => record.id));
-      for (const record of records) {
+      const records = this.displayRecords();
+      const retained = new Map(records.map(record => [record.id, record]));
+      for (const record of this.options.manager.listAgents()) {
         if (record.status === "running" || record.status === "queued") this.agentDocument(record).document.observe();
       }
       for (const [id, cached] of this.documents) {
-        if (retained.has(id)) continue;
+        const record = retained.get(id);
+        if (record) {
+          cached.document.setRecord(record);
+          continue;
+        }
         cached.document.dispose();
         this.documents.delete(id);
       }
@@ -292,6 +486,8 @@ export class AgentWorkspace {
     this.pendingReload = undefined;
     this.blockedReload = undefined;
     this.inlineAgents.clear();
+    this.historyRoot = undefined;
+    this.historyCache = undefined;
     this.todos.dispose();
     this.status.dispose();
   }
@@ -344,7 +540,8 @@ export class AgentWorkspace {
       this.drafts.set(view.key, text);
       if (view.key !== "main") {
         this.draftViews.set(view.key, view);
-        this.unavailableKeys.add(view.key);
+        const archivedAgent = view.key.startsWith("agent:") && this.displayRecord(view.key.slice(6));
+        if (!archivedAgent) this.unavailableKeys.add(view.key);
       }
     }
     if (changed) {
@@ -367,7 +564,7 @@ export class AgentWorkspace {
 
   private draftView(key: string): Omit<ReloadDraft, "text"> {
     if (this.unavailableKeys.has(key)) return this.draftViews.get(key)!;
-    const record = key.startsWith("agent:") ? this.options.manager.getRecord(key.slice(6)) : undefined;
+    const record = key.startsWith("agent:") ? this.displayRecord(key.slice(6)) : undefined;
     const inline = this.inlineAgent();
     const activeInline = inline && key === this.editorDraftKey ? inline : undefined;
     const model = record?.session?.model;
@@ -403,7 +600,8 @@ export class AgentWorkspace {
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index];
       const active = row === activeRow;
-      const marker = (this.treeActive ? index === cursor : active) ? theme.bold(theme.fg("accent", "›")) : " ";
+      const focused = this.treeActive && index === cursor;
+      const marker = (this.treeActive ? focused : active) ? theme.bold(theme.fg("accent", "›")) : " ";
       const circle = active ? theme.fg("accent", "●")
         : row.status === "completed" || row.status === "done" ? theme.fg("success", "✓")
           : row.status === "running" || row.status === "queued" || row.status === "paused" ? theme.fg("accent", "◐") : theme.fg("dim", "○");
@@ -421,7 +619,8 @@ export class AgentWorkspace {
       } else if (row.kind === "main") {
         text = `${marker} ${circle} ${theme.fg(active ? "text" : "muted", theme.bold(label))}`;
       } else {
-        text = `${marker} ${theme.bold(`${disclosure}${label}`)}`;
+        const finished = `${disclosure}${label}`;
+        text = `${marker} ${focused || row.collapsed === false ? theme.bold(finished) : theme.fg("dim", finished)}`;
       }
       lines.push(text);
       if (sidebarRowHeight(row) === 2) {
@@ -430,6 +629,16 @@ export class AgentWorkspace {
     }
     // Reset both edges; the native compositor pads the rest of each tree row.
     return lines.map(line => `\x1b[0m${truncateToWidth(line, width)}\x1b[0m`);
+  }
+
+  finishedSidebarLine(): number {
+    const rows = this.treeRows();
+    let line = 1;
+    for (const row of rows) {
+      if (row.key === FINISHED_KEY) return line;
+      line += sidebarRowHeight(row);
+    }
+    return line;
   }
 
   selectSidebarLine(line: number): boolean {
@@ -472,7 +681,11 @@ export class AgentWorkspace {
       return { kind: "unavailable", label: "Workflow", reason: retained ? "select an agent to steer" : "it is no longer retained" };
     }
     const record = this.options.manager.getRecord(this.selection.id);
-    if (!record) return { kind: "unavailable", id: this.selection.id, label: this.selection.id, reason: "it is no longer retained" };
+    if (!record) {
+      const archived = this.displayRecord(this.selection.id);
+      return { kind: "unavailable", id: this.selection.id, label: archived ? this.workflowLabel(archived) ?? targetName(archived) : this.selection.id,
+        reason: archived ? "is archived and read-only" : "it is no longer retained" };
+    }
     const label = this.workflowLabel(record) ?? targetName(record);
     if (isLiveStatus(record.status)) return { kind: "agent", id: record.id, label };
     return { kind: "unavailable", id: record.id, label, reason: `it has ${record.status === "completed" ? "completed" : record.status === "error" ? "failed" : record.status}` };
@@ -546,9 +759,31 @@ export class AgentWorkspace {
     if (this.attached === attached) return;
     this.attached = attached;
     this.editorViewUnsubscribe?.();
-    this.editorViewUnsubscribe = attached
-      ? this.options.events?.on(EDITOR_VIEW_REQUEST_EVENT, () => this.publishEditorView(true))
-      : undefined;
+    const events = this.options.events;
+    const unsubscribes = attached && events ? [
+      events.on(EDITOR_VIEW_REQUEST_EVENT, () => this.publishEditorView(true)),
+      events.on(EDITOR_STATUS_REQUEST_EVENT, value => {
+        if (!value || typeof value !== "object" || this.unavailableKeys.has(this.editorDraftKey)) return;
+        const request = value as { agentId?: string; respond?: (status: unknown) => void };
+        if (typeof request.respond !== "function") return;
+        const record = this.inlineAgent() ? this.inlineRecord()
+          : this.selection.kind === "agent" ? this.displayRecord(this.selection.id) : undefined;
+        if (!record || record.id !== request.agentId) return;
+        const archived = isArchivedDisplay(record);
+        let usage = archived ? record.finalContextUsage : undefined;
+        if (!archived) {
+          try { usage = record.session?.getContextUsage(); }
+          catch { usage = undefined; }
+        }
+        request.respond({
+          cost: archived ? (record.lifetimeUsage ? record.lifetimeUsage.cost ?? 0 : undefined) : (record as AgentRecord).lifetimeUsage.cost ?? 0,
+          usage,
+          contextWindow: archived ? record.finalContextWindow ?? record.finalContextUsage?.contextWindow : record.session?.model?.contextWindow,
+          reasoning: archived ? record.finalReasoning : record.session?.model?.reasoning,
+        });
+      }),
+    ] : [];
+    this.editorViewUnsubscribe = unsubscribes.length ? () => { for (const unsubscribe of unsubscribes) unsubscribe(); } : undefined;
     this.publishEditorView(true);
     this.options.onAttachmentChanged(attached);
   }
@@ -563,7 +798,7 @@ export class AgentWorkspace {
       const agentIndex = this.selection.kind === "workflow-agent" ? this.selection.index : undefined;
       if (agentIndex !== undefined) {
         const entry = this.workflowAgents(task).find(agent => agent.index === agentIndex);
-        const record = entry?.recordId ? this.options.manager.getRecord(entry.recordId) : undefined;
+        const record = entry?.recordId ? this.displayRecord(entry.recordId) : undefined;
         if (record) {
           this.selection = { kind: "agent", id: record.id };
           this.lastInspectorSelection = this.selection;
@@ -598,7 +833,7 @@ export class AgentWorkspace {
         const inlineScroll = createAgentScrollView(document.inlineActivity);
         const inlineView = new VStack([
           { component: scroll, basis: "auto", grow: 0, shrink: 1, minSize: 1 },
-          { component: document.inlineHeader, basis: "auto", shrink: 0 },
+          { component: new WorkspaceScrollView(document.inlineHeader, { follow: "none", primary: false, overscroll: "contain", scrollbar: "auto" }), basis: "auto", shrink: 0 },
           { component: inlineScroll, basis: 0, grow: 1, shrink: 0, minSize: 1 },
         ]);
         cached = { document, scroll, inlineScroll, inlineView };
@@ -606,9 +841,7 @@ export class AgentWorkspace {
       }
       return agentIndex === undefined && this.workflowTab === "overview" && this.inlineAgents.has(task.id) ? cached.inlineView : cached.scroll;
     }
-    const record = this.options.manager.getRecord(this.selection.id);
-    // Eviction is not navigation. Keep the unavailable target and its draft
-    // selected until the user explicitly chooses Main (and its saved draft).
+    const record = this.displayRecord(this.selection.id);
     if (!record) return this.unavailableDocument;
     const cached = this.agentDocument(record);
     return this.tab === "activity" ? cached.scroll : cached.metadataScroll;
@@ -668,13 +901,13 @@ export class AgentWorkspace {
   }
 
   private openWorkflowAgent(task: WorkflowTask, entry: WorkflowAgentEntry): void {
-    const record = entry.recordId ? this.options.manager.getRecord(entry.recordId) : undefined;
+    const record = entry.recordId ? this.displayRecord(entry.recordId) : undefined;
     this.tab = "activity";
     this.openSelection(record ? { kind: "agent", id: record.id } : { kind: "workflow-agent", id: task.id, index: entry.index }, false);
     this.layout.requestRender();
   }
 
-  private workflowLabel(record: AgentRecord): string | undefined {
+  private workflowLabel(record: AgentDisplayRecord): string | undefined {
     const task = this.options.workflows().find(item => item.id === record.workflowId);
     if (!task) return undefined;
     const entries = this.workflowAgents(task);
@@ -684,17 +917,24 @@ export class AgentWorkspace {
     return undefined;
   }
 
-  private agentDocument(record: AgentRecord): { document: AgentWorkspaceDocument; scroll: ScrollView; metadataScroll: ScrollView } {
+  private agentDocument(record: AgentDisplayRecord): { document: AgentWorkspaceDocument; scroll: ScrollView; metadataScroll: ScrollView } {
     let cached = this.documents.get(record.id);
     if (!cached) {
+      const recordId = record.id;
       const document = new AgentWorkspaceDocument(
         record,
-        () => this.options.activity.get(record.id),
+        () => this.options.activity.get(recordId),
         () => this.tab,
         () => this.theme,
-        () => this.options.workflows().find(task => task.id === record.workflowId),
+        () => {
+          const current = this.displayRecord(recordId);
+          return this.options.workflows().find(task => task.id === current?.workflowId);
+        },
         () => this.layout.requestRender(),
-        () => this.workflowLabel(record),
+        () => {
+          const current = this.displayRecord(recordId);
+          return current ? this.workflowLabel(current) : undefined;
+        },
         next => this.selectAgentTab(next),
         this.tui,
       );
@@ -889,7 +1129,7 @@ export class AgentWorkspace {
       // shortcut to the last inspector. Main selection is always explicit.
       const previous = this.lastInspectorSelection;
       const retained = previous?.kind === "agent"
-        ? this.options.manager.getRecord(previous.id) !== undefined || this.unavailableKeys.has(draftKey(previous))
+        ? this.displayRecord(previous.id) !== undefined || this.unavailableKeys.has(draftKey(previous))
         : previous !== undefined && this.options.workflows().some(task => task.id === previous.id);
       const next = retained ? previous : this.treeRows().find(row => row.selection && row.selection.kind !== "main")?.selection;
       if (next) this.openSelection(next, !retained);
@@ -1048,13 +1288,13 @@ export class AgentWorkspace {
   }
 
   private treeRows(): TreeRow[] {
-    const records = this.options.manager.listAgents().slice().sort((a, b) => a.startedAt - b.startedAt);
+    const records = this.displayRecords().slice().sort((a, b) => a.startedAt - b.startedAt);
     const workflows = [...this.options.workflows()].sort((a, b) => a.startTime - b.startTime);
     const activeWorkflow = (task: WorkflowTask) => task.status === "running" || task.status === "paused";
     const rows: TreeRow[] = [{ kind: "main", key: "main", depth: 0, label: "Main", selection: { kind: "main" } }];
     const shown = new Set<string>();
     const workflowRecords = new Set(workflows.flatMap(task => this.workflowAgents(task).flatMap(entry => entry.recordId ? [entry.recordId] : [])));
-    const children = new Map<string, AgentRecord[]>();
+    const children = new Map<string, AgentDisplayRecord[]>();
     for (const record of records) {
       if (!record.parentAgentId) continue;
       const siblings = children.get(record.parentAgentId) ?? [];
@@ -1072,7 +1312,7 @@ export class AgentWorkspace {
       rows.push({ ...row, collapsed });
       return !collapsed;
     };
-    const addAgent = (record: AgentRecord, depth: number, parentKey: string | undefined, label = targetName(record), previewKey?: string) => {
+    const addAgent = (record: AgentDisplayRecord, depth: number, parentKey: string | undefined, label = targetName(record), previewKey?: string) => {
       if (shown.has(record.id)) return;
       shown.add(record.id);
       const key = `agent:${record.id}`;
@@ -1093,7 +1333,7 @@ export class AgentWorkspace {
       else for (const child of kids) addAgent(child, depth + 1, key);
     };
     const addWorkflowEntry = (workflow: WorkflowTask, entry: WorkflowAgentEntry, depth: number, parentKey: string) => {
-      const record = entry.recordId ? this.options.manager.getRecord(entry.recordId) : undefined;
+      const record = entry.recordId ? this.displayRecord(entry.recordId) : undefined;
       const selection: WorkspaceSelection = { kind: "workflow-agent", id: workflow.id, index: entry.index };
       if (record) {
         addAgent(record, depth, parentKey, entry.label, selectionKey(selection));
@@ -1153,11 +1393,36 @@ export class AgentWorkspace {
     for (const workflow of workflows.filter(activeWorkflow)) addWorkflow(workflow, 0);
     for (const record of records.filter(item => !item.parentAgentId && !item.workflowId && !workflowRecords.has(item.id) && isLiveStatus(item.status))) addAgent(record, 0, undefined);
 
+    const retainedWorkflowIds = new Set(workflows.map(workflow => workflow.id));
+    const orphanWorkflowRecords = new Map<string, AgentDisplayRecord[]>();
+    for (const record of records) {
+      if (!record.workflowId || retainedWorkflowIds.has(record.workflowId)) continue;
+      const group = orphanWorkflowRecords.get(record.workflowId) ?? [];
+      group.push(record);
+      orphanWorkflowRecords.set(record.workflowId, group);
+    }
+    const addArchivedWorkflow = (workflowId: string, group: AgentDisplayRecord[], depth: number, parentKey: string) => {
+      const key = `archived-workflow:${workflowId}`;
+      const ids = new Set(group.map(record => record.id));
+      const roots = group.filter(record => !record.parentAgentId || !ids.has(record.parentAgentId));
+      const expand = push({ kind: "workflow", key, depth, label: `Workflow ${workflowId}`, detail: "completed · archived history",
+        status: "completed", parentKey }, roots.length);
+      if (!expand) {
+        for (const record of group) shown.add(record.id);
+        return;
+      }
+      for (const record of roots) addAgent(record, depth + 1, key);
+    };
+
+    const recordIds = new Set(records.map(record => record.id));
     const finishedWorkflows = workflows.filter(task => !activeWorkflow(task));
-    const finishedAgents = records.filter(item => !item.parentAgentId && !item.workflowId && !workflowRecords.has(item.id) && !isLiveStatus(item.status));
-    const finishedCount = finishedWorkflows.length + finishedAgents.length;
-    if (finishedCount > 0 && push({ kind: "finished", key: FINISHED_KEY, depth: 0, label: `Finished (${finishedCount})` }, finishedCount)) {
+    const finishedAgents = records.filter(item => (!item.parentAgentId || !recordIds.has(item.parentAgentId))
+      && !item.workflowId && !workflowRecords.has(item.id) && !isLiveStatus(item.status));
+    const finishedCount = finishedWorkflows.length + finishedAgents.length + orphanWorkflowRecords.size;
+    const showFinished = push({ kind: "finished", key: FINISHED_KEY, depth: 0, label: `Finished (${finishedCount})` }, finishedCount);
+    if (finishedCount > 0 && showFinished) {
       for (const workflow of finishedWorkflows) addWorkflow(workflow, 1, FINISHED_KEY);
+      for (const [workflowId, group] of orphanWorkflowRecords) addArchivedWorkflow(workflowId, group, 1, FINISHED_KEY);
       for (const record of finishedAgents) addAgent(record, 1, FINISHED_KEY);
     }
     for (const key of this.unavailableKeys) {
@@ -1170,7 +1435,7 @@ export class AgentWorkspace {
     return rows;
   }
 
-  private agentRowDetail(record: AgentRecord): string {
+  private agentRowDetail(record: AgentDisplayRecord): string {
     const activity = this.options.activity.get(record.id);
     const parts: string[] = [record.status, formatDuration(record.startedAt, record.completedAt ?? Date.now())];
     if (activity) {
@@ -1292,7 +1557,7 @@ export class AgentWorkspace {
       const inline = this.inlineAgent();
       if (this.selection.kind === "agent" || inline) {
         const id = inline?.recordId ?? (this.selection.kind === "agent" ? this.selection.id : `${selectionKey(this.selection)}:inline:${inline?.key}`);
-        const record = inline ? this.inlineRecord() : this.options.manager.getRecord(id);
+        const record = inline ? this.inlineRecord() : this.displayRecord(id);
         const model = record?.session?.model;
         const invocation = record?.invocation;
         const canonical = invocation?.modelId ?? inline?.modelId;
@@ -1345,13 +1610,7 @@ export class AgentWorkspace {
     const index = this.treeIndex(rows);
     const line = 1 + rows.slice(0, index).reduce((height, row) => height + sidebarRowHeight(row), 0);
     const bottom = line + sidebarRowHeight(rows[index]) - 1;
-    // The scroll view holds the rows below the heading, so its row 0 is line 1.
-    const top = this.sidebarScroll.scrollTop;
-    const height = this.sidebarScroll.viewportHeight;
-    if (line - 1 < top) this.sidebarScroll.scrollTo(line - 1, { disableFollow: true });
-    else if (height > 0 && bottom - 1 >= top + height) {
-      this.sidebarScroll.scrollTo(bottom - height, { disableFollow: true });
-    }
+    this.sidebarScroll.ensureLogicalRowVisible(line, bottom);
   }
 }
 

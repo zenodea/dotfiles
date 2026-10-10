@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services
 import qs.style
 
 Rectangle {
@@ -12,8 +13,21 @@ Rectangle {
 
     signal clicked
 
+    property bool navigable: true
+    readonly property bool focused: Nav.current === root
+
     implicitWidth: row.implicitWidth + Metrics.itemPadding * 2
     implicitHeight: 30
+    border.width: focused ? Metrics.borderWidth : 0
+    border.color: Theme.accent
+
+    function activate(): void {
+        if (root.enabled)
+            root.clicked();
+    }
+
+    Component.onCompleted: Nav.register(root)
+    Component.onDestruction: Nav.unregister(root)
 
     color: active && enabled ? Theme.alpha(Theme.accent, 0.18) : area.containsMouse && enabled ? Theme.alpha(Theme.fg, 0.09) : Theme.alpha(Theme.fg, 0.05)
 
