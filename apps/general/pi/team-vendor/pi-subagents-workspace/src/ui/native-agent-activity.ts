@@ -392,8 +392,10 @@ export class NativeAgentActivity implements Component {
     // Same per-slot native inheritance as Main, through public factories only.
     const builtin = Object.hasOwn(builtinDefinitions, name) && (!definition?.renderCall || !definition?.renderResult)
       ? builtinDefinitions[name as keyof typeof builtinDefinitions](cwd) : undefined;
-    const renderers = builtin ? { ...definition, renderCall: definition?.renderCall ?? builtin.renderCall,
+    const base = builtin ? { ...definition, renderCall: definition?.renderCall ?? builtin.renderCall,
       renderResult: definition?.renderResult ?? builtin.renderResult } : definition;
+    const runner = session.extensionRunner as { resolveToolRenderers?: (toolName: string, next: () => typeof base) => typeof base } | undefined;
+    const renderers = runner?.resolveToolRenderers?.(name, () => base) ?? base;
     const component = new ToolExecutionComponent(name, id, args, { showImages: this.showImages, imageWidthCells: this.imageWidth },
       renderers, this.ui, cwd);
     component.setExpanded(this.expanded);
