@@ -18,6 +18,7 @@ DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 THEMES_DIR="$DOTFILES/themes"
 APPS_DIR="$DOTFILES/apps"
 export DOTFILES
+export PATH="$HOME/.local/bin:$PATH"
 
 # shellcheck source=lib/common.sh
 source "$DOTFILES/lib/common.sh"

@@ -29,8 +29,8 @@ peach = "#${ORANGE}"
 [ui]
 accent = "#${ACCENT}"
 tab_bar_position = "bottom"
-# shared single-line dividers with a frame around the pane area, no scrollbars
-pane_gaps = false
+# each pane gets its own border with a gap between, no scrollbars
+pane_gaps = true
 pane_outer_borders = true
 pane_borders = "always"
 pane_scrollbars = false
@@ -63,11 +63,10 @@ split_horizontal = "prefix+_"
 
 # ctrl+h/j/k/l is handled by zsh and nvim (they call `herdr pane focus`), since
 # herdr can't pass keys through to vim the way tmux's is_vim check did.
-# prefix+j/k/l belong to the popups below, so panes use arrows here.
 focus_pane_left = ["prefix+h", "prefix+left", "ctrl+alt+h"]
-focus_pane_down = ["prefix+down", "ctrl+alt+j"]
-focus_pane_up = ["prefix+up", "ctrl+alt+k"]
-focus_pane_right = ["prefix+right", "ctrl+alt+l"]
+focus_pane_down = ["prefix+j", "prefix+down", "ctrl+alt+j"]
+focus_pane_up = ["prefix+k", "prefix+up", "ctrl+alt+k"]
+focus_pane_right = ["prefix+l", "prefix+right", "ctrl+alt+l"]
 cycle_pane_next = ["prefix+o", "prefix+tab"]
 last_pane = "prefix+semicolon"
 resize_pane_left = "prefix+ctrl+left"
@@ -82,7 +81,7 @@ copy_mode = "prefix+["
 # windows → tabs
 new_tab = "prefix+c"
 next_tab = "prefix+n"
-previous_tab = "prefix+shift+p"
+previous_tab = "prefix+shift+n"
 switch_tab = "prefix+1..9"
 rename_tab = "prefix+comma"
 close_tab = ["prefix+ampersand", "prefix+shift+x"]
@@ -116,7 +115,7 @@ width = "60%"
 height = "50%"
 
 [[keys.command]]
-key = "prefix+l"
+key = "prefix+shift+l"
 type = "pane"
 command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; herdr pane rename \"$HERDR_PANE_ID\" lazygit >/dev/null 2>&1; exec lazygit"
 description = "lazygit"
@@ -124,13 +123,13 @@ description = "lazygit"
 # Agents get a zoomed pane rather than a popup: a popup can't be hidden without
 # quitting, while a pane keeps running (and shows in the sidebar) when you leave it.
 [[keys.command]]
-key = "prefix+j"
+key = "prefix+shift+a"
 type = "pane"
 command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec codex"
 description = "codex"
 
 [[keys.command]]
-key = "prefix+k"
+key = "prefix+a"
 type = "pane"
 command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec claude"
 description = "claude"
@@ -148,22 +147,24 @@ type = "plugin_action"
 command = "shepherd.pair"
 description = "shepherd: pair a phone"
 
-# graphdiff (the herdr plugin): g for graph. Opens the review page for this pane's repo.
+# Pack Leader (the herdr plugin): shift+p picks the workers' harness, model and
+# thinking level; ctrl+l shows the pack.
 [[keys.command]]
-key = "prefix+g"
-type = "plugin_action"
-command = "graphdiff.open"
-description = "graphdiff"
+key = "prefix+shift+p"
+type = "popup"
+command = "pack-leader config pick"
+description = "pack leader: workers' model"
+width = "60%"
+height = "60%"
 
-# graphdiff in the terminal: the same map as a herdr overlay.
 [[keys.command]]
-key = "prefix+shift+g"
+key = "prefix+ctrl+l"
 type = "plugin_action"
-command = "graphdiff.tui"
-description = "graphdiff in the terminal"
+command = "pack-leader.sidebar"
+description = "pack leader: show the pack"
 
 # fence (the herdr plugin): p for pen. The pen window for the space you're in;
-# previous_tab moved to prefix+shift+p to make room.
+# previous_tab moved to prefix+shift+n to make room.
 [[keys.command]]
 key = "prefix+p"
 type = "plugin_action"

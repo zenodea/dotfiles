@@ -1,12 +1,11 @@
-# Pi packages managed by dotfiles. These are merged into ~/.pi/agent/settings.json.
-# A package already listed there under another version pin is left as it is.
+# Pi packages, in load order. ~/.pi/agent/settings.json is rendered from this list;
+# anything installed outside it is removed on the next render.
 # The classifier must come before the permission system it judges for.
 npm:pi-permission-classifier@0.5.2
 npm:@gotgenes/pi-permission-system
 npm:@narumitw/pi-plan-mode
 npm:@narumitw/pi-btw
 npm:@juicesharp/rpiv-ask-user-question@2.12.0
-npm:@narumitw/pi-usage
 npm:@narumitw/pi-goal@0.54.4
 npm:@ff-labs/pi-fff
 npm:pi-web-access

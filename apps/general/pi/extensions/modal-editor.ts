@@ -3,6 +3,7 @@
  *
  * Deliberately basic: no counts, registers, text objects, or block selection.
  *
+ * Starts in normal mode.
  * Insert mode   Escape -> normal
  * Normal mode   Escape passes through (aborts the agent, etc.)
  *   move        h j k l   w b e   0 ^ $   gg G
@@ -132,7 +133,7 @@ const SCROLLS: [key: KeyId, pages: number, lines: number][] = [
 ];
 
 class ModalEditor extends CustomEditor {
-	private mode: "normal" | "insert" | "visual" | "vline" = "insert";
+	private mode: "normal" | "insert" | "visual" | "vline" = "normal";
 	private pending = "";
 	// Where a selection started; the cursor is its other end.
 	private anchor: Position = { line: 0, col: 0 };

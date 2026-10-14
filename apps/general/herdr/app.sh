@@ -29,5 +29,6 @@ plugins() {
 reload() {
   have herdr || return 0
   herdr server reload-config >/dev/null 2>&1 || return 0
+  pkill -WINCH -x herdr 2>/dev/null || true
   note "reloaded"
 }

@@ -2,5 +2,4 @@
 # Missing ones are installed with `herdr plugin install`. ~/.config/herdr/plugins.json
 # is herdr's own registry (absolute paths, per machine), so it isn't tracked.
 fence zenodea/fence
-graphdiff zenodea/graphdiff
 shepherd zenodea/shepherd

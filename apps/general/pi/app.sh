@@ -14,6 +14,7 @@ render() {
     python3 - "$settings" "$packages" <<'PY'
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -32,54 +33,36 @@ try:
 except json.JSONDecodeError as exc:
     raise SystemExit(f"invalid JSON in {settings_path}: {exc}")
 
-existing = data.get("packages", [])
-if not isinstance(existing, list):
-    raise SystemExit(f"{settings_path}: packages must be a list")
-
-# npm:@scope/name@1.2.3 and npm:@scope/name are the same package, so a pin on
-# either side must not add a second entry.
 def name(package):
     if isinstance(package, str) and package.startswith("npm:"):
         head, sep, _ = package[5:].partition("@")
         return package[:5] + head
     return package
 
-present = {name(package) for package in existing}
-changed = False
-for package in packages:
-    if name(package) not in present:
-        existing.append(package)
-        present.add(name(package))
-        changed = True
+wanted = {name(package) for package in packages}
+for package in data.get("packages", []):
+    if name(package) not in wanted and name(package).startswith("npm:"):
+        subprocess.run(["pi", "remove", name(package)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-data["packages"] = existing
-
-# Follow the dotfiles palette (themes/dotfiles.json, rendered above).
-if data.get("theme") != "dotfiles":
-    data["theme"] = "dotfiles"
-    changed = True
-
-for key, value in {"defaultProvider": "openai", "defaultModel": "gpt-6.1-sol"}.items():
-    if key not in data:
-        data[key] = value
-        changed = True
-levels = data.setdefault("modelThinkingLevels", {})
-for key, value in {"openai/gpt-6.1-sol": "xhigh", "openai/gpt-6-luna": "max"}.items():
-    if key not in levels:
-        levels[key] = value
-        changed = True
-enabled = data.setdefault("enabledModels", [])
-for model in ("openai/gpt-6.1-sol", "openai/gpt-6-luna"):
-    if model not in enabled:
-        enabled.append(model)
-        changed = True
+rendered = {
+    "theme": "dotfiles",
+    "quietStartup": True,
+    "defaultProvider": "openai",
+    "defaultModel": "gpt-6.1-sol",
+    "modelThinkingLevels": {"openai/gpt-6.1-sol": "xhigh", "openai/gpt-6-luna": "max"},
+    "packages": packages,
+}
+if "lastChangelogVersion" in data:
+    rendered = {"lastChangelogVersion": data["lastChangelogVersion"], **rendered}
+changed = data != rendered
+data = rendered
 
 if changed or not settings_path.exists():
     tmp_path = settings_path.with_suffix(settings_path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(data, indent=2) + "\n")
     os.replace(tmp_path, settings_path)
 PY
-    note "ensured: ~/.pi/agent/settings.json packages, theme, models"
+    note "rendered: ~/.pi/agent/settings.json"
   fi
 
   local patch_file pkg_dir

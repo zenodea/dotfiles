@@ -1,5 +1,7 @@
 theme = ${GHOSTTY_THEME}
 font-family = ${FONT_MONO_FAMILY}
+font-family-italic = MonoLisaCode
+font-family-bold-italic = MonoLisaCode
 font-size = ${FONT_SIZE}
 adjust-cell-height = ${FONT_CELL_HEIGHT}
 adjust-cell-width = ${FONT_CELL_WIDTH}
