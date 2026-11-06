@@ -18,11 +18,23 @@ os:
   editAtLineAndWait: 'nvim +{{line}} -- {{filename}}'
 
 git:
+  # Lazygit 0.65 exposes columnWidth (half the pane width minus 6), not width.
+  # Reconstruct the full width and keep tiny panes valid for delta and seq.
   diffRenderers:
     - name: delta
-      command: delta --paging=never --width={{width}} --max-line-length=$(({{width}}-16)) | sed "s/^---\$/$(printf '\033[2m'; printf '─%.0s' $(seq 1 {{width}}); printf '\033[0m')/"
+      command: >-
+        width=$(({{columnWidth}} * 2 + 12));
+        [ "$width" -ge 1 ] || width=1;
+        max_line_length=$((width - 16));
+        [ "$max_line_length" -ge 1 ] || max_line_length=1;
+        delta --paging=never --width="$width" --max-line-length="$max_line_length"
+        | sed "s/^---\$/$(printf '\033[2m'; printf '─%.0s' $(seq 1 "$width"); printf '\033[0m')/"
     - name: delta full
-      command: delta --paging=never --width={{width}} | sed "s/^---\$/$(printf '\033[2m'; printf '─%.0s' $(seq 1 {{width}}); printf '\033[0m')/"
+      command: >-
+        width=$(({{columnWidth}} * 2 + 12));
+        [ "$width" -ge 1 ] || width=1;
+        delta --paging=never --width="$width"
+        | sed "s/^---\$/$(printf '\033[2m'; printf '─%.0s' $(seq 1 "$width"); printf '\033[0m')/"
 
 gui:
   theme:

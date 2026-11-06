@@ -212,6 +212,20 @@ can define `reload_mac` and `reload_linux`.
 (like `mac/appearance` or `linux/gtk`). If one app fails, it's reported and the
 rest still run. `--no-reload` renders without reloading anything.
 
+### Zen live-theme prototype (macOS)
+
+[`apps/mac/zen/`](apps/mac/zen/README.md) contains an **isolated extension-based
+prototype**, not a daily-browser installation. The theme hook stages palette data
+in `render()` and publishes it only in `reload()`, preserving `--no-reload`.
+An explicitly launched temporary profile can follow those colors live using the
+unmodified, signed Zen app. Headless tests verify actual dark/light browser-UI
+paint in one running process while a local page's colors remain unchanged.
+
+The installed app, everyday profiles, and system security settings stay untouched.
+The prototype uses temporary loopback-only test automation; see its README for
+commands, security boundaries, and verification limits. The earlier app-copy
+approach was abandoned, not retained as a fallback.
+
 ## Other commands
 
 ```sh
