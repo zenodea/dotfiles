@@ -118,11 +118,17 @@ apps that are running.
 
 Themed apps: hyprland, hyprlock, quickshell, waybar, fuzzel, rofi, gtk, vifm,
 sketchybar, borders, Alfred, Raycast, ghostty, tmux, herdr, pi, Claude Code,
-Codex, lazygit, delta, nvim, zed, Firefox, Obsidian, and the wallpaper.
+Codex, lazygit, delta, nvim, zed, Firefox, Zen (macOS), Hermes, Obsidian,
+and the wallpaper.
 
-Themes (each has a `-light` version): catppuccin-mocha, dracula, everforest,
-github, gruvbox, gruvbox-material, monaspace, nightfox, night-owl, nord,
-rose-pine, sonokai, tokyo-night, zenbones.
+Themes (each has a `-light` version): ayu, bamboo, blueloco, catppuccin-mocha,
+cobalt2, cyberdream, dracula, embark, everforest, flexoki, github, gruvbox,
+gruvbox-material, horizon, kanagawa, melange, miasma, monaspace, monokai-pro,
+mosel, night-owl, nightfox, nord, nordic, onedark, oxblood, oxocarbon,
+prickly-pear, rose-pine, selenized, shades-of-purple, silkcircuit, silverpoint,
+solarized-osaka, sonokai, synthwave-84, tokyo-night, witches-brew, zenbones.
+
+Every theme, light halves included, has its own wallpaper; no two share one.
 
 ## Fonts
 
@@ -182,6 +188,11 @@ A light theme uses its dark version's `WALLPAPER` unless it sets its own.
 `BG`: it's the faintest color that still has 4.5:1 contrast against the
 background. A theme can set `MUTED=` to use its own color instead.
 
+On light themes, any text color under 4.5:1 against `BG` is darkened in Oklab
+until it reads, keeping its hue, so every app gets legible accents without a
+per-app fix. Ghostty also sets `minimum-contrast = 3` on light themes, which
+catches the 24-bit colors that TUIs built for dark terminals send.
+
 Auto mode never changes the macOS system appearance, because setting Light or
 Dark by hand turns macOS's Auto off.
 
@@ -212,19 +223,46 @@ can define `reload_mac` and `reload_linux`.
 (like `mac/appearance` or `linux/gtk`). If one app fails, it's reported and the
 rest still run. `--no-reload` renders without reloading anything.
 
-### Zen live-theme prototype (macOS)
+### Zen (macOS)
 
-[`apps/mac/zen/`](apps/mac/zen/README.md) contains an **isolated extension-based
-prototype**, not a daily-browser installation. The theme hook stages palette data
-in `render()` and publishes it only in `reload()`, preserving `--no-reload`.
-An explicitly launched temporary profile can follow those colors live using the
-unmodified, signed Zen app. Headless tests verify actual dark/light browser-UI
-paint in one running process while a local page's colors remain unchanged.
+[`apps/mac/zen/`](apps/mac/zen/) generates browser-UI CSS in Zen's default profile.
+Theme switches apply live: render copies a small autoconfig loader
+([`loader/`](apps/mac/zen/loader/)) into `Zen.app/Contents/Resources`, and it
+reloads the stylesheet within half a second of a change. This modifies the app
+bundle, so `codesign --verify` reports it as altered; Zen updates replace the
+bundle, and the next render puts the loader back.
 
-The installed app, everyday profiles, and system security settings stay untouched.
-The prototype uses temporary loopback-only test automation; see its README for
-commands, security boundaries, and verification limits. The earlier app-copy
-approach was abandoned, not retained as a fallback.
+When the running Zen has no loader yet (first install, or right after an
+update), changed colors load through a normal quit/reopen, with session
+restoration enabled. A closed Zen stays closed; `--no-reload` writes the CSS
+without restarting. Cancelled or stalled quits are never force-killed. macOS
+may ask permission for Terminal to control Zen on the first restart.
+
+The sidebar, tabs, toolbar, and URL bar follow the palette with native macOS blur
+and the terminal's opacity. Websites keep their own styling. Existing unrelated
+`userChrome.css` or `user.js` files are left alone rather than overwritten;
+`ZEN_PROFILE` can select a profile explicitly.
+
+### Hermes (macOS and Linux)
+
+[`apps/general/hermes/`](apps/general/hermes/) generates a `dotfiles` skin for the default
+Hermes home and existing local profiles. Background, text, accents, borders, and
+status colors follow the palette; Hermes derives its remaining surface shades
+and may adjust the accent for readability. This also themes Hermes CLI/TUI
+sessions using those profiles.
+
+The adapter uses Hermes' supported `display.skin` setting and `skins/dotfiles.yaml`,
+not app patches or Chromium storage. Its native gateway watcher can apply updates
+without restarting active sessions. If a saved desktop theme takes precedence,
+select **Dotfiles** once in Hermes' Appearance settings. Remote gateways retain
+their own configuration.
+
+`--no-reload` stages the palette without changing Hermes' active files. Publishing
+preserves unrelated configuration and backs up each config before its first
+change. Unsupported YAML layouts are refused rather than rewritten. A closed
+Hermes stays closed. Node.js and the YAML parser from the existing Hermes
+installation are required; `HERMES_HOME` selects its data directory and
+`HERMES_REPO` can select a nonstandard installation directory.
 
 ## Other commands
 

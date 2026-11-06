@@ -77,6 +77,12 @@ palette() {
         printf 'palette = 7=#%s\n' "$(faded "$fg" 4.5)"
         printf 'palette = 8=#%s\n' "$(faded "$fg" 3)"
         printf 'palette = 15=#%s\n' "$fg"
+        # The palette above only covers apps that print ANSI colors. Plenty
+        # (lsd, btop, lazygit's defaults) send their own 24-bit colors tuned
+        # for dark terminals, so have Ghostty check every cell as it draws.
+        # 3:1 matches the quietest tier set on purpose (palette 8), so
+        # deliberately faint text keeps its place and only the unreadable moves.
+        printf 'minimum-contrast = 3\n'
     fi
 }
 

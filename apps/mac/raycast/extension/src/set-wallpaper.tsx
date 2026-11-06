@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { existsSync } from "node:fs";
 import {
   Action,
   ActionPanel,
@@ -10,7 +9,7 @@ import {
   showHUD,
   closeMainWindow,
 } from "@raycast/api";
-import { getWallpapers, repoRoot, run } from "./lib/dotfiles";
+import { getWallpapers, run, wallpaperPath, wallpaperPreview } from "./lib/dotfiles";
 
 interface State {
   wallpapers: string[];
@@ -20,7 +19,6 @@ interface State {
 
 export default function Command() {
   const [state, setState] = useState<State>({ wallpapers: [], loading: true });
-  const dir = `${repoRoot()}/wallpapers`;
 
   async function load() {
     try {
@@ -92,8 +90,8 @@ export default function Command() {
         }
       />
       {state.wallpapers.map((name) => {
-        const path = `${dir}/${name}`;
-        const content = existsSync(path) ? path : Icon.Image;
+        const path = wallpaperPath(name);
+        const content = wallpaperPreview(name) ?? Icon.Image;
         return (
           <Grid.Item
             key={name}

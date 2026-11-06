@@ -31,11 +31,35 @@ export USER="${USER:-$(id -un)}"
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# Every theme in accent-color order, so pickers read as a spectrum: red first,
+# round the wheel, grey accents last. A light half sorts with its dark half,
+# straight after it. One awk pass over all files keeps this cheap.
 theme_names() {
-  local f
-  for f in "$DOTFILES/themes"/*.sh; do
-    basename "$f" .sh
-  done
+  awk '
+    function hex(s, i) { return index("0123456789abcdef", tolower(substr(s, i, 1))) * 16 + index("0123456789abcdef", tolower(substr(s, i + 1, 1))) - 17 }
+    function hue(c,   r, g, b, mx, mn, d, h) {
+      r = hex(c, 1); g = hex(c, 3); b = hex(c, 5)
+      mx = r; if (g > mx) mx = g; if (b > mx) mx = b
+      mn = r; if (g < mn) mn = g; if (b < mn) mn = b
+      d = mx - mn
+      if (d < 20) return -1
+      if (mx == r) h = (g - b) / d
+      else if (mx == g) h = (b - r) / d + 2
+      else h = (r - g) / d + 4
+      return (h * 60 + 360 + 15) % 360 # +15 keeps crimson next to red
+    }
+    FNR == 1 { n = FILENAME; sub(/.*\//, "", n); sub(/\.sh$/, "", n); names[n] = 1 }
+    /^ACCENT="[0-9a-fA-F]+"/ { split($0, kv, "\""); accent[n] = kv[2] }
+    END {
+      for (n in names) {
+        key[n] = hue(accent[n]); if (key[n] < 0) key[n] = 999
+      }
+      for (n in names) {
+        base = n; light = sub(/-light$/, "", base)
+        if (!(base in names)) base = n
+        printf "%07.2f\t%s\t%d\t%s\n", key[base], base, light, n
+      }
+    }' "$DOTFILES/themes"/*.sh | sort -t "$(printf '\t')" -k1,1n -k2,2 -k3,3n | cut -f4
 }
 
 current_theme() {

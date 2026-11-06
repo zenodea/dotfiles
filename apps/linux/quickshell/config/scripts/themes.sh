@@ -6,9 +6,10 @@ field() { sed -n "s/^$2=\"\([^\"]*\)\".*/\1/p" "$1" | head -1; }
 
 printf '['
 first=1
-for f in "$repo"/themes/*.sh; do
+# In the CLI's color order; the launcher keeps it.
+while IFS= read -r name; do
+    f="$repo/themes/$name.sh"
     [[ -f "$f" ]] || continue
-    name=$(basename "$f" .sh)
     bg=$(field "$f" BG)
     fg=$(field "$f" FG)
     accent=$(field "$f" ACCENT)
@@ -31,5 +32,5 @@ for f in "$repo"/themes/*.sh; do
     first=0
     printf '{"name":"%s","bg":"#%s","fg":"#%s","accent":"#%s","appearance":"%s","thumb":"%s"%s}' \
         "$name" "$bg" "$fg" "$accent" "$appearance" "$thumb" "$colors"
-done
+done < <("$repo/bin/dotfiles" --themes-plain)
 printf ']\n'
