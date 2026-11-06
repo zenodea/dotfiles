@@ -4,7 +4,11 @@ __pycache__/
 
 # Machine-local: which appearance a manual theme pick is holding against.
 .auto-pin
+.auto-theme
 .current-theme
+# Machine-local: the fonts last picked. Without them the defaults apply.
+.current-font
+.current-text-font
 # Machine-local: the wallpaper last set, for the launcher's marker.
 .current-wallpaper
 apps/linux/vifm/config/vifminfo.json

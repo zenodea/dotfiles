@@ -103,6 +103,22 @@ export async function getAutoStatus(): Promise<AutoStatus> {
   return { enabled, raw };
 }
 
+/** Full-size wallpaper file, as `dotfiles -w` sets it. */
+export function wallpaperPath(name: string): string {
+  return `${repoRoot()}/wallpapers/full-size/${name}`;
+}
+
+/**
+ * Small thumbnail for a wallpaper: wallpapers/previews/<stem>.jpg (480x270,
+ * made by wallpapers/build-readme.sh). Falls back to the full-size file.
+ */
+export function wallpaperPreview(name: string): string | undefined {
+  const preview = `${repoRoot()}/wallpapers/previews/${name.replace(/\.[^.]+$/, "")}.jpg`;
+  if (existsSync(preview)) return preview;
+  const full = wallpaperPath(name);
+  return existsSync(full) ? full : undefined;
+}
+
 /** Absolute path to the dotfiles repo root, derived from the binary path. */
 export function repoRoot(): string {
   const bin = resolveBin();

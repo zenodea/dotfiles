@@ -56,7 +56,7 @@ inner.vertical = 3
 outer.left = 3
 outer.bottom = 3
 outer.top = [
-  { monitor.'built-in' = 3 }, # notch strip already reserves space; raise to ~42 if the bar gets covered
+  { monitor.'built-in' = 5 }, # notch strip already reserves space; raise to ~42 if the bar gets covered
   { monitor.'msi' = 38 },     # MSI MP275
   42,                         # any other monitor
 ]

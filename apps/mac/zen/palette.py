@@ -1,16 +1,13 @@
-"""Data-only palette validation and atomic stage/publish; no browser access."""
+"""Validated theme colors for Zen's generated startup stylesheet."""
 import argparse
 import json
 import math
 import os
 from pathlib import Path
 import re
-import stat
 import subprocess
-import tempfile
 
 COLORS = ('BG', 'SURFACE', 'BG_ALT', 'BORDER', 'FG', 'FG_BRIGHT', 'ACCENT', 'RED')
-LIMIT = 4096
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 NAME = re.compile(r'[a-z0-9][a-z0-9-]{0,63}\Z')
@@ -41,25 +38,6 @@ def validate(value):
 
 def encode(value):
     return (json.dumps(validate(value), sort_keys=True, separators=(',', ':')) + '\n').encode()
-
-
-def read_palette(path):
-    # No FIFOs, devices or symlinks; bounded read, including on concurrently replaced files.
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
-    with os.fdopen(fd, 'rb') as file:
-        if not stat.S_ISREG(os.fstat(file.fileno()).st_mode):
-            raise ValueError('palette must be a regular file')
-        data = file.read(LIMIT + 1)
-    if len(data) > LIMIT:
-        raise ValueError('palette exceeds byte limit')
-    def unique(pairs):
-        obj = {}
-        for key, value in pairs:
-            if key in obj:
-                raise ValueError('duplicate JSON key')
-            obj[key] = value
-        return obj
-    return validate(json.loads(data, object_pairs_hook=unique))
 
 
 def from_env(env=os.environ):
@@ -104,42 +82,11 @@ def cache_dir():
     return Path(os.environ.get('XDG_CACHE_HOME', str(Path.home() / '.cache'))) / 'dotfiles/zen'
 
 
-def atomic_write(path, value):
-    data = encode(value)
-    path = Path(path)
-    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    if path.is_symlink():
-        raise ValueError('refusing symlink palette')
-    try:
-        if encode(read_palette(path)) == data:
-            return False
-    except FileNotFoundError:
-        pass
-    except (ValueError, json.JSONDecodeError):
-        pass
-    fd, temp = tempfile.mkstemp(prefix='.palette-', dir=path.parent)
-    try:
-        with os.fdopen(fd, 'wb') as file:
-            file.write(data)
-            file.flush()
-            os.fsync(file.fileno())
-        os.replace(temp, path)
-    finally:
-        if os.path.exists(temp):
-            os.unlink(temp)
-    return True
-
-
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['stage', 'publish', 'env-json'])
-    args = parser.parse_args()
-    if args.action == 'env-json':
-        print(encode(from_env()).decode(), end='')
-    elif args.action == 'stage':
-        atomic_write(cache_dir() / 'pending.json', from_env())
-    else:
-        atomic_write(cache_dir() / 'active.json', read_palette(cache_dir() / 'pending.json'))
+    parser.add_argument('action', choices=['env-json'])
+    parser.parse_args()
+    print(encode(from_env()).decode(), end='')
 
 
 if __name__ == '__main__':

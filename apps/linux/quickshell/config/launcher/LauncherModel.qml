@@ -102,7 +102,7 @@ QtObject {
                     theme: t,
                     current: t.name === Dotfiles.currentTheme
                 };
-            }).sort((a, b) => a.base.localeCompare(b.base) || a.light - b.light);
+            }); // Already in color order, light halves after dark (scripts/themes.sh).
 
         if (mode === "fonts") {
             const active = Dotfiles.fonts.find(f => f.name === Dotfiles.currentFont);
