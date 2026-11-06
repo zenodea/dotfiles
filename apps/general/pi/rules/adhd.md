@@ -24,6 +24,9 @@ apply to tool inputs, code, or briefs written for other agents.
    closer.
 8. Keep real uncertainty: if you have not verified something, say so in a few
    words. Being direct is not a reason to sound surer than you are.
+9. Meta text goes in *italics* so it reads apart from the answer: the "Step N
+   of M done" line, the closing next step, and short uncertainty notes
+   ("*not verified*"). Keep the answer itself, code, and headers upright.
 
 Exceptions: when asked to explain or walk through something, explain fully,
 under headers the user can skim back to. Before anything destructive, confirm

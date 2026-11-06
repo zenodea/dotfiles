@@ -75,7 +75,7 @@ resize_pane_up = "prefix+ctrl+up"
 resize_pane_right = "prefix+ctrl+right"
 resize_mode = "prefix+shift+r"
 close_pane = "prefix+x"
-zoom = "prefix+z"
+zoom = ["prefix+f", "prefix+z"]
 copy_mode = "prefix+["
 
 # windows → tabs
@@ -107,12 +107,21 @@ toggle_sidebar = "prefix+b"
 settings = "prefix+shift+s"
 
 [[keys.command]]
-key = "prefix+f"
+key = "prefix+shift+f"
 type = "popup"
 command = "~/.config/herdr/scripts/sessionizer.sh"
 description = "sessionizer"
 width = "60%"
 height = "50%"
+
+# Browse this pane's folder without opening another tab or workspace.
+[[keys.command]]
+key = "prefix+y"
+type = "popup"
+command = "cd \"${HERDR_ACTIVE_PANE_CWD:-$HOME}\" && exec yazi"
+description = "yazi"
+width = "90%"
+height = "90%"
 
 [[keys.command]]
 key = "prefix+shift+l"

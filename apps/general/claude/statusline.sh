@@ -11,10 +11,12 @@ printf '%s' "$payload" | jq -r '
   def tokens: if . >= 1000000 then "\(. / 1000000 | one)M"
               elif . >= 1000 then "\(. / 1000 | round)k"
               else tostring end;
-  def dim: "\u001b[2m\(.)\u001b[22m";
-  def script: "\u001b[3m\(.)\u001b[23m";
-  def tone($percent): if $percent > 90 then "\u001b[31m\(.)\u001b[39m"
-                      elif $percent > 70 then "\u001b[33m\(.)\u001b[39m"
+  # Every span opens its own italic: the statusline renderer does not carry
+  # one line-wide italic across the colour changes inside it.
+  def paint($on; $off): "\u001b[3;\($on)m\(.)\u001b[23;\($off)m";
+  def dim: paint("2"; "22");
+  def tone($percent): if $percent > 90 then paint("31"; "39")
+                      elif $percent > 70 then paint("33"; "39")
                       else dim end;
 
   (.context_window.used_percentage // 0) as $percent
@@ -25,8 +27,7 @@ printf '%s' "$payload" | jq -r '
          then "$\(.cost.total_cost_usd * 1000 | round / 1000)" | dim else empty end),
         ("\($percent | one)%/\((.context_window.context_window_size // 0) | tokens)" | tone($percent))
       ] | join(" ")),
-      (.output_style.name // "default" | select(. != "default") | ascii_downcase | "\u001b[35m\(.)\u001b[39m")
+      (.output_style.name // "default" | select(. != "default") | ascii_downcase | paint("35"; "39"))
     ]
   | join(" │ " | dim)
-  | script
 '
