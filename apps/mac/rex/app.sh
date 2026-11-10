@@ -1,32 +1,19 @@
-# Rex — a Ghostty-based terminal that imports Ghostty theme files but keeps
+# Rex.app — a Ghostty-based terminal that imports Ghostty theme files but keeps
 # its own theme store, so render writes a theme file and reload imports it.
 # Mac apps run after general ones, so the ghostty config is already rendered.
 
 REX_THEME="$HOME/.config/rex/themes/dotfiles.ghostty"
 GHOSTTY_THEMES="/Applications/Ghostty.app/Contents/Resources/ghostty/themes"
 
-rex_bin() {
-    if have rex; then
-        command -v rex
-        return
-    fi
-    local app
-    for app in "/Applications/Rex.app" "/Applications/Rex Beta.app"; do
-        [[ -x "$app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" ]] || continue
-        printf '%s' "$app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex"
-        return
-    done
-    return 1
-}
+source "$APPS_DIR/general/rex/lib.sh"
 
 render() {
     rex_bin > /dev/null || {
         skip "Rex not installed"
         return
     }
-    # ~/.config/rex also holds the rendered theme, so link the file, not the dir.
+    # init.lua, with the key bindings, is general/rex's to link.
     mkdir -p "$(dirname "$REX_THEME")"
-    link "$APP_DIR/init.lua" "$HOME/.config/rex/init.lua"
     # Ghostty's own theme fills the slots the theme file has no colour for
     # (palette 0 and 8, mostly); the rendered config's colours come after and win.
     {

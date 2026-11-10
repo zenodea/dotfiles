@@ -117,7 +117,7 @@ Switching re-renders every app's config from its templates and reloads the
 apps that are running.
 
 Themed apps: hyprland, hyprlock, quickshell, waybar, fuzzel, rofi, gtk, vifm,
-sketchybar, borders, Alfred, Raycast, ghostty, tmux, herdr, pi, Claude Code,
+Renux, sketchybar, borders, Alfred, Raycast, Rex, ghostty, tmux, herdr, pi, Claude Code,
 Codex, lazygit, delta, nvim, zed, Firefox, Zen (macOS), Hermes, Obsidian,
 and the wallpaper.
 
@@ -222,6 +222,20 @@ can define `reload_mac` and `reload_linux`.
 `generate`, `copy`, `note`, `skip` and `have`. An app can have only a `reload`
 (like `mac/appearance` or `linux/gtk`). If one app fails, it's reported and the
 rest still run. `--no-reload` renders without reloading anything.
+
+### Rex and Renux
+
+[Rex](https://rex.superlogical.com) keeps its key bindings on the server, so
+[`apps/general/rex/`](apps/general/rex/) links one `init.lua` to `~/.config/rex` on both
+systems: the `C-a` prefix, splits, tabs, sessions and popups work the same in
+Rex.app on the Mac and in Renux on Linux. A theme switch asks a running server
+to read it again; `C-a r` does the same by hand.
+
+The clients are themed apart. [`apps/mac/rex/`](apps/mac/rex/) imports a Ghostty theme file
+into Rex.app. [`apps/linux/renux/`](apps/linux/renux/) writes the same kind of file to
+`~/.config/renux/themes/dotfiles` and sets the theme, font and opacity in
+Renux's `settings.ini`, touching only those keys. Renux watches both files, so
+it recolors without a reload.
 
 ### Zen (macOS)
 
