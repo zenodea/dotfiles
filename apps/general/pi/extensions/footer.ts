@@ -4,7 +4,7 @@
  * Folds pi's footer into one line: model, stats and extension statuses such
  * as the permission mode.
  *
- * The footer itself renders one blank row of padding. The line is published as a function on
+ * The footer itself renders nothing. The line is published as a function on
  * globalThis, and modal-editor.ts draws it into the editor's bottom border,
  * level with the INSERT/NORMAL label.
  */
@@ -129,7 +129,7 @@ export default function (pi: ExtensionAPI) {
 					if ((globalThis as any)[STATUS_LINE] === statusLine) delete (globalThis as any)[STATUS_LINE];
 				},
 				invalidate() {},
-				render: () => [""],
+				render: () => [],
 			};
 		});
 	});

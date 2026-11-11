@@ -9,7 +9,7 @@ Label {
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter
     text: {
-        const parts = [`up ${SysInfo.uptimeText}`];
+        const parts = [`up ${Monitor.uptimeText}`];
         if (Updates.summary)
             parts.push(Updates.summary);
         if (UPower.displayDevice?.isLaptopBattery ?? false)

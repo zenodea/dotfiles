@@ -1,0 +1,145 @@
+{
+  "$schema": "https://pi.dev/schemas/models.schema.json",
+  "providers": {
+    "openai": {
+      "modelOverrides": {
+        "gpt-6.1-sol": {
+          "samplingParamsByThinkingLevel": {
+            "low": {
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed"
+              }
+            },
+            "medium": {
+              "reasoning": {
+                "effort": "medium",
+                "summary": "detailed"
+              }
+            },
+            "high": {
+              "reasoning": {
+                "effort": "high",
+                "summary": "detailed"
+              }
+            },
+            "xhigh": {
+              "reasoning": {
+                "effort": "xhigh",
+                "summary": "detailed"
+              }
+            },
+            "max": {
+              "reasoning": {
+                "effort": "max",
+                "summary": "detailed"
+              }
+            }
+          }
+        },
+        "gpt-6-sol": {
+          "samplingParamsByThinkingLevel": {
+            "low": {
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed"
+              }
+            },
+            "medium": {
+              "reasoning": {
+                "effort": "medium",
+                "summary": "detailed"
+              }
+            },
+            "high": {
+              "reasoning": {
+                "effort": "high",
+                "summary": "detailed"
+              }
+            },
+            "xhigh": {
+              "reasoning": {
+                "effort": "xhigh",
+                "summary": "detailed"
+              }
+            },
+            "max": {
+              "reasoning": {
+                "effort": "max",
+                "summary": "detailed"
+              }
+            }
+          }
+        },
+        "gpt-6-luna": {
+          "samplingParamsByThinkingLevel": {
+            "low": {
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed"
+              }
+            },
+            "medium": {
+              "reasoning": {
+                "effort": "medium",
+                "summary": "detailed"
+              }
+            },
+            "high": {
+              "reasoning": {
+                "effort": "high",
+                "summary": "detailed"
+              }
+            },
+            "xhigh": {
+              "reasoning": {
+                "effort": "xhigh",
+                "summary": "detailed"
+              }
+            },
+            "max": {
+              "reasoning": {
+                "effort": "max",
+                "summary": "detailed"
+              }
+            }
+          }
+        },
+        "gpt-6-astra": {
+          "samplingParamsByThinkingLevel": {
+            "low": {
+              "reasoning": {
+                "effort": "low",
+                "summary": "detailed"
+              }
+            },
+            "medium": {
+              "reasoning": {
+                "effort": "medium",
+                "summary": "detailed"
+              }
+            },
+            "high": {
+              "reasoning": {
+                "effort": "high",
+                "summary": "detailed"
+              }
+            },
+            "xhigh": {
+              "reasoning": {
+                "effort": "xhigh",
+                "summary": "detailed"
+              }
+            },
+            "max": {
+              "reasoning": {
+                "effort": "max",
+                "summary": "detailed"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

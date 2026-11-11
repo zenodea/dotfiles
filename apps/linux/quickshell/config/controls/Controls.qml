@@ -53,6 +53,10 @@ Item {
                     label: "Controls"
                 },
                 {
+                    id: "clipboard",
+                    label: "Clipboard"
+                },
+                {
                     id: "agent",
                     label: "Agent"
                 }
@@ -69,7 +73,7 @@ Item {
         Loader {
             width: parent.width
             height: root.height - tabs.height - Metrics.borderWidth
-            sourceComponent: Panels.controlsTab === "agent" ? agentTab : controlsTab
+            sourceComponent: Panels.controlsTab === "agent" ? agentTab : Panels.controlsTab === "clipboard" ? clipboardTab : controlsTab
         }
     }
 
@@ -83,6 +87,26 @@ Item {
                 width: parent.width - Metrics.drawerPadding * 2
                 height: parent.height - Metrics.drawerPadding * 2
                 active: root.shown && root.visible
+            }
+        }
+    }
+
+    Component {
+        id: clipboardTab
+
+        Flickable {
+            readonly property bool navScope: true
+
+            contentHeight: clipboard.implicitHeight + Metrics.drawerPadding * 2
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
+            Clipboard {
+                id: clipboard
+
+                x: Metrics.drawerPadding
+                y: Metrics.drawerPadding
+                width: parent.width - Metrics.drawerPadding * 2
             }
         }
     }

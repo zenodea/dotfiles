@@ -12,8 +12,8 @@ Singleton {
     property Item keys: null
     property Item searchField: null
 
-    readonly property var drawerTabs: ["dashboard", "windows", "clipboard"]
-    readonly property var controlsTabs: ["controls", "agent"]
+    readonly property var drawerTabs: ["dashboard", "system"]
+    readonly property var controlsTabs: ["controls", "clipboard", "agent"]
 
     function register(item: Item): void {
         items.push(item);

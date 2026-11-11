@@ -95,6 +95,13 @@ PY
     note "linked: ~/.pi/agent/keybindings.json"
   fi
 
+  local models="$APP_DIR/models.json" models_target="$agent_dir/models.json"
+  if [[ -f "$models" && "$(readlink "$models_target" 2>/dev/null)" != "$models" ]]; then
+    [[ -e "$models_target" || -L "$models_target" ]] && mv "$models_target" "$models_target.bak"
+    ln -s "$models" "$models_target"
+    note "linked: ~/.pi/agent/models.json"
+  fi
+
   # Permission policy and its model judge. Seeded once, not linked: both
   # extensions rewrite their own config (toggling yolo, picking a judge model).
   local policy
@@ -155,6 +162,19 @@ PY
     ln -s "$item" "$target"
     note "linked: ~/.pi/agent/extensions/$name"
   done
+  integration
+}
+
+# herdr learns pi's working/idle/blocked state from this extension; without it
+# herdr guesses from the screen, which the custom editor defeats.
+integration() {
+  have herdr || return 0
+  herdr integration status 2>/dev/null | grep -qE '^pi: current' && return 0
+  if herdr integration install pi >/dev/null 2>&1; then
+    note "installed: herdr pi integration"
+  else
+    note "herdr integration install pi failed"
+  fi
 }
 
 reload() {

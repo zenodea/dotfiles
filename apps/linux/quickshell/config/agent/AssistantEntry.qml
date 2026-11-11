@@ -12,7 +12,7 @@ TextEdit {
     color: Theme.fg
     selectionColor: Theme.alpha(Theme.accent, 0.35)
     font.family: Theme.fontMono
-    font.pixelSize: 14
+    font.pointSize: 10.5
     renderType: Text.NativeRendering
     onLinkActivated: link => Qt.openUrlExternally(link)
 }

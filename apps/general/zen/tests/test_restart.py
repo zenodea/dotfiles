@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from configure import HEADER, IMPORT, LEGACY_IMPORT, PREFS, configure, find_profile, render_css
+from configure import HEADER, IMPORT, LEGACY_IMPORT, PREFS, configure, find_profile, profile_bases, render_css
 from palette import HERE, REPO, from_theme
 
 SHELL = r'''
@@ -26,7 +26,7 @@ open() { printf 'open %s\n' "$*" >> "$HOME/actions"; }
 sleep() { :; }
 source "$APP_DIR/app.sh"
 render
-[[ "$DO_RELOAD" != 1 ]] || reload
+[[ "$DO_RELOAD" != 1 ]] || "reload_$PLATFORM"
 '''
 
 
@@ -35,7 +35,7 @@ class RestartTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='zen-restart-tests-')
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name).resolve()
-        self.base = self.home / 'Library/Application Support/zen'
+        self.base = profile_bases(self.home)[0]
         self.profile = self.base / 'Profiles/own space-é'
         self.profile.mkdir(parents=True)
         (self.base / 'profiles.ini').write_text('[InstallOWN]\nDefault=Profiles/own space-é\n')
@@ -43,10 +43,10 @@ class RestartTests(unittest.TestCase):
         self.palette = from_theme('dracula')
         self.app = self.home / 'Zen.app'
 
-    def invoke(self, reload=True, running=True, quit='normal', multiple=False, palette=None):
+    def invoke(self, reload=True, running=True, quit='normal', multiple=False, palette=None, platform='mac'):
         p = palette or self.palette
         env = {'PATH': os.environ['PATH'], 'HOME': str(self.home), 'APP_DIR': str(HERE),
-               'ZEN_APP': str(self.app),
+               'ZEN_APP': str(self.app), 'PLATFORM': platform,
                'THEME_NAME': p['name'], 'THEME_APPEARANCE': p['appearance'],
                'OPACITY': str(p['opacity']), 'DO_RELOAD': str(int(reload)),
                'MOCK_RUNNING': str(int(running)), 'MOCK_MULTIPLE': str(int(multiple)),
@@ -129,6 +129,20 @@ class RestartTests(unittest.TestCase):
     def test_missing_app_skips_loader(self):
         self.invoke(running=False).check_returncode()
         self.assertFalse(self.app.exists())
+
+    def test_linux_loader_installed_into_install_root(self):
+        self.app.mkdir()
+        self.invoke(running=False, platform='linux').check_returncode()
+        for name in ('config.js', 'defaults/pref/config-prefs.js'):
+            self.assertEqual((self.app / name).read_bytes(), (HERE / 'loader' / name).read_bytes())
+        self.assertFalse((self.app / 'Contents').exists())
+
+    def test_linux_palette_change_never_quits_or_reopens(self):
+        self.invoke(running=False, platform='linux').check_returncode()
+        result = self.invoke(palette=from_theme('nord-light'), platform='linux')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.actions(), '')
+        self.assertFalse(self.marker.exists())
 
     def test_unknown_config_conflict_changes_nothing(self):
         prefs = self.profile / 'user.js'

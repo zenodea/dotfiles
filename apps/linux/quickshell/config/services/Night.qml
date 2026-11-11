@@ -35,7 +35,7 @@ Singleton {
     }
 
     Timer {
-        running: Panels.drawer
+        running: Panels.controls
         interval: 2000
         repeat: true
         triggeredOnStart: true

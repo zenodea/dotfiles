@@ -28,7 +28,7 @@ apps/general/zed/config/prompts/
 apps/general/nvim/config/lua/dotfiles/theme.lua
 apps/general/zed/config/settings.json
 apps/general/lazygit/config/config.yml
-apps/linux/hypr/config/hyprland.conf
+apps/linux/hypr/config/hyprland.lua
 apps/linux/hypr/config/hyprlock.conf
 apps/linux/rofi/config/themes/current.rasi
 apps/linux/rofi/config/themes/power-menu.rasi

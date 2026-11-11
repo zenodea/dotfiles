@@ -75,10 +75,12 @@ installed and themed, and the `rofi-dotfiles` and `rofi-power` scripts in
   fullscreen windows.
 - **Launcher** (bottom): apps, themes, fonts, wallpapers and a session page.
 - **Drawer** (left): dashboard (clock, weather, notifications, system stats,
-  calendar), window list, clipboard history.
+  top processes, per-process network traffic) and an in-depth page (every
+  core's load, clock and temperature, GPU engines and the apps using them,
+  memory, power draw, fans, sensors, disk and interface throughput).
 - **Control centre** (right): volume, brightness, Wi-Fi, Bluetooth, Mullvad,
   mic, power profile, charge limit, keep awake, night mode, screenshots and
-  screen recording.
+  screen recording, plus a clipboard history tab.
 - **Agent** (right, second tab): a Claude or Codex chat for the system, with
   saved sessions and tool approvals in the panel. `Ctrl P` attaches a
   screenshot, `Ctrl H` opens the session history (type to search, `Ctrl R`
@@ -94,7 +96,7 @@ installed and themed, and the `rofi-dotfiles` and `rofi-power` scripts in
 | `Super T` / `Super F` / `Super W` | themes / fonts / wallpapers |
 | `Super Shift P` | session |
 | `Super D` | dashboard |
-| `Super Tab` | windows |
+| `Super Shift D` | in-depth system page |
 | `Super Shift V` | clipboard |
 | `Super C` | control centre |
 | `Super A` | agent |
@@ -223,6 +225,7 @@ can define `reload_mac` and `reload_linux`.
 (like `mac/appearance` or `linux/gtk`). If one app fails, it's reported and the
 rest still run. `--no-reload` renders without reloading anything.
 
+<<<<<<< Updated upstream
 ### Rex and Renux
 
 [Rex](https://rex.superlogical.com) keeps its key bindings on the server, so
@@ -238,10 +241,13 @@ Renux's `settings.ini`, touching only those keys. Renux watches both files, so
 it recolors without a reload.
 
 ### Zen (macOS)
+=======
+### Zen
+>>>>>>> Stashed changes
 
-[`apps/mac/zen/`](apps/mac/zen/) generates browser-UI CSS in Zen's default profile.
+[`apps/general/zen/`](apps/general/zen/) generates browser-UI CSS in Zen's default profile.
 Theme switches apply live: render copies a small autoconfig loader
-([`loader/`](apps/mac/zen/loader/)) into `Zen.app/Contents/Resources`, and it
+([`loader/`](apps/general/zen/loader/)) into `Zen.app/Contents/Resources`, and it
 reloads the stylesheet within half a second of a change. This modifies the app
 bundle, so `codesign --verify` reports it as altered; Zen updates replace the
 bundle, and the next render puts the loader back.
@@ -251,6 +257,12 @@ update), changed colors load through a normal quit/reopen, with session
 restoration enabled. A closed Zen stays closed; `--no-reload` writes the CSS
 without restarting. Cancelled or stalled quits are never force-killed. macOS
 may ask permission for Terminal to control Zen on the first restart.
+
+On Linux, Zen is the official tarball unpacked to `~/.local/opt/zen` (override
+with `ZEN_APP`); the loader goes into that folder and the profile is read from
+`~/.config/zen`. `zen.widget.linux.transparency` makes the window translucent
+so Hyprland blurs it. Linux has no polite way to ask Zen to quit, so when the
+loader isn't running yet a theme change tells you to restart Zen instead.
 
 The sidebar, tabs, toolbar, and URL bar follow the palette with native macOS blur
 and the terminal's opacity. Websites keep their own styling. Existing unrelated

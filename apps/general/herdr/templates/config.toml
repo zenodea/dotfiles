@@ -42,9 +42,6 @@ prompt_new_tab_name = false
 tab_bar_right = [
   { type = "zoom" },
   { type = "command", command = "~/.config/herdr/scripts/git.sh", interval_seconds = 5, timeout_seconds = 2 },
-  { type = "datetime", format = "󰥔 %H:%M" },
-  { type = "datetime", format = " %a %d %b" },
-  { type = "command", command = "printf '󰇅 %s\\n' \"$(hostname -s)\"", interval_seconds = 3600, timeout_seconds = 2 },
   { type = "text", text = "勢之" },
 ]
 tab_bar_right_separator = " │ "
@@ -138,7 +135,7 @@ command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec codex"
 description = "codex"
 
 [[keys.command]]
-key = "prefix+a"
+key = "prefix+shift+c"
 type = "pane"
 command = "cd \"$HERDR_ACTIVE_PANE_CWD\" 2>/dev/null; exec claude"
 description = "claude"
@@ -156,13 +153,21 @@ type = "plugin_action"
 command = "shepherd.pair"
 description = "shepherd: pair a phone"
 
-# Pack Leader (the herdr plugin): shift+p picks the workers' harness, model and
-# thinking level; ctrl+l shows the pack.
+# Pack Leader (the herdr plugin): p opens its settings page (the workers' harness,
+# model, effort, placement and worktrees; the leader's observer, stall alert and
+# handoff); ctrl+l shows the pack; a goes back to the leader from a worker
+# (claude moved to prefix+shift+c to make room).
 [[keys.command]]
-key = "prefix+shift+p"
+key = "prefix+a"
+type = "plugin_action"
+command = "pack-leader.focus-leader"
+description = "pack leader: back to the leader"
+
+[[keys.command]]
+key = "prefix+p"
 type = "popup"
-command = "pack-leader config pick"
-description = "pack leader: workers' model"
+command = "pack-leader settings"
+description = "pack leader: settings"
 width = "60%"
 height = "60%"
 
@@ -172,10 +177,10 @@ type = "plugin_action"
 command = "pack-leader.sidebar"
 description = "pack leader: show the pack"
 
-# fence (the herdr plugin): p for pen. The pen window for the space you're in;
+# fence (the herdr plugin): shift+p for pen. The pen window for the space you're in;
 # previous_tab moved to prefix+shift+n to make room.
 [[keys.command]]
-key = "prefix+p"
+key = "prefix+shift+p"
 type = "plugin_action"
 command = "fence.open"
 description = "fence: this space's pen"

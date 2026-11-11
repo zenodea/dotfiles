@@ -63,6 +63,8 @@ PACMAN_PACKAGES=(
     rofi
 
     # What the quickshell panels reach for
+    python
+    pciutils
     wf-recorder
     libheif
     pacman-contrib

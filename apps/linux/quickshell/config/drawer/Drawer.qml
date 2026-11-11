@@ -52,12 +52,8 @@ Item {
                     label: "Dashboard"
                 },
                 {
-                    id: "windows",
-                    label: "Windows"
-                },
-                {
-                    id: "clipboard",
-                    label: "Clipboard"
+                    id: "system",
+                    label: "In-depth"
                 }
             ]
             onPicked: id => Panels.drawerTab = id
@@ -83,13 +79,7 @@ Item {
                 y: Metrics.drawerPadding
                 width: parent.width - Metrics.drawerPadding * 2
 
-                sourceComponent: {
-                    if (Panels.drawerTab === "windows")
-                        return windowsTab;
-                    if (Panels.drawerTab === "clipboard")
-                        return clipboardTab;
-                    return dashboardTab;
-                }
+                sourceComponent: Panels.drawerTab === "system" ? systemTab : dashboardTab
             }
         }
     }
@@ -101,14 +91,8 @@ Item {
     }
 
     Component {
-        id: windowsTab
+        id: systemTab
 
-        Windows {}
-    }
-
-    Component {
-        id: clipboardTab
-
-        Clipboard {}
+        InDepth {}
     }
 }

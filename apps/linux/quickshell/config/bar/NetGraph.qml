@@ -17,9 +17,9 @@ Rectangle {
     readonly property int graphHeight: 18
     readonly property real naturalWidth: graphWidth + Metrics.itemPadding * 2
 
-    implicitWidth: NetSpeed.connected ? naturalWidth : 0
+    implicitWidth: Monitor.online ? naturalWidth : 0
     implicitHeight: Metrics.barHeight
-    opacity: NetSpeed.connected ? 1 : 0
+    opacity: Monitor.online ? 1 : 0
     visible: implicitWidth > 0
     clip: true
     color: "transparent"
@@ -54,8 +54,8 @@ Rectangle {
 
                 required property int index
 
-                readonly property real down: NetSpeed.rx[index] ?? 0
-                readonly property real up: NetSpeed.tx[index] ?? 0
+                readonly property real down: Monitor.speed.rx[index] ?? 0
+                readonly property real up: Monitor.speed.tx[index] ?? 0
                 readonly property real half: root.graphHeight / 2 - 1
 
                 x: index * (root.columnWidth + root.columnGap)
@@ -95,8 +95,8 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         onEntered: Popouts.show(root, root.screen, {
-            title: `↓ ${NetSpeed.down}`,
-            detail: `↑ ${NetSpeed.up} · ${NetSpeed.iface}`,
+            title: `↓ ${Monitor.speed.down}`,
+            detail: `↑ ${Monitor.speed.up} · ${Monitor.speed.iface}`,
             fixedWidth: root.naturalWidth
         })
     }

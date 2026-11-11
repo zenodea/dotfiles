@@ -2,7 +2,7 @@
 # point at ~/.config/current-wallpaper, which the wallpaper app writes first.
 
 render() {
-    generate hyprland.conf config/hyprland.conf
+    generate hyprland.lua config/hyprland.lua
     generate hyprlock.conf config/hyprlock.conf
 }
 

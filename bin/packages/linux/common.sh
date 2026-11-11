@@ -51,7 +51,7 @@ install_commit_mono() {
     fc-cache -f "$dir"
 }
 
-# Bibata cursors — hyprland.conf sets Bibata-Modern-Ice / Bibata-Modern-Classic.
+# Bibata cursors — hyprland.lua sets Bibata-Modern-Ice / Bibata-Modern-Classic.
 install_bibata() {
     local dir="$HOME/.local/share/icons"
     [ -d "$dir/Bibata-Modern-Ice" ] && return 0

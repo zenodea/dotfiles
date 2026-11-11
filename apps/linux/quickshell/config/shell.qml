@@ -28,6 +28,10 @@ ShellRoot {
             Panels.toggleControls("controls");
         }
 
+        function clipboard(): void {
+            Panels.toggleControls("clipboard");
+        }
+
         function agent(): void {
             Panels.toggleControls("agent");
         }

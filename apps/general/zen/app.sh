@@ -4,14 +4,20 @@
 # closed browser.
 ZEN_READY=0
 ZEN_RESTART="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/zen/restart-needed"
-ZEN_APP="${ZEN_APP:-/Applications/Zen.app}"
+if [[ "${PLATFORM:-}" == linux ]]; then
+    ZEN_APP="${ZEN_APP:-$HOME/.local/opt/zen}"
+    ZEN_RESOURCES="$ZEN_APP"
+else
+    ZEN_APP="${ZEN_APP:-/Applications/Zen.app}"
+    ZEN_RESOURCES="$ZEN_APP/Contents/Resources"
+fi
 
 zen_running() { pgrep -x zen >/dev/null 2>&1; }
 
 # Zen updates replace the app bundle and drop the loader; put it back. It runs
 # from the next startup, so this render may still restart once.
 install_loader() {
-    local resources="$ZEN_APP/Contents/Resources" file
+    local resources="$ZEN_RESOURCES" file
     [[ -d "$resources" ]] || return 0
     for file in config.js defaults/pref/config-prefs.js; do
         cmp -s "$APP_DIR/loader/$file" "$resources/$file" && continue
@@ -48,7 +54,14 @@ restarting() {
     [[ "$ZEN_READY" == 1 && -f "$ZEN_RESTART" ]] && zen_running
 }
 
-reload() {
+reload_linux() {
+    [[ "$ZEN_READY" == 1 && -f "$ZEN_RESTART" ]] || return 0
+    rm -f -- "$ZEN_RESTART"
+    zen_running || return 0
+    skip "restart Zen to load the new theme"
+}
+
+reload_mac() {
     [[ "$ZEN_READY" == 1 && -f "$ZEN_RESTART" ]] || return 0
     if ! zen_running; then
         rm -f -- "$ZEN_RESTART"

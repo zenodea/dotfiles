@@ -107,28 +107,28 @@ Column {
             spacing: (parent.width - 4 * 74) / 3
 
             Gauge {
-                value: SysInfo.cpu
-                label: `${Math.round(SysInfo.cpu * 100)}%`
+                value: Monitor.cpu.usage ?? 0
+                label: `${Math.round((Monitor.cpu.usage ?? 0) * 100)}%`
                 caption: "CPU"
             }
 
             Gauge {
-                value: SysInfo.mem
-                label: `${(SysInfo.memUsedMb / 1024).toFixed(1)}G`
+                value: Monitor.memShare
+                label: `${((Monitor.mem.used ?? 0) / 1073741824).toFixed(1)}G`
                 caption: "RAM"
                 fill: Theme.blue
             }
 
             Gauge {
-                value: Math.min(1, SysInfo.temp / 100)
-                label: `${SysInfo.temp}°`
+                value: Math.min(1, Monitor.temp / 100)
+                label: `${Monitor.temp}°`
                 caption: "TEMP"
-                fill: SysInfo.temp >= 80 ? Theme.red : SysInfo.temp >= 65 ? Theme.yellow : Theme.green
+                fill: Monitor.temp >= 80 ? Theme.red : Monitor.temp >= 65 ? Theme.yellow : Theme.green
             }
 
             Gauge {
-                value: SysInfo.disk
-                label: `${Math.round(SysInfo.disk * 100)}%`
+                value: Monitor.disk
+                label: `${Math.round(Monitor.disk * 100)}%`
                 caption: "DISK"
                 fill: Theme.purple
             }
@@ -138,33 +138,30 @@ Column {
             width: parent.width
         }
 
-        Item {
-            width: parent.width
-            height: upkeep.implicitHeight
-
-            PopoutLabel {
-                id: upkeep
-
-                font.pixelSize: 10
-                text: [`up ${SysInfo.uptimeText}`, Updates.summary].filter(Boolean).join("  ·  ")
-            }
-
-            PopoutLabel {
-                anchors.right: parent.right
-                font.pixelSize: 10
-                color: Theme.yellow
-                text: SysInfo.top ? `${SysInfo.top} ${SysInfo.topCpu}%` : ""
-            }
+        PopoutLabel {
+            font.pixelSize: 10
+            text: [`up ${Monitor.uptimeText}`, Updates.summary].filter(Boolean).join("  ·  ")
         }
     }
 
     Card {
         width: parent.width
-        title: Qt.formatDateTime(root.now, "MMMM yyyy")
 
-        Calendar {
+        ProcessList {
             width: parent.width
-            now: root.now
+            rows: Monitor.byCpu
+            metric: "cpu"
+            limit: 5
+        }
+    }
+
+    Card {
+        width: parent.width
+        title: "Network"
+
+        NetworkList {
+            width: parent.width
+            limit: 5
         }
     }
 
