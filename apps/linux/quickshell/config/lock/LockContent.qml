@@ -1,17 +1,10 @@
 import QtQuick
 import Quickshell
-import Quickshell.Services.UPower
 import qs.services
 import qs.style
 import qs.widgets
 
 Column {
-    id: root
-
-    readonly property var battery: UPower.displayDevice
-    readonly property int percent: Math.round((battery?.percentage ?? 0) <= 1 ? (battery?.percentage ?? 0) * 100 : battery.percentage)
-    readonly property bool charging: battery?.state === UPowerDeviceState.Charging || battery?.state === UPowerDeviceState.FullyCharged
-
     spacing: 8
 
     Clock {
@@ -29,12 +22,7 @@ Column {
             text: `${Math.round(Weather.temp)}° ${Weather.label}`
         }
 
-        Info {
-            visible: root.battery?.isLaptopBattery ?? false
-            icon: root.charging ? "󰂄" : "󰁹"
-            iconColor: root.charging ? Theme.green : root.percent <= 20 ? Theme.red : Theme.fg
-            text: `${root.percent}%`
-        }
+        Battery {}
 
         Info {
             visible: Media.player?.isPlaying ?? false
@@ -58,30 +46,5 @@ Column {
         text: Lock.checking ? "checking…" : Locks.caps ? "caps lock is on" : Lock.fails > 0 ? `wrong password · ${Lock.fails}` : ""
         color: Lock.checking ? Theme.muted : Locks.caps ? Theme.yellow : Theme.red
         font.pixelSize: 12
-    }
-
-    component Info: Row {
-        property alias icon: glyph.text
-        property alias iconColor: glyph.color
-        property alias text: label.text
-
-        spacing: Metrics.gap
-
-        Icon {
-            id: glyph
-
-            anchors.verticalCenter: parent.verticalCenter
-            color: Theme.accent
-            font.pixelSize: Metrics.iconSize
-        }
-
-        Label {
-            id: label
-
-            anchors.verticalCenter: parent.verticalCenter
-            width: Math.min(implicitWidth, 260)
-            elide: Text.ElideRight
-            font.pixelSize: Metrics.fontSize
-        }
     }
 }
