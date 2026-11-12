@@ -36,6 +36,7 @@ PACKAGES=(
     # Idle / lock / blue light (wallpaper daemon awww is built below)
     hypridle
     hyprlock
+    fprintd
     hyprsunset
 
     # Status bar + what its modules call
@@ -152,5 +153,6 @@ install_herdr
 install_flatpaks
 
 enable_services
+enroll_fingerprint
 
 echo "Done. Run ./install.sh next to link your dotfiles and render the theme."

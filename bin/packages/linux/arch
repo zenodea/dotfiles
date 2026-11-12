@@ -46,6 +46,7 @@ PACMAN_PACKAGES=(
     # Idle / lock / wallpaper / blue light
     hypridle
     hyprlock
+    fprintd
     hyprsunset
     awww
 
@@ -182,5 +183,6 @@ fi
 
 install_herdr
 enable_services
+enroll_fingerprint
 
 echo "Done. Run ./install.sh next to link your dotfiles and render the theme."

@@ -1,5 +1,6 @@
-# common.sh — steps shared by the distro scripts. Arch only calls install_herdr and
-# enable_services; the rest covers what neither Fedora nor Debian packages.
+# common.sh — steps shared by the distro scripts. Arch only calls install_herdr,
+# enable_services and enroll_fingerprint; the rest covers what neither Fedora
+# nor Debian packages.
 
 has() { command -v "$1" &> /dev/null; }
 
@@ -103,4 +104,13 @@ enable_services() {
     done
     systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service \
         || echo "    no user session, skipping the audio units"
+}
+
+enroll_fingerprint() {
+    has fprintd-list && [ -t 0 ] || return 0
+    fprintd-list "$USER" 2> /dev/null | grep -q 'no fingers enrolled' || return 0
+    local answer
+    read -r -p "Fingerprint reader found with no fingers enrolled. Enroll one now? [y/N] " answer
+    case "$answer" in y|Y|yes|YES) ;; *) return 0 ;; esac
+    fprintd-enroll || echo "    enrollment failed, run fprintd-enroll later"
 }
