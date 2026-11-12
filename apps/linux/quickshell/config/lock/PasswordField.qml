@@ -81,6 +81,16 @@ Rectangle {
         font.pixelSize: Metrics.iconSize
     }
 
+    Icon {
+        anchors.right: parent.right
+        anchors.rightMargin: 14
+        anchors.verticalCenter: parent.verticalCenter
+        visible: Lock.fingerprint
+        text: "󰈷"
+        color: Theme.muted
+        font.pixelSize: Metrics.iconSize
+    }
+
     Label {
         anchors.centerIn: parent
         visible: Lock.buffer === ""

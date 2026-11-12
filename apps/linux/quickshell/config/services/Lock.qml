@@ -13,6 +13,7 @@ Singleton {
     property bool shut: false
     property string buffer: ""
     property int fails: 0
+    property bool fingerprint: false
 
     readonly property bool checking: pam.active
     readonly property string shotDir: `${Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"}/dotfiles-lock`
@@ -54,6 +55,50 @@ Singleton {
         onExited: {
             root.locked = true;
             root.shut = true;
+            enrolled.running = true;
+        }
+    }
+
+    Process {
+        id: enrolled
+
+        command: ["sh", "-c", 'fprintd-list "$USER" 2> /dev/null | grep -q " - #"']
+        onExited: code => {
+            if (code === 0 && root.shut) {
+                root.fingerprint = true;
+                finger.start();
+            }
+        }
+    }
+
+    PamContext {
+        id: finger
+
+        config: "fingerprint"
+        configDirectory: `${Quickshell.shellDir}/pam`
+
+        onCompleted: result => {
+            if (result === PamResult.Success)
+                root.shut = false;
+            else if (root.shut)
+                retry.start();
+        }
+    }
+
+    Timer {
+        id: retry
+
+        interval: 1000
+        onTriggered: {
+            if (root.shut)
+                finger.start();
+        }
+    }
+
+    onShutChanged: {
+        if (!shut) {
+            fingerprint = false;
+            finger.active = false;
         }
     }
 
