@@ -69,6 +69,16 @@ ShellRoot {
     }
 
     Variants {
+        model: Session.covered ? Quickshell.screens : []
+
+        SessionCurtain {
+            required property ShellScreen modelData
+
+            screen: modelData
+        }
+    }
+
+    Variants {
         model: Quickshell.screens
 
         Scope {

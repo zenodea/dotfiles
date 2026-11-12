@@ -15,12 +15,12 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("XCURSOR_SIZE", "24")
 
 hl.on("hyprland.start", function()
+    hl.exec_cmd("qs -d")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("hyprsunset")
     hl.exec_cmd("systemctl --user start plasma-polkit-agent")
     hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 24")
-    hl.exec_cmd("qs -d")
     hl.exec_cmd("pactl set-sink-mute @DEFAULT_SINK@ true")
     hl.exec_cmd("awww img ~/.config/current-wallpaper")
     hl.exec_cmd("ghostty --gtk-single-instance=true --quit-after-last-window-closed=false --initial-window=false")
@@ -74,6 +74,9 @@ hl.config({
     misc = {
         force_default_wallpaper = -1,
         allow_session_lock_restore = true,
+        background_color = "rgb(${BG})",
+        disable_hyprland_logo = true,
+        disable_splash_rendering = true,
     },
 
     input = {

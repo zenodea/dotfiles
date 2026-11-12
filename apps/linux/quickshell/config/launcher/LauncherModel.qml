@@ -59,21 +59,24 @@ QtObject {
             icon: "󰍃",
             sub: "End this session",
             tone: "warn",
-            command: ["hyprctl", "dispatch", "exit"]
+            command: ["hyprctl", "dispatch", "exit"],
+            leave: true
         },
         {
             name: "Reboot",
             icon: "󰑓",
             sub: "Restart now",
             tone: "warn",
-            command: ["systemctl", "reboot"]
+            command: ["systemctl", "reboot"],
+            leave: true
         },
         {
             name: "Shutdown",
             icon: "󰐥",
             sub: "Power off",
             tone: "danger",
-            command: ["systemctl", "poweroff"]
+            command: ["systemctl", "poweroff"],
+            leave: true
         }
     ]
 
@@ -172,8 +175,12 @@ QtObject {
         else if (item.kind === "wallpaper") {
             Dotfiles.apply("wallpaper", item.name);
             Notices.show("Wallpaper", item.label, "󰸉");
-        } else if (item.kind === "session")
-            Quickshell.execDetached(item.command);
+        } else if (item.kind === "session") {
+            if (item.leave)
+                Session.leave(item.command);
+            else
+                Quickshell.execDetached(item.command);
+        }
         return true;
     }
 }
