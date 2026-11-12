@@ -125,12 +125,10 @@ configure_power_key() {
 
 install_greeter() {
     echo "==> Greeter: greetd running the Quickshell greeter..."
-    local root src state bg mono font
+    local root src state first theme bg monitors published user home mono font
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
     src="$root/apps/linux/greetd"
     state="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/quickshell-theme.json"
-    bg="$(jq -r '.colours.bg // empty' "$state" 2> /dev/null | tr -d '#')"
-    mono="$(jq -r '.font.mono // empty' "$state" 2> /dev/null)"
 
     sudo install -d /etc/greetd
     sudo rm -rf /etc/greetd/quickshell
@@ -138,19 +136,32 @@ install_greeter() {
     sudo install -m 644 "$src/config.toml" /etc/greetd/config.toml
     sudo install -m 644 "$src/pam" /etc/pam.d/greetd
     sudo install -m 755 "$src/password-only" /etc/greetd/password-only
-    { grep '^hl.monitor(' "$HOME/.config/hypr/hyprland.lua" 2> /dev/null; sed "s/@BG@/${bg:-282828}/" "$src/hyprland.lua"; } \
-        | sudo tee /etc/greetd/hyprland.lua > /dev/null
 
     sudo install -d -m 1777 /var/lib/greeter-themes
     if [ -f "$state" ]; then
         cp "$state" "/var/lib/greeter-themes/$USER.json"
     fi
 
-    if [ -n "$mono" ]; then
+    first="$(awk -F: '$3 >= 1000 && $3 < 60000 && $7 !~ /(nologin|false)$/ { print $1; exit }' /etc/passwd)"
+    theme="/var/lib/greeter-themes/$first.json"
+    [ -f "$theme" ] || theme="$state"
+    bg="$(jq -r '.colours.bg // empty' "$theme" 2> /dev/null | tr -d '#')"
+    monitors="$(grep '^hl.monitor(' "$root/apps/linux/hypr/templates/hyprland.lua" 2> /dev/null || true)"
+    {
+        if [ -n "$monitors" ]; then printf '%s\n' "$monitors"; fi
+        sed "s/@BG@/${bg:-282828}/" "$src/hyprland.lua"
+    } | sudo tee /etc/greetd/hyprland.lua > /dev/null
+
+    for published in /var/lib/greeter-themes/*.json; do
+        [ -f "$published" ] || continue
+        user="$(basename "$published" .json)"
+        home="$(getent passwd "$user" | cut -d: -f6)"
+        mono="$(jq -r '.font.mono // empty' "$published" 2> /dev/null)"
+        [ -n "$home" ] && [ -n "$mono" ] || continue
         while read -r font; do
             sudo install -D -m 644 "$font" "/usr/local/share/fonts/greeter/$(basename "$font")"
-        done < <(fc-list "$mono" file | cut -d: -f1 | grep "^$HOME/")
-    fi
+        done < <(sudo -u "$user" env HOME="$home" fc-list "$mono" file | cut -d: -f1 | grep "^$home/")
+    done
     if [ -d /usr/local/share/fonts/greeter ]; then
         sudo fc-cache -f /usr/local/share/fonts/greeter > /dev/null
     fi
