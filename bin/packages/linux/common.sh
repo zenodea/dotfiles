@@ -139,6 +139,7 @@ install_greeter() {
     sudo install -m 755 "$src/fingerprint" /etc/greetd/fingerprint
 
     sudo install -d -m 1777 /var/lib/greeter-themes
+    sudo install -d -o greeter -g greeter -m 755 /var/lib/greeter
     if [ -f "$state" ]; then
         cp "$state" "/var/lib/greeter-themes/$USER.json"
     fi
