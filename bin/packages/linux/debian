@@ -168,6 +168,7 @@ install_herdr
 install_flatpaks
 
 enable_services
+configure_power_key
 enroll_fingerprint
 
 echo

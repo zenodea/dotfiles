@@ -1,6 +1,6 @@
 # common.sh — steps shared by the distro scripts. Arch only calls install_herdr,
-# enable_services and enroll_fingerprint; the rest covers what neither Fedora
-# nor Debian packages.
+# enable_services, configure_power_key and enroll_fingerprint; the rest covers
+# what neither Fedora nor Debian packages.
 
 has() { command -v "$1" &> /dev/null; }
 
@@ -113,4 +113,12 @@ enroll_fingerprint() {
     read -r -p "Fingerprint reader found with no fingers enrolled. Enroll one now? [y/N] " answer
     case "$answer" in y|Y|yes|YES) ;; *) return 0 ;; esac
     fprintd-enroll || echo "    enrollment failed, run fprintd-enroll later"
+}
+
+configure_power_key() {
+    echo "==> Power key: press locks, hold 5s powers off..."
+    sudo mkdir -p /etc/systemd/logind.conf.d
+    printf '[Login]\nHandlePowerKey=lock\nHandlePowerKeyLongPress=poweroff\n' \
+        | sudo tee /etc/systemd/logind.conf.d/power-key.conf > /dev/null
+    sudo systemctl reload systemd-logind
 }
