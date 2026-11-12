@@ -1,6 +1,6 @@
 # common.sh — steps shared by the distro scripts. Arch only calls install_herdr,
-# enable_services, configure_power_key and enroll_fingerprint; the rest covers
-# what neither Fedora nor Debian packages.
+# enable_services, configure_power_key, enroll_fingerprint and install_greeter;
+# the rest covers what neither Fedora nor Debian packages.
 
 has() { command -v "$1" &> /dev/null; }
 
@@ -121,4 +121,39 @@ configure_power_key() {
     printf '[Login]\nHandlePowerKey=lock\nHandlePowerKeyLongPress=poweroff\n' \
         | sudo tee /etc/systemd/logind.conf.d/power-key.conf > /dev/null
     sudo systemctl reload systemd-logind
+}
+
+install_greeter() {
+    echo "==> Greeter: greetd running the Quickshell greeter..."
+    local root src state bg mono font
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+    src="$root/apps/linux/greetd"
+    state="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/quickshell-theme.json"
+    bg="$(jq -r '.colours.bg // empty' "$state" 2> /dev/null | tr -d '#')"
+    mono="$(jq -r '.font.mono // empty' "$state" 2> /dev/null)"
+
+    sudo install -d /etc/greetd
+    sudo rm -rf /etc/greetd/quickshell
+    sudo cp -rL "$root/apps/linux/quickshell/config" /etc/greetd/quickshell
+    sudo install -m 644 "$src/config.toml" /etc/greetd/config.toml
+    sudo install -m 644 "$src/pam" /etc/pam.d/greetd
+    sudo install -m 755 "$src/password-only" /etc/greetd/password-only
+    { grep '^hl.monitor(' "$HOME/.config/hypr/hyprland.lua" 2> /dev/null; sed "s/@BG@/${bg:-282828}/" "$src/hyprland.lua"; } \
+        | sudo tee /etc/greetd/hyprland.lua > /dev/null
+
+    sudo install -d -m 1777 /var/lib/greeter-themes
+    if [ -f "$state" ]; then
+        cp "$state" "/var/lib/greeter-themes/$USER.json"
+    fi
+
+    if [ -n "$mono" ]; then
+        while read -r font; do
+            sudo install -D -m 644 "$font" "/usr/local/share/fonts/greeter/$(basename "$font")"
+        done < <(fc-list "$mono" file | cut -d: -f1 | grep "^$HOME/")
+    fi
+    if [ -d /usr/local/share/fonts/greeter ]; then
+        sudo fc-cache -f /usr/local/share/fonts/greeter > /dev/null
+    fi
+
+    echo "    switch to it with: sudo systemctl enable --force greetd"
 }

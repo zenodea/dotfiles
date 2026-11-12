@@ -47,6 +47,7 @@ PACMAN_PACKAGES=(
     hypridle
     hyprlock
     fprintd
+    greetd
     hyprsunset
     awww
 
@@ -185,5 +186,6 @@ install_herdr
 enable_services
 configure_power_key
 enroll_fingerprint
+install_greeter
 
 echo "Done. Run ./install.sh next to link your dotfiles and render the theme."
