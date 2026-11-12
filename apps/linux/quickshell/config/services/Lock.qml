@@ -16,6 +16,7 @@ Singleton {
     property bool fingerprint: false
 
     readonly property bool checking: pam.active
+    readonly property string user: Quickshell.env("USER") ?? ""
     readonly property string shotDir: `${Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"}/dotfiles-lock`
 
     signal failed

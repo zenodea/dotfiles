@@ -21,6 +21,7 @@ Singleton {
     property color purple: "#d3869b"
 
     property string monoRequested: "monospace"
+    property bool fade: false
 
     readonly property var monoFallbacks: ["Berkeley Mono", "TX-02", "AtkynsonMono Nerd Font", "Hack", "Adwaita Mono", "Noto Sans Mono"]
 
@@ -79,5 +80,113 @@ Singleton {
 
         interval: 2000
         onTriggered: file.reload()
+    }
+
+    Behavior on bg {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on surface {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on muted {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on fg {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on fgBright {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on accent {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on blue {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on red {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on green {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on yellow {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on orange {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
+    }
+
+    Behavior on purple {
+        enabled: root.fade
+
+        ColorAnimation {
+            duration: Metrics.lockDuration
+            easing.type: Easing.InOutCubic
+        }
     }
 }

@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import qs.services
 import qs.style
 import qs.widgets
@@ -7,12 +6,14 @@ import qs.widgets
 Rectangle {
     id: root
 
+    property QtObject auth: Lock
+
     width: 300
     height: 46
     color: Theme.alpha(Theme.surface, 0.6)
     radius: Metrics.frameRadius
     border.width: Metrics.borderWidth
-    border.color: Lock.checking ? Theme.yellow : Lock.buffer !== "" ? Theme.accent : Theme.alpha(Theme.fg, 0.15)
+    border.color: root.auth.checking ? Theme.yellow : root.auth.buffer !== "" ? Theme.accent : Theme.alpha(Theme.fg, 0.15)
     focus: true
 
     Behavior on border.color {
@@ -23,13 +24,15 @@ Rectangle {
 
     Keys.onPressed: event => {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
-            Lock.submit();
+            root.auth.submit();
         else if (event.key === Qt.Key_Backspace)
-            Lock.erase(event.modifiers & Qt.ControlModifier);
+            root.auth.erase(event.modifiers & Qt.ControlModifier);
         else if (event.key === Qt.Key_Escape)
-            Lock.erase(true);
+            root.auth.erase(true);
         else if (event.text.length > 0 && event.text.charCodeAt(0) >= 32)
-            Lock.type(event.text);
+            root.auth.type(event.text);
+        else
+            return;
         event.accepted = true;
     }
 
@@ -38,7 +41,7 @@ Rectangle {
             shake.restart();
         }
 
-        target: Lock
+        target: root.auth
     }
 
     SequentialAnimation {
@@ -77,7 +80,7 @@ Rectangle {
         anchors.leftMargin: 14
         anchors.verticalCenter: parent.verticalCenter
         text: "󰌾"
-        color: Lock.fails > 0 && Lock.buffer === "" ? Theme.red : Theme.muted
+        color: root.auth.fails > 0 && root.auth.buffer === "" ? Theme.red : Theme.muted
         font.pixelSize: Metrics.iconSize
     }
 
@@ -85,7 +88,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.rightMargin: 14
         anchors.verticalCenter: parent.verticalCenter
-        visible: Lock.fingerprint
+        visible: root.auth.fingerprint
         text: "󰈷"
         color: Theme.muted
         font.pixelSize: Metrics.iconSize
@@ -93,8 +96,8 @@ Rectangle {
 
     Label {
         anchors.centerIn: parent
-        visible: Lock.buffer === ""
-        text: Quickshell.env("USER") ?? "password"
+        visible: root.auth.buffer === ""
+        text: root.auth.user || "password"
         color: Theme.muted
         font.pixelSize: Metrics.fontSize
     }
@@ -107,13 +110,13 @@ Rectangle {
         layoutDirection: Qt.RightToLeft
 
         Repeater {
-            model: Lock.buffer.length
+            model: root.auth.buffer.length
 
             Rectangle {
                 width: 8
                 height: 8
                 radius: 4
-                color: Lock.checking ? Theme.muted : Theme.fgBright
+                color: root.auth.checking ? Theme.muted : Theme.fgBright
             }
         }
     }
