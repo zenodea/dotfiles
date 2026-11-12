@@ -1,0 +1,23 @@
+#!/bin/sh
+flag="/run/user/$(id -u greeter)/greeter-password"
+[ -s "$flag" ] && exit 1
+fprintd-list "$PAM_USER" 2> /dev/null | grep -q ' - #' || exit 1
+
+out="$(mktemp)"
+fprintd-verify "$PAM_USER" > "$out" 2>&1 &
+pid=$!
+echo fingerprint
+
+while kill -0 "$pid" 2> /dev/null; do
+    if [ -s "$flag" ]; then
+        kill "$pid"
+        rm -f "$out"
+        exit 1
+    fi
+    sleep 0.2
+done
+
+grep -q 'verify-match' "$out"
+status=$?
+rm -f "$out"
+exit "$status"

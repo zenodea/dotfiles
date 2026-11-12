@@ -136,6 +136,7 @@ install_greeter() {
     sudo install -m 644 "$src/config.toml" /etc/greetd/config.toml
     sudo install -m 644 "$src/pam" /etc/pam.d/greetd
     sudo install -m 755 "$src/password-only" /etc/greetd/password-only
+    sudo install -m 755 "$src/fingerprint" /etc/greetd/fingerprint
 
     sudo install -d -m 1777 /var/lib/greeter-themes
     if [ -f "$state" ]; then

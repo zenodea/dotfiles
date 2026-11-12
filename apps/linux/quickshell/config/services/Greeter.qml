@@ -16,15 +16,16 @@ Singleton {
     property bool checking: false
     property bool done: false
     property bool fingerprint: false
-    property bool prompted: false
+    property string session: ""
+    property string want: ""
     property bool scanned: false
-    property bool pending: false
+    property bool stopping: false
+    property string defaultTheme: ""
 
     readonly property string user: users[index] ?? ""
     readonly property bool preview: !Greetd.available
     readonly property string passwordFlag: `${Quickshell.env("XDG_RUNTIME_DIR")}/greeter-password`
     readonly property string themeDir: "/var/lib/greeter-themes"
-    property string defaultTheme: ""
 
     signal failed
 
@@ -47,8 +48,6 @@ Singleton {
         Theme.fade = true;
     }
 
-    Component.onCompleted: defaultTheme = snapshotTheme()
-
     function type(text: string): void {
         if (!checking)
             buffer += text;
@@ -65,64 +64,70 @@ Singleton {
         index = (index + step + users.length) % users.length;
         buffer = "";
         fails = 0;
-        usePassword(false);
+        want = "finger";
+        stop();
+        kick();
     }
 
     function submit(): void {
         if (buffer === "" || checking || !user)
             return;
         checking = true;
-        if (preview)
+        if (preview) {
             rejectPreview.start();
-        else if (prompted)
-            answer();
-        else
-            usePassword(true);
-    }
-
-    function answer(): void {
-        prompted = false;
-        Greetd.respond(buffer);
-    }
-
-    function reject(): void {
-        buffer = "";
-        checking = false;
-        fails++;
-        failed();
-    }
-
-    function usePassword(on: bool): void {
-        if (preview)
             return;
-        flag.command = on ? ["touch", passwordFlag] : ["rm", "-f", passwordFlag];
-        flag.running = true;
+        }
+        want = "password";
+        stop();
+        kick();
     }
 
-    function restart(): void {
-        fingerprint = false;
-        prompted = false;
+    function stop(): void {
+        if (session !== "finger")
+            return;
+        stopping = true;
+        flag.setText("1");
+    }
+
+    function kick(): void {
+        if (preview || session !== "" || !want || !user)
+            return;
+        retry.stop();
+        session = want;
         scanned = false;
-        if (!user)
-            return;
-        if (Greetd.state === GreetdState.Inactive) {
-            Greetd.createSession(user);
+        flag.setText(want === "password" ? "1" : "");
+        Greetd.createSession(user);
+    }
+
+    function ended(): void {
+        const was = session;
+        session = "";
+        fingerprint = false;
+        if (was === "password") {
+            buffer = "";
+            checking = false;
+            fails++;
+            failed();
+            want = "finger";
+            kick();
+        } else if (stopping) {
+            stopping = false;
+            kick();
+        } else if (scanned) {
+            retry.start();
         } else {
-            pending = true;
-            Greetd.cancelSession();
+            want = "";
         }
     }
 
-    onBufferChanged: {
-        if (buffer === "" && prompted && scanned && !checking)
-            restart();
-    }
+    Component.onCompleted: defaultTheme = snapshotTheme()
 
     FileView {
         path: "/etc/passwd"
         onLoaded: {
             root.users = text().split("\n").map(line => line.split(":")).filter(f => Number(f[2]) >= 1000 && Number(f[2]) < 60000 && !/(nologin|false)$/.test(f[6] ?? "")).map(f => f[0]);
-            root.usePassword(false);
+            root.want = "finger";
+            root.kick();
         }
     }
 
@@ -132,52 +137,48 @@ Singleton {
         onLoadFailed: root.applyTheme(root.defaultTheme)
     }
 
-    Process {
+    FileView {
         id: flag
 
-        onExited: root.restart()
+        path: root.passwordFlag
+        blockWrites: true
+        printErrors: false
     }
 
     Connections {
         function onAuthMessage(message: string, error: bool, responseRequired: bool): void {
             if (responseRequired) {
-                root.fingerprint = false;
-                if (root.checking)
-                    root.answer();
-                else if (root.scanned && root.buffer === "")
-                    root.restart();
-                else
-                    root.prompted = true;
-            } else if (!error) {
+                if (root.session === "password" && root.checking)
+                    Greetd.respond(root.buffer);
+            } else if (!error && root.session === "finger") {
                 root.fingerprint = true;
                 root.scanned = true;
             }
         }
 
         function onAuthFailure(): void {
-            root.reject();
-            root.usePassword(false);
+            root.ended();
         }
 
         function onError(): void {
-            root.reject();
-            root.usePassword(false);
+            root.ended();
         }
 
         function onReadyToLaunch(): void {
+            root.session = "";
             root.fingerprint = false;
             root.done = true;
             launch.start();
         }
 
-        function onStateChanged(): void {
-            if (root.pending && Greetd.state === GreetdState.Inactive) {
-                root.pending = false;
-                Greetd.createSession(root.user);
-            }
-        }
-
         target: Greetd
+    }
+
+    Timer {
+        id: retry
+
+        interval: 1000
+        onTriggered: root.kick()
     }
 
     Timer {
@@ -191,6 +192,11 @@ Singleton {
         id: rejectPreview
 
         interval: 600
-        onTriggered: root.reject()
+        onTriggered: {
+            root.buffer = "";
+            root.checking = false;
+            root.fails++;
+            root.failed();
+        }
     }
 }
