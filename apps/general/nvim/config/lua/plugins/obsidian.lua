@@ -36,6 +36,9 @@ return {
     'obsidian-nvim/obsidian.nvim',
     version = '*',
     ft = 'markdown',
+    cond = function()
+      return #vaults() > 0
+    end,
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-telescope/telescope.nvim',

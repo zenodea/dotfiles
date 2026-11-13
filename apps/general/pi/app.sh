@@ -1,180 +1,71 @@
 # Pi — the palette renders as a pi theme named "dotfiles", which pi hot-reloads
 # from ~/.pi/agent/themes, so a running session re-themes itself.
+# No third-party packages: everything pi loads beyond itself is in extensions/ here.
 
 render() {
   local agent_dir="$HOME/.pi/agent"
+  mkdir -p "$agent_dir/extensions"
   generate theme.json "$agent_dir/themes/dotfiles.json"
-  local src="$APP_DIR/extensions"
-  local dst="$agent_dir/extensions"
-  local packages="$APP_DIR/packages.txt"
-  local settings="$agent_dir/settings.json"
 
-  if [[ -f "$packages" ]]; then
-    mkdir -p "$agent_dir"
-    python3 - "$settings" "$packages" <<'PY'
+  # Rendered, not linked: pi writes lastChangelogVersion into settings.json.
+  python3 - "$agent_dir/settings.json" <<'PY'
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 
-settings_path = Path(sys.argv[1])
-packages_path = Path(sys.argv[2])
-
-packages = []
-for line in packages_path.read_text().splitlines():
-    line = line.strip()
-    if not line or line.startswith("#"):
-        continue
-    packages.append(line)
-
+path = Path(sys.argv[1])
 try:
-    data = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+    current = json.loads(path.read_text()) if path.exists() else {}
 except json.JSONDecodeError as exc:
-    raise SystemExit(f"invalid JSON in {settings_path}: {exc}")
-
-def name(package):
-    if isinstance(package, str) and package.startswith("npm:"):
-        head, sep, _ = package[5:].partition("@")
-        return package[:5] + head
-    return package
-
-wanted = {name(package) for package in packages}
-for package in data.get("packages", []):
-    if name(package) not in wanted and name(package).startswith("npm:"):
-        subprocess.run(["pi", "remove", name(package)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    raise SystemExit(f"invalid JSON in {path}: {exc}")
 
 rendered = {
     "theme": "dotfiles",
     "quietStartup": True,
+    "collapseChangelog": True,
     "defaultProvider": "openai",
     "defaultModel": "gpt-6.1-sol",
     "modelThinkingLevels": {"openai/gpt-6.1-sol": "xhigh", "openai/gpt-6-luna": "max"},
-    "packages": packages,
+    # pi's own grep and find, in place of a search package.
+    "defaultTools": ["+grep", "+find"],
 }
-if "lastChangelogVersion" in data:
-    rendered = {"lastChangelogVersion": data["lastChangelogVersion"], **rendered}
-changed = data != rendered
-data = rendered
-
-if changed or not settings_path.exists():
-    tmp_path = settings_path.with_suffix(settings_path.suffix + ".tmp")
-    tmp_path.write_text(json.dumps(data, indent=2) + "\n")
-    os.replace(tmp_path, settings_path)
+if "lastChangelogVersion" in current:
+    rendered = {"lastChangelogVersion": current["lastChangelogVersion"], **rendered}
+if rendered != current:
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(rendered, indent=2) + "\n")
+    os.replace(tmp, path)
 PY
-    note "rendered: ~/.pi/agent/settings.json"
-  fi
 
-  local patch_file pkg_dir
-  for patch_file in "$APP_DIR"/patches/*.patch; do
-    [[ -f "$patch_file" ]] || continue
-    pkg_dir="$agent_dir/npm/node_modules/@gotgenes/$(basename "$patch_file" .patch)"
-    [[ -d "$pkg_dir" ]] || continue
-    if (cd "$pkg_dir" && patch -p1 -R --dry-run -s -f <"$patch_file" >/dev/null 2>&1); then
-      continue
-    elif (cd "$pkg_dir" && patch -p1 --dry-run -s -f <"$patch_file" >/dev/null 2>&1); then
-      (cd "$pkg_dir" && patch -p1 -s -f <"$patch_file" >/dev/null)
-      note "patched: $(pretty "$pkg_dir")"
-    else
-      note "patch no longer applies: $(basename "$patch_file")"
+  # adhd.ts reads rules/; ctrl+h/j/k/l keybindings; model overrides; extensions.
+  pi_link "$APP_DIR/rules" "$agent_dir/rules"
+  pi_link "$APP_DIR/keybindings.json" "$agent_dir/keybindings.json"
+  pi_link "$APP_DIR/models.json" "$agent_dir/models.json"
+  local item
+  for item in "$APP_DIR"/extensions/*; do
+    pi_link "$item" "$agent_dir/extensions/$(basename "$item")"
+  done
+  # Links left behind by extensions deleted from here.
+  for item in "$agent_dir"/extensions/*; do
+    if [[ -L "$item" && ! -e "$item" ]]; then
+      rm "$item"
+      note "unlinked: $(pretty "$item")"
     fi
   done
-
-  if [[ "$(readlink "$agent_dir/rules" 2>/dev/null)" != "$APP_DIR/rules" ]]; then
-    [[ -e "$agent_dir/rules" || -L "$agent_dir/rules" ]] && mv "$agent_dir/rules" "$agent_dir/rules.bak"
-    mkdir -p "$agent_dir"
-    ln -s "$APP_DIR/rules" "$agent_dir/rules"
-    note "linked: ~/.pi/agent/rules"
-  fi
-
-  # Keybindings: ctrl+h/j/k/l move through pi's lists and the session tree.
-  local keys="$APP_DIR/keybindings.json" keys_target="$agent_dir/keybindings.json"
-  if [[ -f "$keys" && "$(readlink "$keys_target" 2>/dev/null)" != "$keys" ]]; then
-    [[ -e "$keys_target" || -L "$keys_target" ]] && mv "$keys_target" "$keys_target.bak"
-    ln -s "$keys" "$keys_target"
-    note "linked: ~/.pi/agent/keybindings.json"
-  fi
-
-  local models="$APP_DIR/models.json" models_target="$agent_dir/models.json"
-  if [[ -f "$models" && "$(readlink "$models_target" 2>/dev/null)" != "$models" ]]; then
-    [[ -e "$models_target" || -L "$models_target" ]] && mv "$models_target" "$models_target.bak"
-    ln -s "$models" "$models_target"
-    note "linked: ~/.pi/agent/models.json"
-  fi
-
-  # Permission policy and its model judge. Seeded once, not linked: both
-  # extensions rewrite their own config (toggling yolo, picking a judge model).
-  local policy
-  for policy in "$APP_DIR"/permissions/*.json; do
-    [[ -f "$policy" ]] || continue
-    local policy_target="$agent_dir/extensions/$(basename "$policy" .json)/config.json"
-    [[ -e "$policy_target" ]] && continue
-    mkdir -p "$(dirname "$policy_target")"
-    cp "$policy" "$policy_target"
-    note "seeded: $(pretty "$policy_target")"
-  done
-
-  # Local forks: link each into ~/.pi/agent/team-vendor, where settings.json
-  # expects them, and install runtime deps on a machine that has none yet.
-  local item name target
-  for item in "$APP_DIR/team-vendor"/*/; do
-    [[ -d "$item" ]] || continue
-    item="${item%/}"
-    name="$(basename "$item")"
-    target="$agent_dir/team-vendor/$name"
-    mkdir -p "$agent_dir/team-vendor"
-
-    if [[ -L "$target" ]]; then
-      [[ "$(readlink "$target")" == "$item" ]] || { rm "$target" && ln -s "$item" "$target"; }
-    else
-      [[ -e "$target" ]] && mv "$target" "$target.bak"
-      ln -s "$item" "$target"
-      note "linked: ~/.pi/agent/team-vendor/$name"
-    fi
-
-    if [[ ! -d "$item/node_modules" ]] && have npm; then
-      if (cd "$item" && npm ci --omit=dev >/dev/null 2>&1); then
-        note "installed deps: team-vendor/$name"
-      else
-        note "npm ci failed: team-vendor/$name"
-      fi
-    fi
-  done
-
-  [[ -d "$src" ]] || return 0
-  mkdir -p "$dst"
-
-  for item in "$src"/*; do
-    [[ -e "$item" ]] || continue
-    name="$(basename "$item")"
-    # Plannotator registers the same --plan flag and Ctrl+Alt+P shortcut.
-    # Keep the legacy extension in the repo, but don't auto-link it globally.
-    [[ "$name" == "plan-mode" ]] && continue
-    target="$dst/$name"
-
-    if [[ -L "$target" ]]; then
-      [[ "$(readlink "$target")" == "$item" ]] && continue
-      rm "$target"
-    elif [[ -e "$target" ]]; then
-      mv "$target" "$target.bak"
-    fi
-
-    ln -s "$item" "$target"
-    note "linked: ~/.pi/agent/extensions/$name"
-  done
-  integration
+  return 0
 }
 
-# herdr learns pi's working/idle/blocked state from this extension; without it
-# herdr guesses from the screen, which the custom editor defeats.
-integration() {
-  have herdr || return 0
-  herdr integration status 2>/dev/null | grep -qE '^pi: current' && return 0
-  if herdr integration install pi >/dev/null 2>&1; then
-    note "installed: herdr pi integration"
-  else
-    note "herdr integration install pi failed"
+# pi_link SRC DST: point DST at SRC; anything else already there moves to DST.bak.
+pi_link() {
+  [[ "$(readlink "$2" 2>/dev/null)" == "$1" ]] && return 0
+  if [[ -L "$2" ]]; then
+    rm "$2"
+  elif [[ -e "$2" ]]; then
+    mv "$2" "$2.bak"
   fi
+  ln -s "$1" "$2"
+  note "linked: $(pretty "$2")"
 }
 
 reload() {

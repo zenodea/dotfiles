@@ -23,7 +23,9 @@ file-watches it, so a theme switch re-themes running instances — that's why
 | file | holds |
 |---|---|
 | `mini.lua` | all mini.* (ai, surround, comment, base16 theming + watcher) |
-| `coding.lua` | treesitter, todo-comments, gitsigns, lazygit, acp, nextedit |
+| `treesitter.lua` | nvim-treesitter (`main`), highlighting, parser auto-install |
+| `git.lua` | gitsigns, lazygit |
+| `coding.lua` | todo-comments, acp, nextedit |
 | `completion.lua` | blink.cmp, LuaSnip, lazydev |
 | `lsp.lua` | lspconfig, mason, conform, trouble, typescript-tools, fidget |
 | `navigation.lua` | telescope, neo-tree, harpoon, tmux-navigator, flash, neoscroll |
@@ -31,6 +33,28 @@ file-watches it, so a theme switch re-themes running instances — that's why
 | `obsidian.lua` | obsidian.nvim, render-markdown |
 | `tools.lua` | dadbod, kulala |
 | `ui.lua` | lualine, noice, which-key, notify |
+
+## Presets
+
+`.nvim-preset` at the repo root names the preset to load. No file, or an
+empty one, loads `all`.
+
+| preset | loads |
+|---|---|
+| `all` | every file in `plugins/` and `plugins/extras/` |
+| `minimal` | mini, treesitter, navigation, git, ui, image: highlighting, theme, neo-tree, telescope, lazygit, inline images; no LSP, completion or debugging |
+
+Presets are lists of plugin modules in `lua/config/preset.lua`; add one there.
+Each preset other than `all` pins its plugins in its own
+`lazy-lock.<preset>.json`, because lazy rewrites a lockfile with only the
+plugins it loaded.
+
+## Treesitter
+
+Parsers build with the `tree-sitter` CLI (`tree-sitter-cli` package) and a C
+compiler. Opening a filetype with no parser installs one, then highlights the
+buffer. Without the CLI, nvim warns once per session and highlights only what
+is already installed.
 
 ## Conventions
 

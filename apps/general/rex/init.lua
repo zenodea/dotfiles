@@ -119,6 +119,8 @@ prefix("shift+0", "session.next") -- )
 
 prefix("r", "client.config.reload")
 prefix("b", "client.sidebar.toggle")
+prefix("shift+f", "client.fullscreen.toggle") -- Renux: full screen mode
+prefix("shift+o", "client.overview.toggle") -- Renux: overview of every tab
 prefix("i", "client.sidebar.activity.toggle")
 
 -- Programs ------------------------------------------------------------------
@@ -129,3 +131,4 @@ prefix("p", "popup", { command = { "lodestar", "settings" }, size = 0.6 })
 prefix("shift+p", "popup", { command = { "lodestar", "sidebar" }, size = 0.6 })
 prefix("a", "agent_tab", { command = { "claude" } })
 prefix("shift+a", "agent_tab", { command = { "codex" } })
+pcall(dofile, os.getenv("HOME") .. "/.config/rex/compy.lua")

@@ -123,6 +123,7 @@ PACMAN_PACKAGES=(
 
     # Editor tooling (mason/treesitter builds, jq for json formatting)
     base-devel
+    tree-sitter-cli
     nodejs
     npm
     go

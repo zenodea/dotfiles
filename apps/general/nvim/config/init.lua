@@ -13,11 +13,10 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Configure and install plugins
-require('lazy').setup({
-  { import = 'plugins' },
-  { import = 'plugins.extras' },
-}, {
+local preset = require 'config.preset'
+
+require('lazy').setup(preset.spec, {
+  lockfile = preset.lockfile,
   ui = {
     icons = vim.g.have_nerd_font and {} or {
       cmd = '⌘',

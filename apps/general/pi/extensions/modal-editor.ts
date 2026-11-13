@@ -475,7 +475,7 @@ class ModalEditor extends CustomEditor {
 // Whether this session switched the terminal's cursor on; false leaves pi's drawn cursor alone.
 let hardwareCursor = false;
 
-const ASK_USER_BLOCKED = "rpiv:ask-user:blocked";
+const ASK_USER_BLOCKED = "ask:blocked"; // emitted by ask.ts
 const WHEEL = /^\x1b\[<(\d+);\d+;\d+[Mm]$/;
 const WHEEL_LINES = 3;
 const PAGE_OVERLAP = 4;

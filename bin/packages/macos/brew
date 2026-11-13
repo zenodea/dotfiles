@@ -49,6 +49,7 @@ FORMULAE=(
 
     # Editors
     neovim
+    tree-sitter-cli
 
     # Git tooling
     git

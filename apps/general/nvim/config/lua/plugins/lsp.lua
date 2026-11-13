@@ -20,11 +20,6 @@ return {
         on_attach = function(client, bufnr)
           client.server_capabilities.semanticTokensProvider = nil
         end,
-        handlers = {
-          ['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, {
-            silent = true,
-          }),
-        },
         root_dir = function(bufnr, on_dir)
           local util = require 'typescript-tools.utils'
           if not util.bufname_valid(vim.api.nvim_buf_get_name(bufnr)) then
@@ -336,6 +331,7 @@ return {
       local ensure_installed = vim.tbl_keys(servers)
       vim.list_extend(ensure_installed, {
         'stylua',
+        'typescript-language-server',
         'prettier',
         'prettierd',
         'eslint_d',

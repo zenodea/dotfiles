@@ -254,3 +254,7 @@ if (( ${+ZSH_HIGHLIGHT_STYLES} )); then
     ZSH_HIGHLIGHT_STYLES[redirection]="fg=8"
     ZSH_HIGHLIGHT_STYLES[comment]="fg=8,italic"
 fi
+
+
+# filen-cli
+PATH=$PATH:~/.filen-cli/bin
