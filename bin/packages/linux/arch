@@ -106,6 +106,10 @@ PACMAN_PACKAGES=(
     slurp
     wl-clipboard
 
+    # Command palette (calculator, paste into the focused app)
+    libqalculate
+    wtype
+
     # Bluetooth
     bluez
     bluez-utils
@@ -115,6 +119,10 @@ PACMAN_PACKAGES=(
 
     # Browser
     firefox
+
+    # pi's figure tool: a headless browser draws the picture, ImageMagick crops it
+    chromium
+    imagemagick
 
     # Editors
     neovim
@@ -137,8 +145,13 @@ PACMAN_PACKAGES=(
     bat
     github-cli
 
+    # System monitor
+    btop
+
     # Shell
     zsh
+    fish
+    nushell
 
     # Theme engine (envsubst for template rendering, gsettings for GTK scheme)
     gettext

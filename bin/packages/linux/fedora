@@ -96,6 +96,10 @@ PACKAGES=(
     # Browser
     firefox
 
+    # pi's figure tool: a headless browser draws the picture, ImageMagick crops it
+    chromium
+    ImageMagick
+
     # Editors (zed is installed via upstream script below)
     neovim
 
@@ -116,8 +120,12 @@ PACKAGES=(
     bat
     gh
 
+    # System monitor
+    btop
+
     # Shell
     zsh
+    fish
 
     # Theme engine (envsubst for template rendering, gsettings for GTK scheme)
     gettext-envsubst

@@ -57,6 +57,9 @@ FORMULAE=(
     git-delta
     bat
 
+    # System monitor
+    btop
+
     # File managers
     vifm
     yazi
@@ -69,8 +72,13 @@ FORMULAE=(
     fzf
     zoxide
 
+    # pi's figure tool: ImageMagick crops the picture
+    imagemagick
+
     zsh-autosuggestions
     zsh-syntax-highlighting
+    fish
+    nushell
 
     # Terminal multiplexers
     tmux
