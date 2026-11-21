@@ -108,6 +108,10 @@ export PATH=$HOME/.local/lib/node_modules/.bin:$PATH
 export PATH="$HOME/.local/bin:$PATH"
 export NVIM_LOG_FILE="$HOME/.local/state/nvim/log"
 
+# Rex panes understand hyperlink marks, but programs that go by a list of known terminals
+# don't know Rex, so they are told to send them. Wrapped paths and URLs then stay whole.
+[ "$TERM_PROGRAM" = rex ] && export FORCE_HYPERLINK=1
+
 # macOS extras (no-ops elsewhere)
 [ -d /opt/homebrew/opt/ruby/bin ] && export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 [ -d /opt/homebrew/opt/ruby@3.2/bin ] && export PATH="/opt/homebrew/opt/ruby@3.2/bin:$PATH"
@@ -136,17 +140,6 @@ if command -v dotfiles > /dev/null 2>&1; then
     compdef _dotfiles_cli dotfiles
 fi
 
-# yazi — quit with q and the shell cd's to where you browsed
-y() {
-    local tmp cwd
-    tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-    yazi "$@" --cwd-file="$tmp"
-    if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-        builtin cd -- "$cwd"
-    fi
-    rm -f -- "$tmp"
-}
-
 # herdr — ctrl+h/j/k/l moves between panes, like the tmux bindings did
 if [[ -n "$HERDR_PANE_ID" && -z "$TMUX" ]]; then
     _herdr_focus() {
@@ -169,7 +162,6 @@ stopherdr() {
     [[ -f "$session" ]] && mv "$session" "$session.bak"
 }
 
-alias lg="lazygit"
 alias gundo="git reset --soft HEAD~1"
 
 gac() {
@@ -206,9 +198,6 @@ for _f in /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
 done
 unset _f
 
-# zoxide — frecency-based cd (z / zi)
-command -v zoxide > /dev/null 2>&1 && eval "$(zoxide init zsh)"
-
 if command -v fzf > /dev/null 2>&1; then
     if fzf --zsh > /dev/null 2>&1; then
         source <(fzf --zsh)
@@ -219,10 +208,6 @@ if command -v fzf > /dev/null 2>&1; then
         unset _f
     fi
 fi
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 for _f in /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
     /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
@@ -258,3 +243,7 @@ fi
 
 # filen-cli
 PATH=$PATH:~/.filen-cli/bin
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/zeno-marengo/.local/bin:$PATH"

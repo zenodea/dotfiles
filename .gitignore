@@ -15,6 +15,9 @@ apps/linux/vifm/config/vifminfo.json
 # lazygit writes its runtime state next to config.yml, i.e. into the repo.
 apps/general/lazygit/config/state.yml
 apps/general/lazygit/config/github_pull_requests.json
+apps/general/fish/config/fish_variables
+apps/general/fish/config/local.fish
+apps/general/nushell/config/history.txt
 
 # Zed's local prompt store — binary, rewritten on every session
 apps/general/zed/config/prompts/
@@ -28,6 +31,7 @@ apps/general/zed/config/prompts/
 apps/general/nvim/config/lua/dotfiles/theme.lua
 apps/general/zed/config/settings.json
 apps/general/lazygit/config/config.yml
+apps/general/btop/config/themes/
 apps/linux/hypr/config/hyprland.lua
 apps/linux/hypr/config/hyprlock.conf
 apps/linux/rofi/config/themes/current.rasi
