@@ -13,11 +13,16 @@ Singleton {
     readonly property bool inhibited: available && !running
 
     function toggle(): void {
-        if (running)
-            Quickshell.execDetached(["pkill", "-x", "hypridle"]);
-        else
-            Quickshell.execDetached(["hypridle"]);
-        check.restart();
+        Quickshell.execDetached(running ? ["pkill", "-x", "hypridle"] : ["hypridle"]);
+        running = !running;
+        settle.restart();
+    }
+
+    Timer {
+        id: settle
+
+        interval: 600
+        onTriggered: probe.running = true
     }
 
     Process {

@@ -67,7 +67,7 @@ Item {
 
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: Hyprland.dispatch(`workspace ${ws.id}`)
+                    onClicked: Hyprland.dispatch(`hl.dsp.focus({ workspace = ${ws.id} })`)
                 }
             }
         }
