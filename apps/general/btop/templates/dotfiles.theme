@@ -1,0 +1,51 @@
+# btop theme rendered from the dotfiles palette (apps/general/btop/templates).
+
+theme[main_bg]="#${BG}"
+theme[main_fg]="#${FG}"
+theme[title]="#${FG_BRIGHT}"
+theme[hi_fg]="#${ACCENT}"
+theme[selected_bg]="#${BG_ALT}"
+theme[selected_fg]="#${FG_BRIGHT}"
+theme[inactive_fg]="#${MUTED}"
+theme[graph_text]="#${MUTED}"
+theme[meter_bg]="#${SURFACE}"
+theme[proc_misc]="#${ACCENT}"
+
+theme[cpu_box]="#${BORDER}"
+theme[mem_box]="#${BORDER}"
+theme[net_box]="#${BORDER}"
+theme[proc_box]="#${BORDER}"
+theme[div_line]="#${BORDER}"
+
+# Load: calm, then busy, then hot.
+theme[temp_start]="#${GREEN}"
+theme[temp_mid]="#${YELLOW}"
+theme[temp_end]="#${RED}"
+theme[cpu_start]="#${GREEN}"
+theme[cpu_mid]="#${YELLOW}"
+theme[cpu_end]="#${RED}"
+theme[used_start]="#${GREEN}"
+theme[used_mid]="#${YELLOW}"
+theme[used_end]="#${RED}"
+theme[process_start]="#${GREEN}"
+theme[process_mid]="#${YELLOW}"
+theme[process_end]="#${RED}"
+
+# Memory that is still there to use.
+theme[free_start]="#${BLUE}"
+theme[free_mid]="#${ACCENT}"
+theme[free_end]="#${GREEN}"
+theme[cached_start]="#${BLUE}"
+theme[cached_mid]="#${PURPLE}"
+theme[cached_end]="#${PURPLE}"
+theme[available_start]="#${BLUE}"
+theme[available_mid]="#${ACCENT}"
+theme[available_end]="#${GREEN}"
+
+# Network: down cool, up warm.
+theme[download_start]="#${BLUE}"
+theme[download_mid]="#${PURPLE}"
+theme[download_end]="#${PURPLE}"
+theme[upload_start]="#${YELLOW}"
+theme[upload_mid]="#${ORANGE}"
+theme[upload_end]="#${RED}"
