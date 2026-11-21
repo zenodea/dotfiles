@@ -16,19 +16,70 @@ Column {
     readonly property var networks: [...(device?.networks?.values ?? [])].filter(n => n.name !== "").sort((a, b) => (b.connected - a.connected) || (b.signalStrength - a.signalStrength)).slice(0, 8)
 
     property string asking: ""
+    property string error: ""
+    property var connecting: null
 
-    function pick(network: var): void {
-        if (network.connected)
-            network.disconnect();
-        else if (network.known || network.security === WifiSecurityType.Open)
+    function join(network: var, psk: string): void {
+        asking = "";
+        error = "";
+        connecting = network;
+        if (psk === "")
             network.connect();
         else
+            network.connectWithPsk(psk);
+    }
+
+    function failed(reason: int): void {
+        const network = connecting;
+        connecting = null;
+        if (!network)
+            return;
+        error = `Connection failed: ${ConnectionFailReason.toString(reason)}. Please retry.`;
+        if (network.security !== WifiSecurityType.Open && network.security !== WifiSecurityType.Owe)
+            asking = network.name;
+    }
+
+    function pick(network: var): void {
+        if (network.stateChanging)
+            return;
+        error = "";
+        if (network.connected) {
+            asking = "";
+            network.disconnect();
+        } else if (network.known || network.security === WifiSecurityType.Open || network.security === WifiSecurityType.Owe) {
+            join(network, "");
+        } else {
             asking = asking === network.name ? "" : network.name;
+        }
     }
 
     spacing: 2
 
-    onScanningChanged: asking = ""
+    onScanningChanged: {
+        asking = "";
+        error = "";
+    }
+
+    onAskingChanged: {
+        if (asking !== "")
+            Panels.controlsByHover = false;
+    }
+
+    Connections {
+        target: root.connecting
+
+        function onConnectionFailed(reason: int): void {
+            root.failed(reason);
+        }
+
+        function onConnectedChanged(): void {
+            if (root.connecting?.connected) {
+                root.connecting = null;
+                root.asking = "";
+                root.error = "";
+            }
+        }
+    }
 
     Binding {
         target: root.device
@@ -57,6 +108,15 @@ Column {
 
             readonly property bool asking: root.asking === modelData.name
 
+            function submit(): void {
+                if (password.text === "" || modelData.stateChanging)
+                    return;
+                const psk = password.text;
+                password.text = "";
+                Nav.refocus();
+                root.join(modelData, psk);
+            }
+
             width: root.width
 
             PickRow {
@@ -79,7 +139,7 @@ Column {
 
                     anchors.fill: parent
                     anchors.leftMargin: 9
-                    anchors.rightMargin: 9
+                    anchors.rightMargin: connectButton.width + 9
                     verticalAlignment: TextInput.AlignVCenter
                     echoMode: TextInput.Password
                     color: Theme.fgBright
@@ -88,6 +148,7 @@ Column {
                     clip: true
                     focus: entry.asking
                     onVisibleChanged: {
+                        text = "";
                         if (visible)
                             forceActiveFocus();
                     }
@@ -95,24 +156,36 @@ Column {
                         root.asking = "";
                         Nav.refocus();
                     }
-                    onAccepted: {
-                        if (text === "")
-                            return;
-                        entry.modelData.connectWithPsk(text);
-                        root.asking = "";
-                        Nav.refocus();
-                    }
+                    onAccepted: entry.submit()
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: password.text === ""
-                        text: "Password…"
+                        text: "Password (Enter to connect)…"
                         color: Theme.alpha(Theme.muted, 0.7)
                         font: password.font
                         renderType: Text.NativeRendering
                     }
                 }
+
+                PillButton {
+                    id: connectButton
+
+                    anchors.right: parent.right
+                    label: "Connect"
+                    enabled: password.text !== "" && !entry.modelData.stateChanging
+                    onClicked: entry.submit()
+                }
             }
         }
+    }
+
+    Label {
+        width: parent.width
+        visible: text !== ""
+        text: root.error
+        color: Theme.red
+        font.pixelSize: 11
+        wrapMode: Text.Wrap
     }
 }
