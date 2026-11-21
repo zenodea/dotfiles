@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import qs.style
+import qs.widgets
 
 // the launcher's results; each cell builds only the tile for the current mode
 GridView {
@@ -58,6 +59,10 @@ GridView {
     currentIndex: 0
     keyNavigationEnabled: false
     boundsBehavior: Flickable.StopAtBounds
+
+    Momentum {
+        orientation: Qt.Horizontal
+    }
 
     delegate: Item {
         id: cell

@@ -25,6 +25,8 @@ Flickable {
     contentHeight: cards.implicitHeight
     boundsBehavior: Flickable.StopAtBounds
 
+    Momentum {}
+
     onVisibleChanged: {
         if (visible)
             sync();

@@ -101,6 +101,8 @@ Item {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
 
+            Momentum {}
+
             Clipboard {
                 id: clipboard
 
@@ -120,6 +122,8 @@ Item {
             contentHeight: cards.implicitHeight + Metrics.drawerPadding * 2
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+
+            Momentum {}
 
             Column {
                 id: cards

@@ -117,6 +117,8 @@ Rectangle {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
 
+        Momentum {}
+
         TextEdit {
             id: input
 

@@ -44,6 +44,8 @@ ListView {
     model: visible ? shown : []
     highlightMoveDuration: 0
 
+    Momentum {}
+
     header: SectionHeader {
         height: 28
         text: root.count === 0 ? "SESSIONS  · no matches" : "SESSIONS  · ^J ^K ⏎ · ^R rename · ^D delete"

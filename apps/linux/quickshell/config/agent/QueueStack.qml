@@ -29,6 +29,8 @@ Column {
         boundsBehavior: Flickable.StopAtBounds
         model: Agent.queue
 
+        Momentum {}
+
         delegate: Rectangle {
             id: queued
 

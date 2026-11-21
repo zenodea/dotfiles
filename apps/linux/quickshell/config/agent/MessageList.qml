@@ -1,6 +1,7 @@
 import QtQuick
 import QtQml.Models
 import qs.services
+import qs.widgets
 
 ListView {
     id: root
@@ -21,6 +22,10 @@ ListView {
     spacing: 16
     boundsBehavior: Flickable.StopAtBounds
     model: Agent.messages
+
+    Momentum {
+        onSettled: root.stick = root.atYEnd
+    }
 
     onMovementEnded: stick = atYEnd
     onContentHeightChanged: {

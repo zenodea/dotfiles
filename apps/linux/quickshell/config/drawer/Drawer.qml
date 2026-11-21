@@ -72,6 +72,8 @@ Item {
             clip: true
             boundsBehavior: Flickable.StopAtBounds
 
+            Momentum {}
+
             Loader {
                 id: content
 
