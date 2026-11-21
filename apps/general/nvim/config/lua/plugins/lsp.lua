@@ -352,6 +352,10 @@ return {
       }
 
       vim.lsp.enable(vim.tbl_keys(servers))
+
+      if vim.fn.executable 'nu' == 1 then
+        vim.lsp.enable 'nushell'
+      end
     end,
   },
 

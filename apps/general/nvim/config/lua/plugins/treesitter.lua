@@ -11,6 +11,7 @@ local ensure = {
   'c',
   'cpp',
   'bash',
+  'nu',
   'json',
   'yaml',
   'toml',
