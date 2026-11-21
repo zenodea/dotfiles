@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.services
 import qs.style
 
 Scope {
@@ -12,7 +13,7 @@ Scope {
 
     ExclusionZone {
         anchors.top: true
-        exclusiveZone: Metrics.barHeight
+        exclusiveZone: Panels.hidden ? Metrics.strip : Metrics.barHeight
     }
 
     ExclusionZone {

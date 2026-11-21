@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import Quickshell
+import qs.services
 import qs.style
 import qs.widgets
 
@@ -18,6 +19,8 @@ PopupWindow {
     readonly property var currentHandle: trail.length > 0 ? trail[trail.length - 1] : trayItem?.menu ?? null
 
     function open(): void {
+        if (Panels.hidden)
+            return;
         trail = [];
         visible = true;
     }
@@ -25,6 +28,15 @@ PopupWindow {
     function close(): void {
         visible = false;
         trail = [];
+    }
+
+    Connections {
+        target: Panels
+
+        function onHiddenChanged(): void {
+            if (Panels.hidden)
+                root.close();
+        }
     }
 
     anchor {

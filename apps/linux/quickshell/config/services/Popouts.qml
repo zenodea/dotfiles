@@ -19,7 +19,7 @@ Singleton {
     property var source: null
 
     function show(item: Item, screen: var, opts: var): void {
-        if (Panels.anyOpen)
+        if (Panels.hidden || Panels.anyOpen)
             return;
 
         closeTimer.stop();

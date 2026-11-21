@@ -20,7 +20,7 @@ PanelWindow {
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
     readonly property bool hasFullscreen: monitor?.activeWorkspace?.lastIpcObject?.hasfullscreen ?? false
 
-    property real hide: hasFullscreen ? 1 : 0
+    property real hide: hasFullscreen || Panels.hidden ? 1 : 0
 
     readonly property real escapeScale: height / 2 / Math.max(1, height / 2 - (Metrics.barHeight + Metrics.innerShadow)) * 1.02
 
@@ -62,7 +62,7 @@ PanelWindow {
     WlrLayershell.namespace: "dotfiles-shell"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.keyboardFocus: Panels.anyOpen && Panels.screen?.name === modelData?.name ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: !Panels.hidden && Panels.anyOpen && Panels.screen?.name === modelData?.name ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     anchors {
         top: true
@@ -72,32 +72,32 @@ PanelWindow {
     }
 
     mask: Region {
-        item: root.hide > 0.5 ? null : silhouette.bar
+        item: root.hide > 0 ? null : silhouette.bar
 
         regions: [
             Region {
-                item: popout.hitArea
+                item: root.hide > 0 ? null : popout.hitArea
             },
             Region {
-                item: leftEdge
+                item: root.hide > 0 ? null : leftEdge
             },
             Region {
-                item: bottomEdge
+                item: root.hide > 0 ? null : bottomEdge
             },
             Region {
-                item: rightEdge
+                item: root.hide > 0 ? null : rightEdge
             },
             Region {
-                item: drawer.hitArea
+                item: root.hide > 0 ? null : drawer.hitArea
             },
             Region {
-                item: controls.hitArea
+                item: root.hide > 0 ? null : controls.hitArea
             },
             Region {
-                item: launcher.hitArea
+                item: root.hide > 0 ? null : launcher.hitArea
             },
             Region {
-                item: toast.hitArea
+                item: root.hide > 0 ? null : toast.hitArea
             }
         ]
     }
