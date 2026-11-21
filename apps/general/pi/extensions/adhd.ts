@@ -25,7 +25,8 @@ function loadRules(): string | undefined {
 
 const STATE_FILE = join(getAgentDir(), "adhd.json");
 
-const REMINDER = "<reminder>ADHD reply style is on: follow the <adhd> section of the system prompt.</reminder>";
+const REMINDER =
+	"<reminder>ADHD reply style is on. Result first. Full sentences in everyday words. Explain every term or name the first time, in the same sentence. One concrete example for anything abstract. At most four list items. End with one next step. The <adhd> section of the system prompt has the full rules.</reminder>";
 
 function load(): boolean {
 	try {

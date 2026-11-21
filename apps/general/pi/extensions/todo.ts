@@ -2,7 +2,10 @@
  * Todo - the agent's task list, with a panel above the editor.
  *
  * Based on pi's examples/extensions/todo.ts. Tasks are pending ○, in progress ◐
- * or completed ✓. The panel shows while anything is unfinished:
+ * or completed ✓. The panel shows while anything is unfinished, closed to one line
+ * with the step being worked on; alt+t or a click opens and closes it:
+ *
+ *   ▸ Todos (1/3) · ◐ #2 write the guard (testing regexes)
  *
  *   ▾ Todos (1/3)
  *   ├─ ✓ #1 read the config
@@ -36,6 +39,7 @@ interface TodoDetails {
 
 const PANEL = "todo-panel";
 const PANEL_ROWS = 8;
+const TOGGLE = "alt+t";
 
 const TodoParams = Type.Object({
 	action: StringEnum(["create", "update", "delete", "list", "clear"] as const),
@@ -67,11 +71,14 @@ function summary(tasks: Task[]): string {
 	return tasks.length ? tasks.map((t) => `[${t.status === "completed" ? "x" : t.status === "in_progress" ? "~" : " "}] #${t.id} ${t.subject}`).join("\n") : "No tasks";
 }
 
-// The panel: heading plus a tree of rows; completed tasks give way first when there are too many.
-function panelLines(tasks: Task[], theme: Theme, width: number): string[] {
+// The panel: closed, one line with the step in progress; open, a tree of rows where
+// completed tasks give way first when there are too many.
+function panelLines(tasks: Task[], theme: Theme, width: number, open: boolean): string[] {
 	const done = tasks.filter((t) => t.status === "completed").length;
-	const color = tasks.some((t) => t.status === "in_progress") ? "accent" : "dim";
-	const lines = [truncateToWidth(theme.fg(color, `▾ Todos (${done}/${tasks.length})`), width)];
+	const current = tasks.find((t) => t.status === "in_progress");
+	const heading = theme.fg(current ? "accent" : "dim", `${open ? "▾" : "▸"} Todos (${done}/${tasks.length})`);
+	if (!open) return [truncateToWidth(current ? `${heading} ${theme.fg("dim", "·")} ${taskLine(current, theme)}` : heading, width)];
+	const lines = [truncateToWidth(heading, width)];
 
 	let shown = tasks;
 	if (shown.length > PANEL_ROWS) {
@@ -85,20 +92,35 @@ function panelLines(tasks: Task[], theme: Theme, width: number): string[] {
 		lines.push(truncateToWidth(`${theme.fg("dim", last ? "└─" : "├─")} ${taskLine(task, theme)}`, width));
 	});
 	if (hidden > 0) lines.push(truncateToWidth(`${theme.fg("dim", "└─")} ${theme.fg("dim", `+${hidden} more`)}`, width));
-	lines.push("");
 	return lines;
 }
 
 export default function (pi: ExtensionAPI) {
 	let tasks: Task[] = [];
 	let nextId = 1;
+	let open = false;
 
 	function showPanel(ctx: ExtensionContext) {
 		if (!ctx.hasUI) return;
 		if (!tasks.some((t) => t.status !== "completed")) return ctx.ui.setWidget(PANEL, undefined);
 		const snapshot = tasks.map((t) => ({ ...t }));
-		ctx.ui.setWidget(PANEL, (_tui, theme) => ({ render: (width: number) => panelLines(snapshot, theme, width), invalidate() {} }));
+		ctx.ui.setWidget(PANEL, (_tui, theme) => ({
+			render: (width: number) => panelLines(snapshot, theme, width, open),
+			invalidate() {},
+			handleMouse(event: { type?: string; button?: string }) {
+				if (event.type !== "click" || event.button !== "left") return undefined;
+				toggle(ctx);
+				return { handled: true };
+			},
+		}));
 	}
+
+	function toggle(ctx: ExtensionContext) {
+		open = !open;
+		showPanel(ctx);
+	}
+
+	pi.registerShortcut(TOGGLE, { description: "Open or close the todo panel", handler: async (ctx) => toggle(ctx) });
 
 	function reconstruct(ctx: ExtensionContext) {
 		tasks = [];

@@ -7,7 +7,8 @@ render() {
   mkdir -p "$agent_dir/extensions"
   generate theme.json "$agent_dir/themes/dotfiles.json"
 
-  # Rendered, not linked: pi writes lastChangelogVersion into settings.json.
+  # Rendered, not linked: pi writes into settings.json (lastChangelogVersion, /settings,
+  # ctrl+t). The keys below are set here; anything else pi saved is kept.
   python3 - "$agent_dir/settings.json" <<'PY'
 import json
 import os
@@ -30,8 +31,9 @@ rendered = {
     # pi's own grep and find, in place of a search package.
     "defaultTools": ["+grep", "+find"],
 }
-if "lastChangelogVersion" in current:
-    rendered = {"lastChangelogVersion": current["lastChangelogVersion"], **rendered}
+# Defaults pi may later change and save: thinking starts collapsed (thinking.ts labels it).
+defaults = {"hideThinkingBlock": True, "fullscreenWheelScrollLines": 1}
+rendered = {**defaults, **current, **rendered}
 if rendered != current:
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(rendered, indent=2) + "\n")

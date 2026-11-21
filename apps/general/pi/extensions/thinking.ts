@@ -45,12 +45,6 @@ function accentLine(line: string, theme: Theme): string {
 type Content = { type: string; text?: string; thinking?: string };
 type Run = { text: string; last: boolean };
 
-interface LiveState {
-	opened: Map<number, boolean>;
-	userSet: Set<number>;
-}
-const live = new WeakMap<object, LiveState>();
-
 function thinkingRuns(content: Content[]): Run[] {
 	const runs: Run[] = [];
 	for (let i = 0; i < content.length; i++) {
@@ -64,31 +58,6 @@ function thinkingRuns(content: Content[]): Run[] {
 		i--;
 	}
 	return runs;
-}
-
-function followLive(component: any, runs: Run[], streaming: boolean): void {
-	if (!component.hideThinkingBlock) return;
-	const overrides: Map<number, boolean> = component.thinkingVisibilityOverrides;
-	let state = live.get(component);
-	if (!state) live.set(component, (state = { opened: new Map(), userSet: new Set() }));
-
-	runs.forEach((run, index) => {
-		if (state.userSet.has(index)) return;
-		const ours = state.opened.get(index);
-		const current = overrides.get(index);
-		if (current !== undefined && current !== ours) {
-			state.userSet.add(index);
-			state.opened.delete(index);
-			return;
-		}
-		if (streaming && run.last) {
-			overrides.set(index, false);
-			state.opened.set(index, false);
-		} else if (ours !== undefined) {
-			overrides.delete(index);
-			state.opened.delete(index);
-		}
-	});
 }
 
 function words(text: string): string {
@@ -141,7 +110,6 @@ function patch() {
 		let runs: Run[] = [];
 		try {
 			runs = thinkingRuns(message.content);
-			followLive(this, runs, isStreaming);
 		} catch {}
 		const result = updateContent.call(this, message, isStreaming);
 		try {
