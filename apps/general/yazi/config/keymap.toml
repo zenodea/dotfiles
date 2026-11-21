@@ -1,0 +1,13 @@
+# Yanking also puts the files on the system clipboard, as files, so they can be pasted into
+# other apps: a terminal that uploads pasted files, a chat, a file manager. Yazi's own yank
+# only reaches yazi. The selected files go, or the one under the cursor when none is selected.
+# Where there is no wl-copy (macOS, a remote host) it does nothing and the yank still happens.
+# A file's address spells a space and a few other characters as %20 and the like; yazi takes a
+# lone % for one of its own placeholders, so each is written %% here.
+[[mgr.prepend_keymap]]
+on = "y"
+run = [
+    'shell -- command -v wl-copy > /dev/null || exit 0; set -- %s; [ $# -eq 0 ] && set -- %h; for p in "$@"; do echo "file://$p"; done | sed "s/%%/%%25/g; s/ /%%20/g; s/#/%%23/g; s/?/%%3F/g" | wl-copy -t text/uri-list',
+    "yank",
+]
+desc = "Yank selected files, and copy them to the system clipboard"
