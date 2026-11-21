@@ -1,126 +1,55 @@
 /**
- * Modal Editor - a small vim mode for pi's prompt
- *
- * Deliberately basic: no counts, registers, text objects, or block selection.
- *
- * Starts in normal mode.
- * Insert mode   Escape -> normal
- * Normal mode   Escape passes through (aborts the agent, etc.)
- *   move        h j k l   w b e   0 ^ $   gg G
+ * Modal Editor - vim mode for pi's prompt. Starts in normal mode; Escape goes to
+ * normal, and in normal mode passes through (aborts the agent, etc.).
+ *   counts      3w 2dd 5x d2w ...
+ *   move        h j k l  w b e W B E  0 ^ $  gg G  f F t T ; ,  %  [ ] sentences  { } paragraphs
+ *               (k on the first line and j on the last browse prompt history)
+ *   operators   d c y + any motion or text object; dd cc yy for lines
+ *   objects     iw aw iW aW  i" a" i' a' i` a`  i( a( ib  i[ a[  i{ a{ iB  i< a<  is as  ip ap
+ *   edit        x X s S D C Y  p P  J  ~  r{char}  u  ctrl+r redo  . repeat
  *   insert      i a I A o O
- *   edit        x X   dd D dw db d0 d$   cc C cw   u (undo)   p (paste last delete or yank)
- *   select      v (characters)  V (lines), extended with the move keys;
- *               y copy to the clipboard, d / x delete, c change, Escape cancel
- *   transcript  ctrl+u / ctrl+d half page, ctrl+b / ctrl+f page,
- *               ctrl+y / ctrl+e one line; with an empty prompt, j k gg G
- *               scroll the transcript too
- *
- * pi's working indicator is drawn on the top border, so nothing moves when a
- * turn starts. The terminal's own cursor shows the mode: a bar in insert, a block in normal.
- * Also draws the status line from footer.ts into the bottom border.
+ *   select      v / V, then motions, text objects or o; y d x c s ~ u U J p act on it
+ *   transcript  ctrl+u / ctrl+d half page, ctrl+b / ctrl+f page, ctrl+y / ctrl+e line
+ *   reading     (label READING) with an empty prompt, a cursor walks the transcript and lights up
+ *               the sentence or table cell under it (lib/reader.ts):
+ *               h j k l move   [ ] sentences   { } paragraphs   ( ) messages
+ *               gg G first / last   0 $ line   y copy what is lit   Escape hide
+ * Also: the terminal cursor's shape shows the mode, pi's working indicator sits on
+ * the top border, footer.ts's status line is drawn into the bottom border, and the
+ * terminal title drops pi's "π - " prefix.
  */
 
-import { spawn } from "node:child_process";
 import { CustomEditor, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import {
-	CURSOR_MARKER,
-	isKeyRelease,
-	type KeyId,
-	matchesKey,
-	truncateToWidth,
-	type TuiMouseEvent,
-	visibleWidth,
-} from "@earendil-works/pi-tui";
-import { liveTheme, startsUserMessage, transcript } from "./lib/live.ts";
+import { type KeyId, matchesKey, truncateToWidth, type TuiMouseEvent, visibleWidth } from "@earendil-works/pi-tui";
+import { liveTheme, transcript } from "./lib/live.ts";
+import { paintColumns, Reader } from "./lib/reader.ts";
+import { type Find, firstNonBlank, lastChar, lineEnd, lineStart, motion, type Range, type Target, textObject, toLineCol, toOffset } from "./lib/vim.ts";
+
+const reader = new Reader();
+const READER_KEYS = new Set(["h", "j", "k", "l", "[", "]", "{", "}", "(", ")", "gg", "G", "0", "$"]);
+const READER_MARGIN = 2;
 
 const STATUS_LINE = Symbol.for("dotfiles.pi.status-line");
 
 // DECSCUSR cursor shapes (steady), and the reset to the terminal's default.
 const CURSOR_SHAPE = { insert: "\x1b[6 q", normal: "\x1b[2 q", visual: "\x1b[2 q", vline: "\x1b[2 q" };
 const CURSOR_SHAPE_RESET = "\x1b[0 q";
+const UP = "\x1b[A";
+const DOWN = "\x1b[B";
 
-// Keys the base editor already understands, as the bytes it expects.
-const KEY = {
-	left: "\x1b[D",
-	right: "\x1b[C",
-	up: "\x1b[A",
-	down: "\x1b[B",
-	wordLeft: "\x1bb",
-	wordRight: "\x1bf",
-	lineStart: "\x01",
-	lineEnd: "\x05",
-	deleteChar: "\x1b[3~",
-	backspace: "\x7f",
-	deleteWord: "\x1bd",
-	deleteWordBack: "\x17",
-	deleteToStart: "\x15",
-	deleteToEnd: "\x0b",
-	paste: "\x19",
-	undo: "\x1f",
-};
+const MODE_LABEL = { insert: " INSERT ", normal: " NORMAL ", visual: " VISUAL ", vline: " V-LINE ", reading: " READING " };
+// Theme colours each mode's label may be filled with, first choice first. A choice that
+// looks the same as NORMAL's accent is skipped, so the modes never share a colour.
+const MODE_COLORS = {
+	normal: ["accent"],
+	insert: ["success", "warning"],
+	visual: ["syntaxKeyword", "error"],
+	vline: ["syntaxKeyword", "error"],
+	reading: ["syntaxFunction", "syntaxNumber"],
+} as const;
 
-// Normal mode: one key -> the editor keys it stands for.
-const MOTIONS: Record<string, string[]> = {
-	h: [KEY.left],
-	j: [KEY.down],
-	k: [KEY.up],
-	l: [KEY.right],
-	// The editor's word key stops after a word; vim's e sits on its last letter.
-	e: [KEY.right, KEY.wordRight, KEY.left],
-	b: [KEY.wordLeft],
-	"0": [KEY.lineStart],
-	"^": [KEY.lineStart],
-	$: [KEY.lineEnd],
-	x: [KEY.deleteChar],
-	X: [KEY.backspace],
-	D: [KEY.deleteToEnd],
-	u: [KEY.undo],
-	p: [KEY.paste],
-};
-
-// Normal mode: keys that end in insert mode, after these editor keys.
-const INSERTS: Record<string, string[]> = {
-	i: [],
-	a: [KEY.right],
-	I: [KEY.lineStart],
-	A: [KEY.lineEnd],
-	C: [KEY.deleteToEnd],
-};
-
-// Two-key commands. "dd", "cc", "gg" and "dw" are handled in code.
-const OPERATORS: Record<string, string[]> = {
-	de: [KEY.deleteWord],
-	db: [KEY.deleteWordBack],
-	d0: [KEY.deleteToStart],
-	d$: [KEY.deleteToEnd],
-	cw: [KEY.deleteWord],
-	ce: [KEY.deleteWord],
-	cb: [KEY.deleteWordBack],
-	c$: [KEY.deleteToEnd],
-};
-
-// Keys that only move the cursor; these also extend a selection.
-const MOVES = new Set(["h", "j", "k", "l", "w", "b", "e", "0", "^", "$", "g", "gg", "G"]);
-
-const MODE_LABEL = { insert: " INSERT ", normal: " NORMAL ", visual: " VISUAL ", vline: " V-LINE " };
-// Theme colour each mode's label is filled with.
-const MODE_COLOR = { insert: "success", normal: "accent", visual: "syntaxKeyword", vline: "syntaxKeyword" } as const;
-
-type Position = { line: number; col: number };
-
-// Copy to the system clipboard: the platform's tool, else the terminal's OSC 52.
-function copyToClipboard(text: string, write: (sequence: string) => void): void {
-	const osc52 = () => write(`\x1b]52;c;${Buffer.from(text).toString("base64")}\x07`);
-	const [command, ...args] = process.platform === "darwin" ? ["pbcopy"] : process.env.WAYLAND_DISPLAY ? ["wl-copy"] : ["xclip", "-selection", "clipboard"];
-	try {
-		const child = spawn(command!, args, { stdio: ["pipe", "ignore", "ignore"] });
-		child.on("error", osc52);
-		child.stdin.on("error", () => {});
-		child.stdin.end(text);
-	} catch {
-		osc52();
-	}
-}
+// A command that is still being typed: a count, an operator, g, f/t/r, or i/a of a text object.
+const UNFINISHED = /^(g|[fFtTr]|[ia])$/;
 
 // Transcript scrolling, in viewport fractions (or single lines).
 const SCROLLS: [key: KeyId, pages: number, lines: number][] = [
@@ -132,93 +61,357 @@ const SCROLLS: [key: KeyId, pages: number, lines: number][] = [
 	["ctrl+e", 0, 1],
 ];
 
-class ModalEditor extends CustomEditor {
-	private mode: "normal" | "insert" | "visual" | "vline" = "normal";
-	private pending = "";
-	// Where a selection started; the cursor is its other end.
-	private anchor: Position = { line: 0, col: 0 };
-	// Text from the last y / selection delete, for p. Cleared by a normal-mode delete,
-	// whose text lives in the editor's own kill ring instead.
-	private register: string | undefined;
+// READING is only a label: normal mode while the reading cursor is out.
+type Mode = Exclude<keyof typeof MODE_LABEL, "reading">;
+type Snapshot = { text: string; pos: number };
+type Change = { keys: string; typed: string[] };
 
-	// The selection as [start, end) on its first and last lines. A character
-	// selection includes the character under whichever end is later.
-	private selection(): { start: Position; end: Position; lines: string[] } {
-		const lines = this.getLines();
-		const cursor = this.getCursor();
-		const [first, last] =
-			cursor.line < this.anchor.line || (cursor.line === this.anchor.line && cursor.col < this.anchor.col)
-				? [cursor, this.anchor]
-				: [this.anchor, cursor];
-		if (this.mode === "vline") {
-			return { start: { line: first.line, col: 0 }, end: { line: last.line, col: (lines[last.line] ?? "").length }, lines };
-		}
-		const text = lines[last.line] ?? "";
-		const under = [...(this as any).segment(text.slice(last.col), "grapheme")][0]?.segment ?? "";
-		return { start: { ...first }, end: { line: last.line, col: Math.min(text.length, last.col + under.length) }, lines };
+class ModalEditor extends CustomEditor {
+	private mode: Mode = "normal";
+	private keys = "";
+	// Where a selection started; the cursor is its other end.
+	private anchor = 0;
+	// The column j and k aim for.
+	private goal = 0;
+	private register = { text: "", linewise: false };
+	private lastFind: Find | undefined;
+	private undos: Snapshot[] = [];
+	private redos: Snapshot[] = [];
+	// The last change, for "."; an insert-mode change keeps what was typed.
+	private lastChange: Change | undefined;
+	private typing: Change | undefined;
+	private replaying = false;
+
+	// The cursor as an offset into the text.
+	private get pos(): number {
+		const { line, col } = this.getCursor();
+		return toOffset(this.getText(), line, col);
 	}
 
-	private setCursor(position: Position): void {
+	// Move the cursor; outside insert mode it stays on a character.
+	private place(pos: number): void {
+		const t = this.getText();
+		pos = Math.max(0, Math.min(pos, t.length));
+		if (this.mode !== "insert") pos = Math.min(pos, lastChar(t, pos));
+		const { line, col } = toLineCol(t, pos);
 		const state = (this as any).state;
-		const lines = this.getLines();
-		state.cursorLine = Math.max(0, Math.min(position.line, lines.length - 1));
-		state.cursorCol = Math.max(0, Math.min(position.col, (lines[state.cursorLine] ?? "").length));
+		state.cursorLine = line;
+		state.cursorCol = col;
 		this.tui.requestRender();
 	}
 
-	private visual(data: string): void {
-		const command = this.pending + data;
-		this.pending = "";
-
-		if (MOVES.has(command)) {
-			// At the first or last line, up and down would step into prompt history.
-			const { line } = this.getCursor();
-			if ((command === "k" && line === 0) || (command === "j" && line === this.getLines().length - 1)) return;
-			return this.normal(command);
-		}
-		if (command === "v" || command === "V") {
-			const mode = command === "v" ? "visual" : "vline";
-			this.mode = this.mode === mode ? "normal" : mode;
-			return;
-		}
-		if (!["y", "d", "x", "c"].includes(command)) return;
-
-		const { start, end, lines } = this.selection();
-		const linewise = this.mode === "vline";
-		const picked = [lines[start.line]!.slice(start.col), ...lines.slice(start.line + 1, end.line + 1)];
-		picked[picked.length - 1] = picked[picked.length - 1]!.slice(0, end.col - (start.line === end.line ? start.col : 0));
-		this.register = picked.join("\n") + (linewise ? "\n" : "");
-		copyToClipboard(this.register, (sequence) => (this.tui as any).terminal?.write?.(sequence));
-
-		this.mode = command === "c" ? "insert" : "normal";
-		if (command === "y") return this.setCursor(start);
-
-		const joined = lines[start.line]!.slice(0, start.col) + lines[end.line]!.slice(end.col);
-		// Deleting whole lines removes them; changing them leaves one empty line to type on.
-		const kept = linewise && command !== "c" ? [] : [joined];
-		const rest = [...lines.slice(0, start.line), ...kept, ...lines.slice(end.line + 1)];
-		this.setText(rest.join("\n"));
-		this.setCursor(start);
+	private base(data: string): void {
+		super.handleInput(data);
 	}
 
-	// Paint the selection onto the rendered rows. Rows between the borders are
-	// padding + one wrapped chunk of plain text (+ the cursor marker), so string
-	// offsets within a chunk are offsets within its row.
-	private paintSelection(lines: string[], width: number): void {
+	// Replace the text but keep pi's store of large pastes, which setText clears.
+	private write(text: string): void {
+		const editor = this as any;
+		const pastes = new Map(editor.pastes ?? []);
+		const counter = editor.pasteCounter;
+		this.setText(text);
+		for (const [id, paste] of pastes) editor.pastes?.set(id, paste);
+		if (counter !== undefined) editor.pasteCounter = counter;
+	}
+
+	private snapshot(): void {
+		this.undos.push({ text: this.getText(), pos: this.pos });
+		this.redos = [];
+	}
+
+	private change(text: string, pos: number, keys?: string): void {
+		this.snapshot();
+		this.write(text);
+		this.place(pos);
+		if (keys && !this.replaying) this.lastChange = { keys, typed: [] };
+	}
+
+	private undo(redo: boolean, count: number): void {
+		const [from, to] = redo ? [this.redos, this.undos] : [this.undos, this.redos];
+		for (let i = 0; i < count && from.length; i++) {
+			const snap = from.pop()!;
+			to.push({ text: this.getText(), pos: this.pos });
+			this.write(snap.text);
+			this.place(snap.pos);
+		}
+	}
+
+	// Enter insert mode; a command that already changed the text has taken its snapshot.
+	private insert(keys: string, snapshot = true): void {
+		if (snapshot) this.snapshot();
+		this.mode = "insert";
+		this.typing = this.replaying ? undefined : { keys, typed: [] };
+	}
+
+	private stopInsert(): void {
+		this.mode = "normal";
+		const top = this.undos[this.undos.length - 1];
+		if (top && top.text === this.getText()) this.undos.pop();
+		if (this.typing?.keys) this.lastChange = this.typing;
+		this.typing = undefined;
+		const p = this.pos;
+		this.place(p > lineStart(this.getText(), p) ? p - 1 : p);
+	}
+
+	// "." runs the last change again, typed text included.
+	private repeat(count: number): void {
+		const change = this.lastChange;
+		if (!change) return;
+		this.replaying = true;
+		try {
+			for (let i = 0; i < count; i++) {
+				this.run(change.keys);
+				if (this.mode !== "insert") continue;
+				for (const data of change.typed) this.base(data);
+				this.stopInsert();
+			}
+		} finally {
+			this.replaying = false;
+		}
+	}
+
+	// [from, to) of the visual selection; V takes whole lines.
+	private selected(): Range {
+		const t = this.getText();
+		const [a, b] = [Math.min(this.anchor, this.pos), Math.max(this.anchor, this.pos)];
+		return this.mode === "vline" ? [lineStart(t, a), lineEnd(t, b), true] : [a, Math.min(t.length, b + 1)];
+	}
+
+	// count whole lines from the cursor's line.
+	private lines(count: number): Range {
+		const t = this.getText();
+		let end = lineEnd(t, this.pos);
+		for (let i = 1; i < count && end < t.length; i++) end = lineEnd(t, end + 1);
+		return [lineStart(t, this.pos), end, true];
+	}
+
+	// The range an operator takes from the cursor to a motion's target.
+	private span(target: Target, op: string, key: string, count: number): Range {
+		const t = this.getText();
+		const p = this.pos;
+		// cw on a word acts like ce: the space after it stays.
+		if (op === "c" && /^[wW]$/.test(key) && !/\s/.test(t[p] ?? " ")) target = motion(t, p, key === "w" ? "e" : "E", count, false, 0)!;
+		let [from, to] = p <= target.pos ? [p, target.pos] : [target.pos, p];
+		if (target.inclusive) to++;
+		// dw on a line's last word stops at the line end.
+		if (/^[wW]$/.test(key) && to > lineEnd(t, from)) to = lineEnd(t, from);
+		return [from, to, target.linewise];
+	}
+
+	private operate(op: string, [from, to, linewise]: Range, keys: string): void {
+		const t = this.getText();
+		if (linewise) [from, to] = [lineStart(t, from), lineEnd(t, to)];
+		const text = t.slice(from, to) + (linewise ? "\n" : "");
+		this.register = { text, linewise: !!linewise };
+		if (op === "y") {
+			(this.tui as any).copyTextToClipboard?.(text);
+			return this.place(linewise ? this.pos : from);
+		}
+		// Deleting whole lines takes a newline with them; changing them leaves an empty line.
+		if (linewise && op === "d") {
+			if (to < t.length) to++;
+			else if (from > 0) from--;
+		}
+		const next = t.slice(0, from) + t.slice(to);
+		this.change(next, linewise && op === "d" ? firstNonBlank(next, Math.min(from, next.length)) : from, op === "c" ? undefined : keys);
+		if (op === "c") {
+			this.insert(keys, false);
+			this.place(from);
+		}
+	}
+
+	private paste(before: boolean, count: number, keys: string): void {
+		const { text, linewise } = this.register;
+		if (!text) return;
+		const t = this.getText();
+		const p = this.pos;
+		const body = text.repeat(count);
+		if (linewise) {
+			const at = before ? lineStart(t, p) : lineEnd(t, p);
+			const added = before ? body : `\n${body.slice(0, -1)}`;
+			const next = t.slice(0, at) + added + t.slice(at);
+			return this.change(next, firstNonBlank(next, before ? at : at + 1), keys);
+		}
+		const at = before ? p : Math.min(p + 1, lineEnd(t, p));
+		this.change(t.slice(0, at) + body + t.slice(at), at + body.length - 1, keys);
+	}
+
+	// Rewrite a range: toggle, lower or upper case.
+	private recase([from, to]: Range, how: string, keys?: string): void {
+		const t = this.getText();
+		const flip = (ch: string) => (ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase());
+		const part = t.slice(from, to);
+		const cased = how === "u" ? part.toLowerCase() : how === "U" ? part.toUpperCase() : [...part].map(flip).join("");
+		this.change(t.slice(0, from) + cased + t.slice(to), how === "~" && keys ? to : from, keys);
+	}
+
+	// Join the lines of [from, to] (at least two), with one space where each break was.
+	private join([from, to]: Range, keys?: string): void {
+		const t = this.getText();
+		const end = Math.max(lineEnd(t, to), lineEnd(t, lineEnd(t, from) + 1));
+		if (lineEnd(t, from) >= t.length) return;
+		this.change(t.slice(0, from) + t.slice(from, end).replace(/\n[ \t]*/g, " ") + t.slice(end), lineEnd(t, from), keys);
+	}
+
+	private moveTo(target: Target, key: string): void {
+		if (target.find) this.lastFind = target.find;
+		this.place(target.pos);
+		if (key === "$") this.goal = Number.POSITIVE_INFINITY;
+		else if (key !== "j" && key !== "k") this.goal = toLineCol(this.getText(), this.pos).col;
+	}
+
+	// One key of a normal or visual command; runs once the command is complete.
+	private feed(data: string): void {
+		this.keys += data;
+		if (this.run(this.keys) !== "more") this.keys = "";
+	}
+
+	private run(keys: string): "more" | void {
+		const t = this.getText();
+		const p = this.pos;
+		if (this.mode === "visual" || this.mode === "vline") return this.visualKey(keys);
+
+		// With an empty prompt the keys read the transcript; y copies what is lit.
+		if (!t && /^([1-9]\d*)?y$/.test(keys)) return void this.read("y", 1);
+		const m = /^([1-9]\d*)?(?:([dcy])([1-9]\d*)?)?([\s\S]*)$/.exec(keys)!;
+		const hasCount = Boolean(m[1] || m[3]);
+		const count = Number(m[1] ?? 1) * Number(m[3] ?? 1);
+		const op = m[2];
+		const rest = m[4]!;
+		if (!rest || (UNFINISHED.test(rest) && (op || !/^[ia]$/.test(rest)))) return "more";
+		if (!t && !op && READER_KEYS.has(rest) && this.read(rest, count)) return;
+
+		if (op && rest === op) return this.operate(op, this.lines(count), keys);
+		if (op && /^[ia].$/.test(rest)) {
+			const range = textObject(t, p, rest);
+			return range && this.operate(op, range, keys);
+		}
+		// k on the first line and j on the last browse prompt history, as before.
+		const { line } = toLineCol(t, p);
+		if (!op && count === 1 && ((rest === "k" && line === 0) || (rest === "j" && lineEnd(t, p) >= t.length))) return this.base(rest === "k" ? UP : DOWN);
+		const target = motion(t, p, rest, count, hasCount, this.goal, this.lastFind);
+		if (target && op) return this.operate(op, this.span(target, op, rest, count), keys);
+		if (target) return this.moveTo(target, rest);
+		if (!op) this.command(rest, count, keys);
+	}
+
+	private command(key: string, count: number, keys: string): void {
+		const t = this.getText();
+		const p = this.pos;
+		const [start, end] = [lineStart(t, p), lineEnd(t, p)];
+		switch (key) {
+			case "i":
+				return this.insert(keys);
+			case "a":
+				this.insert(keys);
+				return this.place(Math.min(p + 1, end));
+			case "I":
+				this.insert(keys);
+				return this.place(firstNonBlank(t, p));
+			case "A":
+				this.insert(keys);
+				return this.place(end);
+			case "o":
+			case "O": {
+				const at = key === "o" ? end : start;
+				this.change(`${t.slice(0, at)}\n${t.slice(at)}`, key === "o" ? at + 1 : at);
+				this.insert(keys, false);
+				return this.place(key === "o" ? at + 1 : at);
+			}
+			case "x":
+				return end > start ? this.operate("d", [p, Math.min(end, p + count)], keys) : undefined;
+			case "X":
+				return p > start ? this.operate("d", [Math.max(start, p - count), p], keys) : undefined;
+			case "s":
+				return this.operate("c", [p, Math.min(end, p + count)], keys);
+			case "S":
+				return this.operate("c", this.lines(count), keys);
+			case "D":
+			case "C":
+				return this.operate(key === "D" ? "d" : "c", [p, this.lines(count)[1]], keys);
+			case "Y":
+				return this.operate("y", this.lines(count), keys);
+			case "p":
+			case "P":
+				return this.paste(key === "P", count, keys);
+			case "J":
+				return this.join([p, this.lines(Math.max(2, count))[1]], keys);
+			case "~":
+				if (end > start) this.recase([p, Math.min(end, p + count)], "~", keys);
+				return;
+			case "u":
+				return this.undo(false, count);
+			case ".":
+				return this.repeat(count);
+			case "v":
+			case "V":
+				this.anchor = p;
+				this.mode = key === "v" ? "visual" : "vline";
+				return this.tui.requestRender();
+		}
+		if (/^r.$/s.test(key) && p + count <= end) this.change(t.slice(0, p) + key[1]!.repeat(count) + t.slice(p + count), p + count - 1, keys);
+	}
+
+	private visualKey(keys: string): "more" | void {
+		const m = /^([1-9]\d*)?([\s\S]*)$/.exec(keys)!;
+		const count = Number(m[1] ?? 1);
+		const rest = m[2]!;
+		if (!rest || UNFINISHED.test(rest)) return "more";
+		const t = this.getText();
+		if (/^[ia].$/.test(rest)) {
+			const range = textObject(t, this.pos, rest);
+			if (!range) return;
+			if (range[2]) this.mode = "vline";
+			this.anchor = range[0];
+			return this.place(range[1] - 1);
+		}
+		const target = motion(t, this.pos, rest, count, Boolean(m[1]), this.goal, this.lastFind);
+		if (target) return this.moveTo(target, rest);
+
+		const range = this.selected();
+		if (rest === "v" || rest === "V") {
+			const mode = rest === "v" ? "visual" : "vline";
+			this.mode = this.mode === mode ? "normal" : mode;
+			return this.place(this.pos);
+		}
+		if (rest === "o") {
+			const p = this.pos;
+			this.place(this.anchor);
+			this.anchor = p;
+			return;
+		}
+		// The selection's actions; any other key leaves the selection as it is.
+		if (!["y", "d", "x", "c", "s", "~", "u", "U", "J", "p"].includes(rest)) return;
+		this.mode = "normal";
+		if ("ydxcs".includes(rest)) return this.operate(rest === "x" ? "d" : rest === "s" ? "c" : rest, range, "");
+		if ("~uU".includes(rest)) return this.recase(range, rest);
+		if (rest === "J") return this.join(range);
+		// p replaces the selection with the register.
+		const { text, linewise } = this.register;
+		const body = linewise && range[2] ? text.slice(0, -1) : text;
+		this.change(t.slice(0, range[0]) + body + t.slice(range[1]), range[0] + Math.max(0, body.length - 1));
+	}
+
+	// Paint [from, to) onto the rendered rows. Rows between the borders are padding
+	// plus one wrapped chunk of the text, styled however pi likes, so ranges are
+	// placed by visible columns and painted around any escapes.
+	private paintRange(lines: string[], width: number, [from, to]: Range, open: string): void {
 		const editor = this as any;
 		const pad = Math.min(editor.paddingX ?? 0, Math.max(0, Math.floor((width - 1) / 2)));
-		const { start, end, lines: text } = this.selection();
+		const text = this.getLines();
+		const all = this.getText();
+		const [start, end] = [toLineCol(all, from), toLineCol(all, to)];
 
 		// Which logical line and offsets each wrapped row holds.
 		const layout: { text: string }[] = editor.layoutText(editor.lastWidth);
 		const rows: { line: number; from: number; to: number }[] = [];
 		for (let line = 0, at = 0; line < text.length && at < layout.length; line++) {
-			let from = 0;
+			let a = 0;
 			do {
-				const to = from + layout[at++]!.text.length;
-				rows.push({ line, from, to });
-				from = to;
-			} while (from < text[line]!.length && at < layout.length);
+				const b = a + layout[at++]!.text.length;
+				rows.push({ line, from: a, to: b });
+				a = b;
+			} while (a < text[line]!.length && at < layout.length);
 		}
 
 		const visible = editor.renderedVisibleLineCount ?? 0;
@@ -226,40 +419,23 @@ class ModalEditor extends CustomEditor {
 			const row = rows[(editor.scrollOffset ?? 0) + index];
 			const rendered = lines[index + 1];
 			if (!row || rendered === undefined || row.line < start.line || row.line > end.line) continue;
-			const from = Math.max(row.from, row.line === start.line ? start.col : 0);
-			const to = Math.min(row.to, row.line === end.line ? end.col : row.to);
+			const a = Math.max(row.from, row.line === start.line ? start.col : 0);
+			const b = Math.min(row.to, row.line === end.line ? end.col : row.to);
+			const line = text[row.line] ?? "";
 			// An empty stretch (a blank line, or the newline itself) still shows one cell.
-			const a = pad + Math.min(from, row.to) - row.from;
-			const b = to > from ? pad + to - row.from : a + 1;
-
-			const marker = rendered.indexOf(CURSOR_MARKER);
-			const plain = marker === -1 ? rendered : rendered.slice(0, marker) + rendered.slice(marker + CURSOR_MARKER.length);
-			if (plain.includes("\x1b") || b > plain.length) continue; // not the plain row this expects
-			const inserts: [number, string][] = [[a, "\x1b[7m"], [b, "\x1b[27m"]];
-			if (marker !== -1) inserts.push([marker, CURSOR_MARKER]);
-			lines[index + 1] = inserts
-				.sort((x, y) => y[0] - x[0])
-				.reduce((out, [at, sequence]) => out.slice(0, at) + sequence + out.slice(at), plain);
+			const x = pad + visibleWidth(line.slice(row.from, Math.min(a, row.to)));
+			const y = b > a ? pad + visibleWidth(line.slice(row.from, b)) : x + 1;
+			lines[index + 1] = paintColumns(rendered, x, y, open);
 		}
 	}
 
 	private shape = "";
 
-	// pi draws its own cursor as a reverse-video cell after CURSOR_MARKER. With the
-	// terminal's cursor switched on instead (see the factory below), drop that
-	// cell's highlight and set the shape for the mode.
-	private syncCursor(lines: string[]): void {
+	// Keep the terminal's own cursor on (pi then stops drawing its fake one) and
+	// shaped for the mode.
+	private syncCursor(): void {
 		const host = this.tui as any;
 		if (host.getShowHardwareCursor?.() === false) host.setShowHardwareCursor?.(true);
-
-		const index = lines.findIndex((line) => line.includes(CURSOR_MARKER));
-		if (index === -1) return;
-		const line = lines[index]!;
-		const start = line.indexOf("\x1b[7m", line.indexOf(CURSOR_MARKER));
-		const end = start === -1 ? -1 : Math.min(...["\x1b[0m", "\x1b[27m"].map((reset) => line.indexOf(reset, start)).filter((at) => at !== -1));
-		if (start !== -1 && Number.isFinite(end)) {
-			lines[index] = line.slice(0, start) + line.slice(start + 4, end) + line.slice(end + (line.startsWith("\x1b[0m", end) ? 4 : 5));
-		}
 		const shape = CURSOR_SHAPE[this.mode];
 		if (shape !== this.shape) {
 			this.shape = shape;
@@ -270,153 +446,105 @@ class ModalEditor extends CustomEditor {
 	// A filled block in the mode's colour: bold, with the colour as the background.
 	private paintLabel(label: string): string {
 		const theme = liveTheme();
-		return theme ? theme.fg(MODE_COLOR[this.mode], `\x1b[1;3;7m${label}\x1b[22;23;27m`) : label;
+		if (!theme) return label;
+		const choices: readonly string[] = MODE_COLORS[this.shownMode()];
+		const accent = theme.fg("accent", "x");
+		const color = choices.find((c) => c === "accent" || theme.fg(c as any, "x") !== accent) ?? choices[choices.length - 1]!;
+		return theme.fg(color as any, `\x1b[1;3;7m${label}\x1b[22;23;27m`);
 	}
 
-	private send(keys: string[]): void {
-		for (const key of keys) super.handleInput(key);
+	private shownMode(): keyof typeof MODE_LABEL {
+		return this.mode === "normal" && reader.active ? "reading" : this.mode;
 	}
 
 	// The fullscreen renderer owns the transcript's scroll view; regular mode has none.
+	// A visible reading cursor moves with the page, as in vim.
 	private scrollTranscript(pages: number, lines: number): void {
 		const tui = this.tui as any;
 		const view = tui.getPrimaryScrollView?.();
 		if (!view) return;
-		tui.scrollBy?.(lines + Math.trunc(pages * Math.max(2, view.viewportHeight)));
+		const delta = lines + Math.trunc(pages * Math.max(2, view.viewportHeight));
+		tui.scrollBy?.(delta);
+		if (reader.cursor && pages !== 0) reader.cursor = { ...reader.cursor, row: Math.max(0, reader.cursor.row + delta) };
 	}
 
-	private jumpToUserMessage(direction: -1 | 1): void {
+	// Reading keys with an empty prompt. The first key only shows the cursor
+	// (on the sentence nearest the middle); jumps also move from there.
+	private read(command: string, count = 1): boolean {
 		const tui = this.tui as any;
 		const found = transcript(tui);
-		const background = liveTheme()?.getBgAnsi("userMessageBg");
-		if (!found || !background) return tui.scrollToPrompt?.(direction);
+		if (!found) return false;
 		const { view, rows } = found;
-
-		for (let row = view.scrollTop + direction; row >= 0 && row < rows.length; row += direction) {
-			if (!startsUserMessage(rows[row], background)) continue;
-			view.scrollTo(row, { disableFollow: true });
-			this.tui.requestRender();
-			return;
+		if (command === "y") {
+			const text = reader.text(rows);
+			if (text) tui.copyTextToClipboard?.(text);
+			return true;
 		}
-		if (direction === 1) this.scrollTranscriptTo("end");
-	}
+		const starting = !reader.active;
+		if (starting) reader.start(rows, view.scrollTop, view.viewportHeight);
+		if (!(starting && "hjkl".includes(command)) && !reader.move(rows, command, count)) return false;
 
-	private scrollTranscriptTo(edge: "start" | "end"): void {
-		const view = (this.tui as any).getPrimaryScrollView?.();
-		if (edge === "start") view?.scrollToStart?.();
-		else view?.scrollToEnd?.();
-		this.tui.requestRender();
-	}
-
-	private normal(data: string): void {
-		const empty = this.getText() === "";
-		const command = this.pending + data;
-		this.pending = "";
-
-		if (command === "d" || command === "c" || command === "g") {
-			this.pending = command;
-			return;
+		// hjkl scroll only at the edges; a jump that lands outside the middle half
+		// brings the lit text to the middle of the screen, like vim's zz.
+		const row = reader.cursor!.row;
+		const height = Math.max(1, view.viewportHeight);
+		const top = view.scrollTop;
+		if ("hjkl".includes(command)) {
+			if (row < top + READER_MARGIN) view.scrollTo(Math.max(0, row - READER_MARGIN), { disableFollow: true });
+			else if (row >= top + height - READER_MARGIN) view.scrollTo(row - height + 1 + READER_MARGIN, { disableFollow: true });
+		} else if (row < top + height / 4 || row >= top + (height * 3) / 4) {
+			view.scrollTo(Math.max(0, row - Math.floor(height / 2)), { disableFollow: true });
 		}
-
-		if (command === "v" || command === "V") {
-			this.anchor = this.getCursor();
-			this.mode = command === "v" ? "visual" : "vline";
-			return;
-		}
-
-		if (command === "p" && this.register !== undefined) {
-			// A line-wise yank goes on its own line below, as in vim.
-			if (this.register.endsWith("\n")) {
-				this.send([KEY.lineEnd]);
-				this.insertTextAtCursor(`\n${this.register.slice(0, -1)}`);
-			} else {
-				this.insertTextAtCursor(this.register);
-			}
-			return;
-		}
-		if (/^[dcxXDC]/.test(command)) this.register = undefined;
-
-		if (command === "gg" || command === "G") {
-			if (empty) return this.scrollTranscriptTo(command === "G" ? "end" : "start");
-			const last = this.getLines().length - 1;
-			this.setCursor(command === "gg" ? { line: 0, col: 0 } : { line: last, col: Number.MAX_SAFE_INTEGER });
-			return;
-		}
-
-		if (empty && (command === "j" || command === "k")) return this.scrollTranscript(0, command === "j" ? 1 : -1);
-
-		if (command === "[" || command === "]") return this.jumpToUserMessage(command === "[" ? -1 : 1);
-
-		if (command === "dd" || command === "cc") {
-			this.send([KEY.lineStart, KEY.deleteToEnd]);
-			if (command === "cc") this.mode = "insert";
-			// dd also removes the emptied line: join with the next, or the previous if last.
-			else if (this.getCursor().line < this.getLines().length - 1) this.send([KEY.deleteChar]);
-			else if (this.getLines().length > 1) this.send([KEY.backspace, KEY.lineStart]);
-			return;
-		}
-
-		// The editor's word keys stop at the end of a word; vim's w and dw also
-		// take the space after it.
-		if (command === "w" || command === "dw") {
-			this.send([command === "w" ? KEY.wordRight : KEY.deleteWord]);
-			const { line, col } = this.getCursor();
-			if (this.getLines()[line]?.[col] === " ") this.send([command === "w" ? KEY.right : KEY.deleteChar]);
-			return;
-		}
-
-		if (command === "o" || command === "O") {
-			this.send([command === "o" ? KEY.lineEnd : KEY.lineStart]);
-			this.insertTextAtCursor("\n");
-			if (command === "O") this.send([KEY.up]);
-			this.mode = "insert";
-			return;
-		}
-
-		if (command in OPERATORS) {
-			this.send(OPERATORS[command]!);
-			if (command[0] === "c") this.mode = "insert";
-		} else if (command in MOTIONS) {
-			this.send(MOTIONS[command]!);
-		} else if (command in INSERTS) {
-			this.send(INSERTS[command]!);
-			this.mode = "insert";
-		}
-		// Anything else, including a half-typed operator, is dropped.
+		tui.requestRender();
+		return true;
 	}
 
 	handleInput(data: string): void {
-		// Escape toggles to normal mode, or passes through for app handling
+		this.handleKey(data);
+		// The reading cursor belongs to an empty prompt in normal mode.
+		if (reader.active && (this.mode !== "normal" || this.getText() !== "")) {
+			reader.stop();
+			this.tui.requestRender();
+		}
+	}
+
+	private handleKey(data: string): void {
+		// Escape leaves insert or visual mode, drops a half-typed command, hides the
+		// reading cursor, or passes through (aborts the agent, etc.).
 		if (matchesKey(data, "escape")) {
-			if (this.mode !== "normal") {
+			if (this.mode === "insert") return this.stopInsert();
+			if (this.mode !== "normal" || this.keys) {
 				this.mode = "normal";
-				this.pending = "";
-			} else if (this.pending) {
-				this.pending = "";
-			} else {
-				super.handleInput(data); // abort agent, etc.
+				this.keys = "";
+				return this.place(this.pos);
 			}
-			return;
+			if (reader.active) {
+				reader.stop();
+				return this.tui.requestRender();
+			}
+			return this.base(data);
 		}
 
-		// Insert mode: pass everything through
 		if (this.mode === "insert") {
-			super.handleInput(data);
+			const submit = matchesKey(data, "enter");
+			this.base(data);
+			if (submit) this.typing = undefined;
+			else this.typing?.typed.push(data);
+			if (!this.getText()) [this.undos, this.redos] = [[], []];
 			return;
 		}
 
 		for (const [key, pages, lines] of SCROLLS) {
 			if (matchesKey(data, key)) return this.scrollTranscript(pages, lines);
 		}
+		if (matchesKey(data, "ctrl+r")) return this.undo(true, 1);
 
-		// Printable keys are commands; control sequences (ctrl+c, enter, etc.) go to super
-		if (data.length === 1 && data.charCodeAt(0) >= 32) {
-			if (this.mode === "normal") this.normal(data);
-			else this.visual(data);
-		} else {
-			if (this.mode !== "normal") this.mode = "normal";
-			super.handleInput(data);
-		}
+		// Printable keys are commands; control keys (enter, arrows, ...) go to pi's editor.
+		if (data.length === 1 && data.charCodeAt(0) >= 32) return this.feed(data);
+		this.keys = "";
+		if (this.mode !== "normal") this.mode = "normal";
+		this.base(data);
+		if (!this.getText()) [this.undos, this.redos] = [[], []];
 	}
 
 	private listHeight(): number {
@@ -445,11 +573,13 @@ class ModalEditor extends CustomEditor {
 	private renderEditor(width: number): string[] {
 		const lines = super.render(width);
 		if (lines.length === 0) return lines;
-		if (hardwareCursor) this.syncCursor(lines);
-		if ((this.mode === "visual" || this.mode === "vline") && hardwareCursor) this.paintSelection(lines, width);
+		if (hardwareCursor) {
+			this.syncCursor();
+			if (this.mode === "visual" || this.mode === "vline") this.paintRange(lines, width, this.selected(), "\x1b[7m");
+		}
 
 		// Add mode indicator to bottom border
-		const label = MODE_LABEL[this.mode];
+		const label = MODE_LABEL[this.shownMode()];
 		// The bottom border follows the visible text rows; an open autocomplete list comes after it.
 		const last = Math.min(lines.length - 1, 1 + ((this as any).renderedVisibleLineCount ?? lines.length));
 		const border = lines[last]!;
@@ -475,66 +605,58 @@ class ModalEditor extends CustomEditor {
 // Whether this session switched the terminal's cursor on; false leaves pi's drawn cursor alone.
 let hardwareCursor = false;
 
-const ASK_USER_BLOCKED = "ask:blocked"; // emitted by ask.ts
-const WHEEL = /^\x1b\[<(\d+);\d+;\d+[Mm]$/;
-const WHEEL_LINES = 3;
-const PAGE_OVERLAP = 4;
+// The fullscreen renderer runs every frame through applySearchHighlights after
+// laying it out; the reading highlight is painted in the same pass. The hook goes
+// in once per TUI and calls the latest painter, so /reload swaps in new code.
+const READER_PAINT = Symbol.for("dotfiles.pi.reader-paint");
+const READER_HOOK = Symbol.for("dotfiles.pi.reader-hook");
+function paintReaderOn(host: any): void {
+	host[READER_PAINT] = (painted: string[], layout: any) => {
+		const theme = liveTheme();
+		const view = host.getPrimaryScrollView?.();
+		if (!reader.active || !theme || !view) return painted;
+		const find = (box: any): any => (box?.scrollView === view ? box : box?.children?.map(find).find(Boolean));
+		const box = find(layout?.root);
+		const rows = box?.scrollContentLines;
+		return rows ? reader.paint(painted, rows, box, view.scrollTop, theme) : painted;
+	};
+	if (host[READER_HOOK] || typeof host.applySearchHighlights !== "function") return;
+	const original = host.applySearchHighlights.bind(host);
+	host.applySearchHighlights = (screen: string[], layout: any) => host[READER_PAINT](original(screen, layout), layout);
+	host[READER_HOOK] = true;
+}
 
-function transcriptScroll(data: string, tui: any): number | undefined {
-	const wheel = WHEEL.exec(data);
-	if (wheel) {
-		const button = Number(wheel[1]);
-		if ((button & 64) === 0 || (button & 2) !== 0) return undefined;
-		return (button & 1) === 0 ? -WHEEL_LINES : WHEEL_LINES;
-	}
-	const page = Math.max(1, (tui.getPrimaryScrollView?.()?.viewportHeight ?? 10) - PAGE_OVERLAP);
-	if (matchesKey(data, "pageUp")) return -page;
-	if (matchesKey(data, "pageDown")) return page;
-	return undefined;
+// pi titles the terminal "π - <session name> - <folder>" (Rex shows it as the
+// window name); every title it writes loses the "π - ".
+const TITLE_PATCHED = Symbol.for("dotfiles.pi.title-prefix");
+function dropTitlePrefix(terminal: any): void {
+	if (!terminal || terminal[TITLE_PATCHED] || typeof terminal.setTitle !== "function") return;
+	const setTitle = terminal.setTitle.bind(terminal);
+	terminal.setTitle = (title: string) => setTitle(String(title).replace(/^π - /, ""));
+	terminal[TITLE_PATCHED] = true;
 }
 
 export default function (pi: ExtensionAPI) {
 	let restore: (() => void) | undefined;
-	let asking = false;
-	let editorTui: any;
-	let stopScrollListener: (() => void) | undefined;
-
-	pi.events.on(ASK_USER_BLOCKED, (data: unknown) => {
-		asking = Boolean((data as { active?: unknown } | undefined)?.active);
-	});
 
 	pi.on("session_start", (_event, ctx) => {
-		stopScrollListener?.();
-		stopScrollListener = ctx.ui.onTerminalInput((data) => {
-			if (!asking || !editorTui) return undefined;
-			const delta = transcriptScroll(data, editorTui);
-			if (delta === undefined) return undefined;
-			if (!isKeyRelease(data)) {
-				editorTui.scrollBy?.(delta);
-				editorTui.requestRender?.();
-			}
-			return { consume: true };
-		});
-
 		ctx.ui.setEditorComponent((tui, theme, kb) => {
-			editorTui = tui;
 			const host = tui as any;
 			if (typeof host.setShowHardwareCursor === "function" && typeof host.terminal?.write === "function") {
 				host.setShowHardwareCursor(true);
 				hardwareCursor = true;
 				restore = () => host.terminal.write(CURSOR_SHAPE_RESET);
 			}
+			paintReaderOn(host);
+			dropTitlePrefix(host.terminal);
 			// Draw pi's working indicator on the top border instead of on a row of its own.
 			return new ModalEditor(tui, theme, kb, { embedWorkingStatus: true });
 		});
 	});
 
 	pi.on("session_shutdown", (event) => {
+		reader.stop();
 		if (event.reason === "quit") restore?.();
 		restore = undefined;
-		stopScrollListener?.();
-		stopScrollListener = undefined;
-		editorTui = undefined;
-		asking = false;
 	});
 }

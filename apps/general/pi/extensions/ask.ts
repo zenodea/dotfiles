@@ -5,16 +5,11 @@
  *   j / k or ↑ / ↓   move          1-9      pick that option
  *   Enter            pick          Esc      cancel
  * The last option is always "Type something", which opens a small editor.
- *
- * While a question is open it emits "ask:blocked" so modal-editor keeps the
- * mouse wheel and page keys scrolling the transcript.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Editor, type EditorTheme, Key, matchesKey, Text, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
-
-const BLOCKED_EVENT = "ask:blocked";
 
 interface Option {
 	label: string;
@@ -63,113 +58,107 @@ export default function (pi: ExtensionAPI) {
 
 			const options: Option[] = [...params.options, { label: "Type something", isOther: true }];
 
-			pi.events.emit(BLOCKED_EVENT, { active: true });
-			let result: Answer;
-			try {
-				result = await ctx.ui.custom<Answer>(
-					(tui, theme, _kb, done) => {
-						let index = 0;
-						let editing = false;
-						let cached: string[] | undefined;
+			const result = await ctx.ui.custom<Answer>(
+				(tui, theme, _kb, done) => {
+					let index = 0;
+					let editing = false;
+					let cached: string[] | undefined;
 
-						const editorTheme: EditorTheme = {
-							borderColor: (s) => theme.fg("accent", s),
-							selectList: {
-								selectedPrefix: (t) => theme.fg("accent", t),
-								selectedText: (t) => theme.fg("accent", t),
-								description: (t) => theme.fg("muted", t),
-								scrollInfo: (t) => theme.fg("dim", t),
-								noMatch: (t) => theme.fg("warning", t),
-							},
+					const editorTheme: EditorTheme = {
+						borderColor: (s) => theme.fg("accent", s),
+						selectList: {
+							selectedPrefix: (t) => theme.fg("accent", t),
+							selectedText: (t) => theme.fg("accent", t),
+							description: (t) => theme.fg("muted", t),
+							scrollInfo: (t) => theme.fg("dim", t),
+							noMatch: (t) => theme.fg("warning", t),
+						},
+					};
+					const editor = new Editor(tui, editorTheme);
+					editor.onSubmit = (value) => {
+						const text = value.trim();
+						if (text) return done({ answer: text, wasCustom: true });
+						editing = false;
+						editor.setText("");
+						refresh();
+					};
+
+					function refresh() {
+						cached = undefined;
+						tui.requestRender();
+					}
+
+					function pick(i: number) {
+						const option = options[i]!;
+						if (option.isOther) {
+							index = i;
+							editing = true;
+							return refresh();
+						}
+						done({ answer: option.label, wasCustom: false, index: i + 1 });
+					}
+
+					function handleInput(data: string) {
+						if (editing) {
+							if (matchesKey(data, Key.escape)) {
+								editing = false;
+								editor.setText("");
+								return refresh();
+							}
+							editor.handleInput(data);
+							return refresh();
+						}
+						if (matchesKey(data, Key.up) || data === "k") {
+							index = Math.max(0, index - 1);
+							return refresh();
+						}
+						if (matchesKey(data, Key.down) || data === "j") {
+							index = Math.min(options.length - 1, index + 1);
+							return refresh();
+						}
+						const number = Number(data);
+						if (data.length === 1 && number >= 1 && number <= options.length) return pick(number - 1);
+						if (matchesKey(data, Key.enter)) return pick(index);
+						if (matchesKey(data, Key.escape)) done(null);
+					}
+
+					function render(width: number): string[] {
+						if (cached) return cached;
+						const lines: string[] = [];
+						const w = Math.max(1, width);
+						const add = (prefix: string, text: string) => {
+							const pad = visibleWidth(prefix);
+							if (pad >= w) return void lines.push(...wrapTextWithAnsi(prefix + text, w));
+							wrapTextWithAnsi(text, w - pad).forEach((line, i) => lines.push(`${i === 0 ? prefix : " ".repeat(pad)}${line}`));
 						};
-						const editor = new Editor(tui, editorTheme);
-						editor.onSubmit = (value) => {
-							const text = value.trim();
-							if (text) return done({ answer: text, wasCustom: true });
-							editing = false;
-							editor.setText("");
-							refresh();
-						};
 
-						function refresh() {
-							cached = undefined;
-							tui.requestRender();
-						}
-
-						function pick(i: number) {
-							const option = options[i]!;
-							if (option.isOther) {
-								index = i;
-								editing = true;
-								return refresh();
-							}
-							done({ answer: option.label, wasCustom: false, index: i + 1 });
-						}
-
-						function handleInput(data: string) {
-							if (editing) {
-								if (matchesKey(data, Key.escape)) {
-									editing = false;
-									editor.setText("");
-									return refresh();
-								}
-								editor.handleInput(data);
-								return refresh();
-							}
-							if (matchesKey(data, Key.up) || data === "k") {
-								index = Math.max(0, index - 1);
-								return refresh();
-							}
-							if (matchesKey(data, Key.down) || data === "j") {
-								index = Math.min(options.length - 1, index + 1);
-								return refresh();
-							}
-							const number = Number(data);
-							if (data.length === 1 && number >= 1 && number <= options.length) return pick(number - 1);
-							if (matchesKey(data, Key.enter)) return pick(index);
-							if (matchesKey(data, Key.escape)) done(null);
-						}
-
-						function render(width: number): string[] {
-							if (cached) return cached;
-							const lines: string[] = [];
-							const w = Math.max(1, width);
-							const add = (prefix: string, text: string) => {
-								const pad = visibleWidth(prefix);
-								if (pad >= w) return void lines.push(...wrapTextWithAnsi(prefix + text, w));
-								wrapTextWithAnsi(text, w - pad).forEach((line, i) => lines.push(`${i === 0 ? prefix : " ".repeat(pad)}${line}`));
-							};
-
-							lines.push(theme.fg("accent", "─".repeat(w)));
-							add(" ", theme.fg("text", params.question));
+						lines.push(theme.fg("accent", "─".repeat(w)));
+						add(" ", theme.fg("text", params.question));
+						lines.push("");
+						options.forEach((option, i) => {
+							const selected = i === index;
+							const active = selected || (option.isOther && editing);
+							const label = `${i + 1}. ${option.label}${option.isOther && editing ? " ✎" : ""}`;
+							add(selected ? theme.fg("accent", "> ") : "  ", theme.fg(active ? "accent" : "text", label));
+							if (option.description) add("     ", theme.fg("muted", option.description));
+						});
+						if (editing) {
 							lines.push("");
-							options.forEach((option, i) => {
-								const selected = i === index;
-								const active = selected || (option.isOther && editing);
-								const label = `${i + 1}. ${option.label}${option.isOther && editing ? " ✎" : ""}`;
-								add(selected ? theme.fg("accent", "> ") : "  ", theme.fg(active ? "accent" : "text", label));
-								if (option.description) add("     ", theme.fg("muted", option.description));
-							});
-							if (editing) {
-								lines.push("");
-								add(" ", theme.fg("muted", "Your answer:"));
-								for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
-							}
-							lines.push("");
-							const hint = editing ? "Enter submit • Esc back" : "j/k move • 1-9 or Enter pick • Esc cancel";
-							add(" ", theme.fg("dim", hint));
-							lines.push(theme.fg("accent", "─".repeat(w)));
-							cached = lines;
-							return lines;
+							add(" ", theme.fg("muted", "Your answer:"));
+							for (const line of editor.render(Math.max(1, w - 2))) lines.push(` ${line}`);
 						}
+						lines.push("");
+						const hint = editing ? "Enter submit • Esc back" : "j/k move • 1-9 or Enter pick • Esc cancel";
+						add(" ", theme.fg("dim", hint));
+						lines.push(theme.fg("accent", "─".repeat(w)));
+						cached = lines;
+						return lines;
+					}
 
-						return { render, invalidate: () => (cached = undefined), handleInput };
-					},
-					{ blocked: { kind: "question", message: params.question } },
-				);
-			} finally {
-				pi.events.emit(BLOCKED_EVENT, { active: false });
-			}
+					return { render, invalidate: () => (cached = undefined), handleInput };
+				},
+				{ blocked: { kind: "question", message: params.question } },
+			);
 
 			if (!result) return reply("The user cancelled the question");
 			if (result.wasCustom) return reply(`The user wrote: ${result.answer}`, { answer: result.answer, wasCustom: true });
