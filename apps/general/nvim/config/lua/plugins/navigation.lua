@@ -293,9 +293,13 @@ return {
       'TmuxNavigatePrevious',
     },
     keys = (function()
-      -- Under herdr (and not tmux), step off the edge window into the next herdr pane.
+      -- The nested multiplexer owns navigation before the outer Rex/herdr pane.
       local function navigate(dir, wincmd)
         return function()
+          if not vim.env.TMUX and vim.env.REX_SESSION and vim.env.REX_BLOCK then
+            require('config.rex').navigate(wincmd)
+            return
+          end
           if vim.env.TMUX or not vim.env.HERDR_PANE_ID then
             vim.cmd('TmuxNavigate' .. dir)
             return

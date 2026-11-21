@@ -49,6 +49,78 @@ Each preset other than `all` pins its plugins in its own
 `lazy-lock.<preset>.json`, because lazy rewrites a lockfile with only the
 plugins it loaded.
 
+## Rex integration (both presets, no new dependencies)
+
+`config/rex.lua` and `config/rex_edit.lua` use the installed `rex` and `nvim`
+CLIs. Nothing else is installed and no background bridge service runs.
+
+### Navigation
+
+`Ctrl-h/j/k/l` moves between Neovim windows, then into a Rex pane at an edge.
+Outside Neovim these keys navigate Rex panes; a nested tmux retains its keys.
+Embedded Neovim terminals leave terminal-input mode before moving. Navigation
+stops at the outside edge instead of wrapping. Existing `Ctrl-a` pane shortcuts
+and non-Rex tmux/herdr navigation remain available.
+
+### Send context to Pi
+
+| Key (normal or visual mode) | Action |
+| --- | --- |
+| `Space a s` | Paste the current line / selected lines and their file/range into Pi |
+| `Space a c` | Ask for a question/comment, then paste it with that code |
+| `Space a r` | Paste just the file/range reference |
+
+Equivalent commands: `:[range]RexSend [question]`, `:[range]RexAsk`, and
+`:[range]RexRef`. Visual selections send whole lines, including unsaved text
+(marked as such). A sole Pi in the same Rex tab is preferred; otherwise a sole
+Pi in the session is used, or a picker asks. Targets are checked again before
+sending; stale processes, open permission/question prompts, and programs that
+do not support bracketed paste are refused. Terminal control bytes are stripped.
+
+**Nothing is submitted automatically.** The Pi pane takes focus so you can
+check the message and press Enter yourself. There is no persistent review store
+or automatic agent editing.
+
+### Open in the existing editor
+
+```sh
+rex-edit file.lua
+rex-edit +42 -- 'file with spaces.lua'
+e +42 file.lua                       # shortcut in a new zsh shell
+```
+
+A Neovim started in Rex registers its existing Unix socket in a user-private
+`stdpath('state')/rex-edit/` directory. The opener considers only live editors
+in the same Rex server/session and project, prefers the same tab, and asks if
+several still match. Registration is removed on normal exit; dead sockets are
+ignored. Run the command on the machine where the editor and files live.
+Nested tmux editors are not registered: several tmux panes share one Rex block,
+so registering them would choose the last editor arbitrarily.
+
+The opener preserves unsaved buffers and avoids replacing fixed/floating
+panels. With no matching editor, it starts a normal blocking Neovim. `$EDITOR`
+and blocking commit-message editing are deliberately unchanged.
+
+`e` in a Rex Lazygit popup uses the same opener. The popup is minimized, not
+killed; `Ctrl-a Shift-l` restores that same Lazygit. The existing callback for
+Lazygit inside Neovim also remains available.
+
+After installing/syncing these dotfiles, reload Rex with `rex config reload`.
+Start a new Neovim for socket registration and a new shell for the `e` shortcut.
+
+### Tests
+
+From the repository root:
+
+```sh
+nvim --headless -u NONE -l apps/general/nvim/tests/rex.lua
+python3 apps/general/nvim/tests/integration.py
+```
+
+The second test uses Python's standard library and a disposable Rex server,
+Neovim instances, a fake Pi, and the installed Lazygit. It never uses the user's
+running sessions or sends messages to a real agent.
+
 ## Treesitter
 
 Parsers build with the `tree-sitter` CLI (`tree-sitter-cli` package) and a C

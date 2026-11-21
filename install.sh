@@ -159,6 +159,7 @@ link_all() {
     link_skills
     [ "$PLATFORM" = "mac" ] && link_alfred_workflows
     link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
+    link "$DOTFILES_DIR/bin/rex-edit" "$HOME/.local/bin/rex-edit"
 }
 
 # --check is a library call from `dotfiles --doctor`; it prints and returns.

@@ -1,0 +1,10 @@
+#!/bin/sh
+# Reuse this project's Neovim; keep the normal blocking editor outside Rex.
+if [ -z "${REX_SESSION:-}" ]; then
+    exec nvim "$@"
+fi
+config="${XDG_CONFIG_HOME:-$HOME/.config}/${NVIM_APPNAME:-nvim}"
+nvim -l "$config/lua/config/rex_edit_cli.lua" "$@"
+status=$?
+[ "$status" -eq 2 ] || exit "$status"
+exec nvim "$@"

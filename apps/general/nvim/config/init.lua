@@ -1,6 +1,7 @@
 require 'config.options'
 require 'config.keymaps'
 require 'config.autocmds'
+require('config.rex').setup()
 
 -- Install `lazy.nvim` plugin manager
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'

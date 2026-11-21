@@ -91,36 +91,7 @@ return {
         -- quoting as literal keystrokes, so peel it back off.
         local file = table.concat(vim.list_slice(opts.fargs, 2), ' '):gsub('^[\'"](.*)[\'"]$', '%1')
 
-        local function usable(w)
-          return vim.api.nvim_win_get_config(w).relative == '' and not vim.wo[w].winfixbuf and vim.bo[vim.api.nvim_win_get_buf(w)].buftype == ''
-        end
-
-        local tries = 0
-        local function open()
-          -- Bounded: lazygit.nvim leaves lazygit_opened set if lazygit exits
-          -- non-zero, and a file the user asked for beats waiting forever.
-          if vim.g.lazygit_opened == 1 and tries < 50 then
-            tries = tries + 1
-            return vim.defer_fn(open, 20)
-          end
-          if not usable(vim.api.nvim_get_current_win()) then
-            local target = vim.iter(vim.api.nvim_tabpage_list_wins(0)):find(usable)
-            -- No code window in this tab (an acp workspace on its own, say):
-            -- make one rather than failing or hijacking a panel.
-            if target then
-              vim.api.nvim_set_current_win(target)
-            else
-              vim.cmd 'topleft vsplit'
-            end
-          end
-          vim.cmd.edit(vim.fn.fnameescape(file))
-          if line > 0 then
-            pcall(vim.api.nvim_win_set_cursor, 0, { line, 0 })
-            vim.cmd 'normal! zz'
-          end
-        end
-
-        open()
+        require('config.rex_edit').open(file, line)
       end, { nargs = '+', desc = 'Open a file handed over by lazygit' })
     end,
   },
