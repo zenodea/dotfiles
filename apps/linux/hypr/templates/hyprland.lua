@@ -125,6 +125,23 @@ hl.layer_rule({
     ignore_alpha = 0,
 })
 
+hl.layer_rule({
+    name = "palette-instant",
+    match = { namespace = "dotfiles-palette" },
+    no_anim = true,
+    blur = true,
+    ignore_alpha = 0,
+})
+
+-- Renux without its window background shows only its cards, with the desktop between them.
+-- A shadow around the window would read as a thin black border. Renux says itself which
+-- parts to blur (its Sharp gaps setting), so the blur stays on.
+hl.window_rule({
+    name = "renux-cards",
+    match = { class = "dev.renux" },
+    no_shadow = true,
+})
+
 local function run(keys, cmd)
     hl.bind(keys, hl.dsp.exec_cmd(cmd))
 end
@@ -138,8 +155,9 @@ run("XF86Display", "slurp | grim -g- | wl-copy")
 
 run(mainMod .. " + Return", terminal)
 run(mainMod .. " + Q", menu)
-run(mainMod .. " + Space", menu)
+hl.bind(mainMod .. " + Space", hl.dsp.global("quickshell:palette"))
 run(mainMod .. " + R", menu)
+run(mainMod .. " + Z", "qs ipc call shell zen")
 run(mainMod .. " + SHIFT + P", "qs ipc call shell launcher session")
 run(mainMod .. " + W", "qs ipc call shell launcher wallpapers")
 run(mainMod .. " + T", "qs ipc call shell launcher themes")

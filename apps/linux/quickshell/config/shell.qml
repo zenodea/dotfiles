@@ -6,6 +6,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs.frame
 import qs.lock
+import qs.palette
 import qs.services
 
 ShellRoot {
@@ -40,8 +41,16 @@ ShellRoot {
             Panels.openLauncher(mode);
         }
 
+        function palette(): void {
+            Panels.togglePalette();
+        }
+
         function close(): void {
             Panels.close();
+        }
+
+        function zen(): void {
+            Panels.toggleZen();
         }
 
         function screenshot(mode: string): void {
@@ -67,6 +76,8 @@ ShellRoot {
 
         LockSurface {}
     }
+
+    Palette {}
 
     Variants {
         model: Session.covered ? Quickshell.screens : []
