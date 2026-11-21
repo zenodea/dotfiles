@@ -63,7 +63,7 @@ Singleton {
     Process {
         id: enrolled
 
-        command: ["sh", "-c", 'fprintd-list "$USER" 2> /dev/null | grep -q " - #"']
+        command: ["sh", "-c", 'command -v fprintd-list > /dev/null || exit 1; until list="$(fprintd-list "$USER" 2> /dev/null)"; do sleep 1; done; printf %s "$list" | grep -q " - #"']
         onExited: code => {
             if (code === 0 && root.shut) {
                 root.fingerprint = true;
@@ -100,6 +100,7 @@ Singleton {
         if (!shut) {
             fingerprint = false;
             finger.active = false;
+            enrolled.running = false;
         }
     }
 

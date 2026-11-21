@@ -1,7 +1,12 @@
 #!/bin/sh
 flag="/run/user/$(id -u greeter)/greeter-password"
 [ -s "$flag" ] && exit 1
-fprintd-list "$PAM_USER" 2> /dev/null | grep -q ' - #' || exit 1
+command -v fprintd-list > /dev/null || exit 1
+until list="$(fprintd-list "$PAM_USER" 2> /dev/null)"; do
+    [ -s "$flag" ] && exit 1
+    sleep 0.5
+done
+printf %s "$list" | grep -q ' - #' || exit 1
 
 out="$(mktemp)"
 fprintd-verify "$PAM_USER" > "$out" 2>&1 &
