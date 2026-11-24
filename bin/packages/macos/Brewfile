@@ -1,0 +1,76 @@
+# Brewfile — everything the macOS setup installs. `brew bundle` reads this, skips
+# what's already there, and `brew bundle check` reports what's missing.
+
+tap "nikitabobko/tap"   # aerospace
+
+# ── Formulae ─────────────────────────────────────────────────────────────────
+
+brew "jq"               # rex theme reloads, dotfiles scripts
+brew "gh"
+
+# Editors
+brew "neovim"
+brew "tree-sitter-cli"
+
+# Git tooling
+brew "git"
+brew "lazygit"
+brew "git-delta"
+brew "bat"
+
+# System monitor
+brew "btop"
+
+# File managers
+brew "vifm"
+brew "yazi"
+
+# yazi extras: video thumbnails, PDF previews, file search, fuzzy jump,
+# frecency jump
+brew "ffmpeg"
+brew "poppler"
+brew "fd"
+brew "fzf"
+brew "zoxide"
+
+# pi's figure tool: ImageMagick crops the picture
+brew "imagemagick"
+
+# Shells
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+brew "fish"
+brew "nushell"
+
+# Terminal multiplexers
+brew "tmux"
+brew "herdr"
+
+# Search
+brew "ripgrep"
+
+# Runtimes (node also builds the Raycast extension)
+brew "node"
+brew "pyenv"
+brew "rbenv"
+brew "rust"
+
+# ── Apps ─────────────────────────────────────────────────────────────────────
+
+cask "nikitabobko/tap/aerospace"   # tiling window manager
+cask "ghostty"                     # terminal
+cask "zed"                         # editor
+cask "obsidian"                    # notes
+cask "firefox"                     # browser
+cask "zen"                         # browser, themed by apps/general/zen
+cask "raycast"                     # launcher, runs apps/mac/raycast/extension
+cask "tailscale-app"               # private network for Rex and remote access
+
+# ── Fonts ────────────────────────────────────────────────────────────────────
+
+cask "font-hack-nerd-font"
+cask "font-inter"
+cask "font-ibm-plex-sans"
+cask "font-iosevka"
+cask "font-iosevka-aile"
+cask "font-commit-mono"

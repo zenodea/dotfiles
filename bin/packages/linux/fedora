@@ -49,7 +49,8 @@ PACKAGES=(
     fprintd
     hyprsunset
 
-    # Status bar + what its modules call
+    # Bar, launcher and panels (apps/linux/quickshell); waybar is the fallback
+    quickshell
     waybar
     playerctl
     blueman
@@ -137,6 +138,7 @@ PACKAGES=(
     # Shell
     zsh
     fish
+    nushell
 
     # Theme engine (envsubst for template rendering, gsettings for GTK scheme)
     gettext-envsubst

@@ -9,7 +9,10 @@ install_awww() {
     has awww && return 0
     echo "==> Building awww from source..."
     has cargo || { echo "    cargo not found, skipping awww"; return 0; }
-    cargo install --locked --git https://codeberg.org/LGFae/awww
+    # A failed build shouldn't stop the fonts and services that come after it.
+    # The repo is a workspace, so name both crates: the client and its daemon.
+    cargo install --locked --git https://codeberg.org/LGFae/awww awww awww-daemon \
+        || echo "    awww build failed, no wallpapers until it's installed"
 }
 
 # Nerd Font symbols — the waybar icons. No distro ships the symbols-only build.

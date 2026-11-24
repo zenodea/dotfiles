@@ -48,9 +48,15 @@ cmd_doctor() {
     fi
     check_dep nvim
     if [[ "$PLATFORM" == "mac" ]]; then
-        check_dep sketchybar
-        check_dep borders
+        check_dep aerospace
         check_dep fzf "used by dotfiles --pick"
+        if command -v brew > /dev/null 2>&1; then
+            if brew bundle check --file="$DOTFILES/bin/packages/macos/Brewfile" > /dev/null 2>&1; then
+                ok "Brewfile packages installed"
+            else
+                warn "Brewfile packages missing (run: bin/install-packages)"
+            fi
+        fi
     elif [[ "$PLATFORM" == "linux" ]]; then
         check_dep hyprctl
         check_dep waybar

@@ -22,12 +22,32 @@ that recolors everything at once.
 
 ## Install
 
+On a new machine, one command does everything:
+
 ```sh
-git clone --recurse-submodules https://github.com/zenodea/dotfiles_nixless ~/dotfiles
-cd ~/dotfiles
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/zenodea/dotfiles/main/bootstrap.sh)"
+```
+
+`bootstrap.sh` installs Apple's command-line tools on macOS, clones the repo
+into `~/Github/dotfiles` (set `DOTFILES_DIR` to change that), installs the
+packages, runs `install.sh`, and makes fish the login shell (set
+`LOGIN_SHELL` to another shell, or to an empty string to skip). Fish sets up
+`PATH` and hands every interactive session to nushell, so terminals open in nu
+while scripts and remote commands still get a normal shell. On macOS it
+ends with a short list of permissions only you can grant in System Settings.
+It's safe to rerun.
+
+The same steps by hand:
+
+```sh
+git clone --recurse-submodules https://github.com/zenodea/dotfiles ~/Github/dotfiles
+cd ~/Github/dotfiles
 bin/install-packages   # optional: Arch, Fedora, Debian or Homebrew
 ./install.sh
 ```
+
+On macOS the package list is `bin/packages/macos/Brewfile`, and
+`dotfiles --doctor` reports anything from it that's missing.
 
 `install-packages` picks the script for your OS from `bin/packages/`. You can
 also run one of those directly. On Arch it asks before touching the AUR and
@@ -51,7 +71,9 @@ skills/<name>/SKILL.md       agent skills, symlinked into Claude Code, Codex and
 themes/<name>.sh             palettes
 fonts/<name>.sh              mono fonts
 fonts/text/<name>.sh         proportional fonts
+bootstrap.sh                 one-command setup for a new machine
 bin/                         dotfiles, switch-theme, install-packages
+bin/packages/macos/Brewfile  everything macOS installs
 lib/common.sh                helpers shared by bin/ and install.sh
 lib/dotfiles/                the dotfiles command's subcommands
 wallpapers/                  submodule: github.com/zenodea/wallpapers
@@ -60,7 +82,7 @@ screenshots/                 images for this README
 
 `general/` is used on both systems, `mac/` and `linux/` only on their own.
 Apps without an `app.sh` (lazygit, yazi, aerospace) are only symlinked. Apps
-without a `config/` (ghostty, borders, fuzzel) are fully generated and written
+without a `config/` (ghostty, fuzzel) are fully generated and written
 straight to `~/.config`.
 
 ## Linux shell
@@ -119,7 +141,7 @@ Switching re-renders every app's config from its templates and reloads the
 apps that are running.
 
 Themed apps: hyprland, hyprlock, quickshell, waybar, fuzzel, rofi, gtk, vifm,
-Renux, sketchybar, borders, Alfred, Raycast, Rex, ghostty, tmux, herdr, pi, Claude Code,
+Renux, Raycast, Rex, ghostty, tmux, herdr, pi, Claude Code,
 Codex, lazygit, delta, nvim, zed, Firefox, Zen (macOS), Hermes, Obsidian,
 and the wallpaper.
 
@@ -147,7 +169,7 @@ this:
 
 ```sh
 FONT_MONO_FAMILY="Berkeley Mono"        # ghostty, zed editor, code
-FONT_TEXT_FAMILY="IBM Plex Sans Text"   # zed UI, Obsidian, sketchybar labels
+FONT_TEXT_FAMILY="IBM Plex Sans Text"   # zed UI, Obsidian
 FONT_SIZE="14"                          # optional, terminal size
 FONT_CELL_HEIGHT="10%"                  # optional, ghostty line height
 FONT_CELL_WIDTH="0%"                    # optional, ghostty cell width
@@ -155,9 +177,8 @@ FONT_CELL_WIDTH="0%"                    # optional, ghostty cell width
 
 The mono font goes to ghostty (and so everything in the terminal), zed's
 editor, Obsidian code blocks and Firefox's `monospace`. The text font goes to
-zed's UI, Obsidian, sketchybar labels, Firefox's UI and its `sans-serif`.
-`--text-font` swaps only the text font. Sketchybar icons stay on SF Pro
-because they're SF Symbols.
+zed's UI, Obsidian, Firefox's UI and its `sans-serif`.
+`--text-font` swaps only the text font.
 
 ## Light / dark
 
@@ -358,18 +379,6 @@ Each harness also gets the shared skills in `skills/`.
 - **Raycast** (macOS): `apps/mac/raycast/extension/` is a Raycast extension for
   the `dotfiles` command: search themes and fonts, set wallpapers, random
   theme, toggle auto, maintenance. See its own README for development.
-- **Alfred** (macOS): `apps/mac/alfred/workflows/dotfiles/` is a workflow for
-  the same command. `install.sh` symlinks it into Alfred, so edits in the repo
-  apply right away. Restart Alfred once after the first install. Type
-  `dotfiles`, then:
-
-  | | |
-  |---|---|
-  | `theme <name>` | switch theme (⇥ to browse) |
-  | `wallpaper <name>` | wallpaper only, `random` works |
-  | `random` | random theme |
-  | `update` / `sync` / `doctor` | output shown in Large Type |
-  | `save` | commit and push |
 
 ## Notes
 

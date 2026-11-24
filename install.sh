@@ -67,7 +67,7 @@ app_dest() {
 }
 
 # apps/<platform>/<name>/config → ~/.config/<name>
-# An app with no config/ is either wholly generated (ghostty, borders, fuzzel
+# An app with no config/ is either wholly generated (ghostty, fuzzel
 # render straight to ~/.config) or has nothing to link.
 link_apps() {
     local dir="$1" app name
@@ -86,34 +86,6 @@ link_home() {
     for entry in "$dir"/* "$dir"/.[!.]*; do
         [ -e "$entry" ] || continue
         link "$entry" "$HOME/$(basename "$entry")"
-    done
-}
-
-# Alfred reads workflows straight from its prefs bundle, so a symlink keeps the
-# workflow in the repo and live-editable. Restart Alfred to pick up new ones.
-#
-# The bundle may sit in a synced folder (Dropbox/iCloud), so its path comes from
-# prefs.json rather than the default location — same as apps/mac/alfred/app.sh.
-# Alfred only writes prefs.json on first launch, so on a fresh machine there's
-# nothing to link into yet; say so instead of skipping in silence.
-link_alfred_workflows() {
-    local src="$DOTFILES_DIR/apps/mac/alfred/workflows"
-    [ -d "$src" ] || return 0
-
-    local json="$HOME/Library/Application Support/Alfred/prefs.json" prefs=""
-    [ -f "$json" ] && prefs="$(python3 -c "
-import json, sys
-print(json.load(open(sys.argv[1])).get('current', ''))" "$json" 2> /dev/null)"
-
-    if [ -z "$prefs" ] || [ ! -d "$prefs" ]; then
-        warn "Alfred workflows not linked — launch Alfred once, then: dotfiles --sync"
-        return 0
-    fi
-
-    local wf
-    for wf in "$src"/*/; do
-        [ -d "$wf" ] || continue
-        link "${wf%/}" "$prefs/workflows/user.workflow.$(basename "$wf")"
     done
 }
 
@@ -157,7 +129,6 @@ link_all() {
     link_home general
     link_home "$PLATFORM"
     link_skills
-    [ "$PLATFORM" = "mac" ] && link_alfred_workflows
     link "$DOTFILES_DIR/bin/dotfiles" "$HOME/.local/bin/dotfiles"
     link "$DOTFILES_DIR/bin/rex-edit" "$HOME/.local/bin/rex-edit"
 }

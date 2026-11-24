@@ -10,10 +10,10 @@ Linux) PLATFORM="linux" ;;
   ;;
 esac
 
-# Theme reloads shell out to GUI tools (sketchybar, borders, aerospace) that
-# live in Homebrew's bin. Interactive shells have that on PATH, but launchd
-# (the auto-appearance timer) and Raycast do not — there the reloads would be
-# command-not-found and fail silently, leaving the bar on stale colors. Put the
+# Theme reloads shell out to tools (aerospace, jq, rex) that live in
+# Homebrew's bin. Interactive shells have that on PATH, but launchd (the
+# auto-appearance timer) and Raycast do not — there the reloads would be
+# command-not-found and fail silently, leaving apps on stale colors. Put the
 # usual bin dirs on PATH up front so any caller's reloads resolve.
 for _d in /opt/homebrew/bin /usr/local/bin; do
   case ":$PATH:" in
@@ -24,9 +24,8 @@ done
 export PATH
 unset _d
 
-# sketchybar-msg aborts with "'env USER' not set!" when USER is missing, which
-# it is under launchd (the auto-appearance timer) and Raycast. Guarantee it so
-# the sketchybar reload doesn't fail for those callers.
+# USER is missing under launchd (the auto-appearance timer) and Raycast, and
+# some reload steps read it, so guarantee it for those callers.
 export USER="${USER:-$(id -un)}"
 
 have() { command -v "$1" >/dev/null 2>&1; }

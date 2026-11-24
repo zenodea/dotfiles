@@ -106,8 +106,8 @@ cmd_sync_appearance() {
         return 1
     fi
 
-    # This runs on a timer, so bail before a needless switch reloads sketchybar
-    # and every terminal.
+    # This runs on a timer, so bail before a needless switch reloads every
+    # terminal and editor.
     if [[ "$(current_theme)" == "$target" ]]; then return 0; fi
 
     "$DOTFILES/bin/switch-theme" "$target"

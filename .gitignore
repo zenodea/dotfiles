@@ -26,7 +26,7 @@ apps/general/zed/config/prompts/
 # They sit inside the app's config/ because that dir is symlinked into
 # ~/.config, but they're derived, so tracking them just churns the repo on
 # every switch. install.sh renders them from .current-theme.
-# (ghostty, borders and fuzzel are wholly generated and render straight to
+# (ghostty and fuzzel are wholly generated and render straight to
 # ~/.config, so they have nothing here.)
 apps/general/nvim/config/lua/dotfiles/theme.lua
 apps/general/zed/config/settings.json
@@ -42,8 +42,6 @@ apps/linux/rofi/config/themes/dotfiles-menu.rasi
 apps/linux/vifm/config/theme.vifm
 apps/linux/waybar/config/style.css
 apps/mac/raycast/theme.json
-apps/mac/sketchybar/config/colors.sh
-apps/mac/sketchybar/config/sketchybarrc
 
 # Vendored pi packages install their runtime deps in place.
 apps/general/pi/team-vendor/*/node_modules/

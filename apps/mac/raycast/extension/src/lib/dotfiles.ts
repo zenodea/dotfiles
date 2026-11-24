@@ -33,12 +33,12 @@ export function resolveBin(): string {
 
 /**
  * Build the environment the CLI runs under. Raycast launches commands with a
- * minimal environment, which breaks two reload steps:
+ * minimal environment, which breaks reload steps:
  *
- * - PATH omits Homebrew, so `sketchybar` / `borders` are command-not-found and
- *   their reloads fail silently. We prepend the usual bin dirs.
- * - USER is unset, so `sketchybar-msg` aborts with "'env USER' not set!" and
- *   the bar never repaints. We fill it in.
+ * - PATH omits Homebrew, so tools like `aerospace`, `jq` and `rex` are
+ *   command-not-found and their reloads fail silently. We prepend the usual
+ *   bin dirs.
+ * - USER is unset, and some reload steps read it. We fill it in.
  *
  * (The dotfiles CLI now guards both itself in lib/common.sh, so this is
  * belt-and-suspenders — but it keeps the extension correct on its own.)

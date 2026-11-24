@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# brew — install every package the macOS setup needs, then
-# register sketchybar and borders as login services so the bar and the window
-# borders come up on their own.
+# brew — install everything in the Brewfile next to this script, then the
+# Raycast extension's npm dependencies. Safe to rerun: brew bundle skips what's
+# already installed.
 set -e
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="$(cd "$here/../../.." && pwd)"
 
 has() { command -v "$1" &> /dev/null; }
 
@@ -11,8 +14,10 @@ has() { command -v "$1" &> /dev/null; }
 if ! has brew; then
     echo "==> Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
 
-    # The installer doesn't touch the current shell's PATH.
+# The installer doesn't touch the current shell's PATH.
+if ! has brew; then
     if [ -x /opt/homebrew/bin/brew ]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"   # Apple silicon
     else
@@ -20,129 +25,29 @@ if ! has brew; then
     fi
 fi
 
-# ── Taps ─────────────────────────────────────────────────────────────────────
+# ── Packages ─────────────────────────────────────────────────────────────────
 
-echo "==> Tapping..."
-brew tap felixkratz/formulae   # sketchybar, borders
-brew tap nikitabobko/tap       # aerospace
+echo "==> Installing from the Brewfile..."
+# --adopt takes over apps that were installed by hand (dragged in from a .dmg)
+# instead of failing because the .app is already there.
+HOMEBREW_CASK_OPTS="${HOMEBREW_CASK_OPTS:+$HOMEBREW_CASK_OPTS }--adopt" \
+    brew bundle --file="$here/Brewfile"
 
-# ── Formulae ─────────────────────────────────────────────────────────────────
+# ── Raycast extension ────────────────────────────────────────────────────────
 
-FORMULAE=(
-    # Status bar + window borders (both run as services, see below)
-    felixkratz/formulae/sketchybar
-    felixkratz/formulae/borders
+# Only the dependencies: loading the extension into Raycast needs Raycast set
+# up first, so that step is on the checklist bootstrap.sh prints.
+ext="$root/apps/mac/raycast/extension"
+if [ -f "$ext/package-lock.json" ] && [ ! -d "$ext/node_modules" ]; then
+    echo "==> Installing the Raycast extension's dependencies..."
+    (cd "$ext" && npm ci --no-audit --no-fund)
+fi
 
-    # The sketchybar config shells out to these on every update:
-    #   jq              — parsing --query output in the plugins
-    #   gh              — the github.bell notification popup
-    #   switchaudio-osx — SwitchAudioSource, the volume right-click device picker
-    # macOS 26 does ship its own /usr/bin/jq, but older ones don't.
-    jq
-    gh
-    switchaudio-osx
-
-    # Now-playing for the music item. sketchybar's own media_change event is
-    # dead on macOS 15.4+ (Apple locked the MediaRemote framework); this reaches
-    # the same service through a signed adapter that still works.
-    media-control
-
-    # Editors
-    neovim
-    tree-sitter-cli
-
-    # Git tooling
-    git
-    lazygit
-    git-delta
-    bat
-
-    # System monitor
-    btop
-
-    # File managers
-    vifm
-    yazi
-
-    # yazi extras: video thumbnails, PDF previews, file search, fuzzy jump,
-    # frecency jump
-    ffmpeg
-    poppler
-    fd
-    fzf
-    zoxide
-
-    # pi's figure tool: ImageMagick crops the picture
-    imagemagick
-
-    zsh-autosuggestions
-    zsh-syntax-highlighting
-    fish
-    nushell
-
-    # Terminal multiplexers
-    tmux
-    herdr
-
-    # Search
-    ripgrep
-
-    # Runtimes
-    node
-    pyenv
-    rbenv
-    rust
-)
-
-echo "==> Installing formulae..."
-brew install "${FORMULAE[@]}"
-
-# ── Casks ────────────────────────────────────────────────────────────────────
-
-CASKS=(
-    # Tiling window manager
-    nikitabobko/tap/aerospace
-
-    # Terminal
-    ghostty
-
-    # Editors
-    zed
-
-    # Launcher
-    alfred
-
-    # Browser
-    firefox
-
-    # Notes
-    obsidian
-
-    # Fonts. sketchybar's icons are SF Symbols glyphs from the private-use
-    # range — without SF Pro every icon in the bar renders as an empty box.
-    font-sf-pro
-    font-hack-nerd-font
-    font-inter
-    font-ibm-plex-sans
-    font-iosevka
-    font-iosevka-aile
-    font-commit-mono
-)
-
-echo "==> Installing casks..."
-brew install --cask "${CASKS[@]}"
-
-# ── Services ─────────────────────────────────────────────────────────────────
-
-# `brew services start` registers a LaunchAgent, so these come back on login
-# and after a crash — not just for this session.
-echo "==> Starting services..."
-brew services start felixkratz/formulae/sketchybar
-brew services start felixkratz/formulae/borders
+# ── AeroSpace ────────────────────────────────────────────────────────────────
 
 # AeroSpace is a .app, not a brew service; it starts itself at login only if its
 # own config says so. That config lives in apps/mac/aerospace/.
-if ! grep -q "^start-at-login = true" "$HOME/.config/aerospace/aerospace.toml" 2> /dev/null; then
+if ! grep -q "^start-at-login = true" "$root/apps/mac/aerospace/config/aerospace.toml" 2> /dev/null; then
     echo "    note: aerospace won't start at login — set start-at-login = true"
     echo "          in apps/mac/aerospace/config/aerospace.toml to change that"
 fi

@@ -23,15 +23,6 @@ default-root-container-orientation = 'auto'
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
-# sketchybar's aerospace_workspace item subscribes to this event and has no
-# other way to learn the workspace changed — AeroSpace doesn't poll or notify,
-# so without this hook the indicator stays frozen on whatever it read at launch.
-exec-on-workspace-change = [
-  '/bin/bash',
-  '-c',
-  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
-]
-
 # Cmd-H'd windows otherwise leave invisible holes in the layout.
 automatically-unhide-macos-hidden-apps = true
 
@@ -44,21 +35,20 @@ preset = 'qwerty'
 
 # Gaps between windows (inner-*) and monitor edges (outer-*).
 #
-# outer.top must clear sketchybar (height 33 + y_offset 2 = 35px) wherever the
-# bar actually occupies tiling space. Whether it does depends on the display
-# and on menu bar auto-hide, so it's set per monitor below — patterns are
+# outer.top is set per monitor below, since the menu bar and notch take a
+# different amount of space on each display — patterns are
 # case-insensitive substrings of the monitor names (`aerospace list-monitors`),
 # the bare number at the end is the fallback for anything unlisted.
-# Tune per monitor: too small = windows cover the bar, too big = dead strip.
+# Tune per monitor: too small = windows touch the menu bar, too big = dead strip.
 [gaps]
 inner.horizontal = 3
 inner.vertical = 3
 outer.left = 3
 outer.bottom = 3
 outer.top = [
-  { monitor.'built-in' = 5 }, # notch strip already reserves space; raise to ~42 if the bar gets covered
-  { monitor.'msi' = 38 },     # MSI MP275
-  42,                         # any other monitor
+  { monitor.'built-in' = 5 }, # notch strip already reserves space
+  { monitor.'msi' = 3 },      # MSI MP275
+  3,                          # any other monitor
 ]
 outer.right = 6
 

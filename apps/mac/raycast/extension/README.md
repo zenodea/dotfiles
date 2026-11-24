@@ -46,7 +46,7 @@ edits hot-reload.
 
 ## Notes
 
-- Theme switches reload running apps (sketchybar, terminals, etc.), so they take
+- Theme switches reload running apps (terminals, editors, etc.), so they take
   a second or two — a toast/HUD confirms completion.
 - Wallpaper thumbnails point directly at the files in `../../../wallpapers/`.
 - A theme switch behaves exactly as it does from the terminal: it changes the
@@ -58,11 +58,10 @@ edits hot-reload.
 
 ## Troubleshooting
 
-### "sketchybar / borders / the bar didn't recolor"
+### "an app didn't recolor"
 
 Raycast launches commands with a minimal environment: `PATH` omits Homebrew (so
-`sketchybar` / `borders` are command-not-found) and `USER` is unset (so
-`sketchybar-msg` aborts with `'env USER' not set!`). Both would make the bar
-stay on stale colors. The dotfiles CLI now guards `PATH` and `USER` itself in
+tools like `aerospace`, `jq` and `rex` are command-not-found) and `USER` is
+unset. Either would leave apps on stale colors. The dotfiles CLI now guards `PATH` and `USER` itself in
 `lib/common.sh`, and the extension also sets them before invoking the CLI, so
 all reload steps resolve regardless of how it's launched.
