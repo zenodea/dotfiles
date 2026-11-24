@@ -78,21 +78,32 @@ install_herdr() {
     curl -fsSL https://herdr.dev/install.sh | sh
 }
 
+# pyenv — Fedora doesn't package it, so use its own installer (lands in ~/.pyenv).
+install_pyenv() {
+    has pyenv || [ -d "$HOME/.pyenv" ] && return 0
+    echo "==> Installing pyenv..."
+    curl -fsSL https://pyenv.run | bash
+}
+
 install_zed() {
     has zed && return 0
     echo "==> Installing zed..."
     curl -fsSL https://zed.dev/install.sh | sh
 }
 
-# Desktop apps with no native package on either distro.
+# Desktop apps with no native package on either distro. Discord and Spotify
+# only publish x86_64 builds on Flathub, so ARM machines get Obsidian alone.
 install_flatpaks() {
     has flatpak || { echo "    flatpak not found, skipping flatpaks"; return 0; }
     echo "==> Installing flatpaks..."
+    local apps=(md.obsidian.Obsidian)
+    if [ "$(uname -m)" = x86_64 ]; then
+        apps+=(com.discordapp.Discord com.spotify.Client)
+    else
+        echo "    $(uname -m): skipping Discord and Spotify (x86_64 only)"
+    fi
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    flatpak install -y --noninteractive flathub \
-        md.obsidian.Obsidian \
-        com.discordapp.Discord \
-        com.spotify.Client
+    flatpak install -y --noninteractive flathub "${apps[@]}"
 }
 
 enable_services() {

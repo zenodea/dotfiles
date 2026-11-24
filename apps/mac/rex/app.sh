@@ -16,9 +16,11 @@ render() {
     mkdir -p "$(dirname "$REX_THEME")"
     # Ghostty's own theme fills the slots the theme file has no colour for
     # (palette 0 and 8, mostly); the rendered config's colours come after and win.
+    # Rex keeps the first cursor-color it reads, not the last like Ghostty, so
+    # drop the earlier ones and write only the accent.
     {
-        [[ -f "$GHOSTTY_THEMES/$GHOSTTY_THEME" ]] && cat "$GHOSTTY_THEMES/$GHOSTTY_THEME"
-        grep -E '^(background|foreground|cursor-color|cursor-text|selection-background|selection-foreground|palette) *=' \
+        [[ -f "$GHOSTTY_THEMES/$GHOSTTY_THEME" ]] && grep -v -E '^cursor-color *=' "$GHOSTTY_THEMES/$GHOSTTY_THEME"
+        grep -E '^(background|foreground|cursor-text|selection-background|selection-foreground|palette) *=' \
             "$HOME/.config/ghostty/config"
         # Rex takes its accent (the active pane border, among others) from the cursor.
         printf 'cursor-color = #%s\n' "$ACCENT"

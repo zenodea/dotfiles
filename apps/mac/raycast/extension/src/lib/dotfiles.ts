@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { homedir, userInfo } from "node:os";
 import { promisify } from "node:util";
 import { getPreferenceValues } from "@raycast/api";
@@ -121,10 +121,13 @@ export function wallpaperPreview(name: string): string | undefined {
 
 /** Absolute path to the dotfiles repo root, derived from the binary path. */
 export function repoRoot(): string {
-  const bin = resolveBin();
-  // ~/.local/bin/dotfiles is a symlink; the real repo is ~/dotfiles.
-  const guess = `${homedir()}/dotfiles`;
-  if (existsSync(guess)) return guess;
-  // bin/dotfiles -> repo root is two levels up.
+  // ~/.local/bin/dotfiles is a symlink into the repo; follow it to the real
+  // <repo>/bin/dotfiles, whose repo root is two levels up.
+  let bin = resolveBin();
+  try {
+    bin = realpathSync(bin);
+  } catch {
+    // Missing binary: keep the unresolved path.
+  }
   return bin.replace(/\/bin\/dotfiles$/, "");
 }

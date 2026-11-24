@@ -9,13 +9,15 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 echo "==> Enabling COPRs and third-party repos..."
 sudo dnf install -y dnf-plugins-core
 
-# Fedora ships hyprland/hyprlock/hypridle, but hyprsunset and swww live here.
-sudo dnf copr enable -y solopasha/hyprland
+# Fedora retired its hyprland package, so the whole Hyprland stack (hyprland,
+# its portal, hyprlock, hypridle, hyprsunset) comes from this COPR, a maintained
+# fork of solopasha's. It builds for x86_64 and aarch64.
+sudo dnf copr enable -y sdegler/hyprland
 sudo dnf copr enable -y scottames/ghostty
 sudo dnf copr enable -y lihaohong/yazi
 sudo dnf copr enable -y atim/lazygit
 
-# RPM Fusion — steam, full ffmpeg
+# RPM Fusion — full ffmpeg, and steam on x86_64
 sudo dnf install -y \
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
@@ -138,12 +140,15 @@ PACKAGES=(
     ibm-plex-sans-fonts
     fontconfig
 
-    # Misc
-    pyenv
-    steam
+    # Misc (pyenv isn't packaged for Fedora; it's installed below)
     cargo
     flatpak
 )
+
+# Steam only exists for x86_64, so an ARM machine (or VM) goes without it.
+if [ "$(uname -m)" = x86_64 ]; then
+    PACKAGES+=(steam)
+fi
 
 echo "==> Installing packages..."
 sudo dnf install -y "${PACKAGES[@]}"
@@ -158,6 +163,7 @@ install_bibata
 install_oh_my_zsh
 install_zed
 install_herdr
+install_pyenv
 install_flatpaks
 
 enable_services
