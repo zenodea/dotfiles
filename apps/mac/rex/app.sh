@@ -34,17 +34,30 @@ render() {
 }
 
 reload() {
-    local rex out
+    local rex out apps ids id
     rex="$(rex_bin)" || return 0
     # Don't start the server just to theme it: no app connected, nothing to reload.
-    "$rex" --autostart=false --timeout 3s client ls --json 2> /dev/null |
-        grep -q '"kind": "app"' || return 0
-    if ! out="$("$rex" --autostart=false --timeout 5s do client.theme.import path="$REX_THEME" 2>&1)"; then
-        case "$out" in
-            *"not accepting actions"*) skip "turn on Remote Control in Rex Settings → Rex Server" ;;
-            *) skip "import failed: $out" ;;
-        esac
+    apps="$("$rex" --autostart=false --timeout 3s client ls --json 2> /dev/null)" || return 0
+    # Other apps can share the server (Compy on a phone, say), and an untargeted
+    # import is then refused as ambiguous, so send it to each Rex.app by its ID.
+    # The theme file is on this Mac, so only this Mac's apps (local socket).
+    local rex_apps='.clients[] | select(.info.kind == "app" and .info.name == "Rex" and .principal.transport == "unix")'
+    jq -e "$rex_apps" <<< "$apps" > /dev/null || return 0
+    # The server keeps an app that dropped off listed (connection_state "lost"),
+    # and an import sent to it fails, so say so instead of skipping quietly.
+    ids="$(jq -r "$rex_apps | select(.connection_state == \"connected\") | .client_id" <<< "$apps")"
+    if [[ -z "$ids" ]]; then
+        skip "Rex.app lost its server connection; restart Rex, then run: dotfiles --sync"
         return 0
     fi
+    while IFS= read -r id; do
+        if ! out="$("$rex" --autostart=false --timeout 5s -C "$id" do client.theme.import path="$REX_THEME" 2>&1)"; then
+            case "$out" in
+                *"not accepting actions"*) skip "turn on Remote Control in Rex Settings → Rex Server" ;;
+                *) skip "import failed: $out" ;;
+            esac
+            return 0
+        fi
+    done <<< "$ids"
     note "reloaded"
 }
