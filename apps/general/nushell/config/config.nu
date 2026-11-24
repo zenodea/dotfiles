@@ -1,3 +1,23 @@
+# Same PATH as config.fish. As the login shell, nu starts with launchd's bare
+# PATH on macOS, so Homebrew isn't on it unless added here.
+use std/util "path add"
+# Some launchers start nu with no PATH at all, and path add then fails looking
+# for Windows' "Path", which aborts the whole config. Start from the system dirs.
+if "PATH" not-in $env { $env.PATH = ["/usr/bin" "/bin" "/usr/sbin" "/sbin"] }
+path add --append ~/.filen-cli/bin
+path add ...([
+    ~/.local/bin
+    ~/.local/lib/node_modules/.bin
+    ~/.npm-global/bin
+    ~/.cargo/bin
+    /opt/homebrew/opt/ruby@3.2/bin
+    /opt/homebrew/opt/ruby/bin
+    /opt/homebrew/bin
+    /opt/homebrew/sbin
+] | where { path exists })
+$env.NVIM_LOG_FILE = ($nu.home-dir | path join .local/state/nvim/log)
+if ($env.TERM_PROGRAM? == "rex") { $env.FORCE_HYPERLINK = "1" }
+
 $env.config.show_banner = false
 $env.config.error_style = "nested"
 $env.config.render_right_prompt_on_last_line = true

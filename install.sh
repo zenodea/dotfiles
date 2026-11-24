@@ -55,12 +55,13 @@ link() {
 }
 
 # Where an app's config/ lands. Almost always ~/.config/<name>, but lazygit
-# asks Go for os.UserConfigDir(), which on macOS is ~/Library/Application
-# Support — it never looks at ~/.config unless XDG_CONFIG_HOME is set.
-# `lazygit --print-config-dir` confirms the path on any machine.
+# (Go's os.UserConfigDir()) and nushell (Rust's dirs::config_dir()) both use
+# ~/Library/Application Support on macOS and never look at ~/.config unless
+# XDG_CONFIG_HOME is set. `lazygit --print-config-dir` and
+# `nu -c '$nu.config-path'` confirm the path on any machine.
 app_dest() {
-    if [ "$1" = "lazygit" ] && [ "$PLATFORM" = "mac" ] && [ -z "${XDG_CONFIG_HOME:-}" ]; then
-        echo "$HOME/Library/Application Support/lazygit"
+    if { [ "$1" = "lazygit" ] || [ "$1" = "nushell" ]; } && [ "$PLATFORM" = "mac" ] && [ -z "${XDG_CONFIG_HOME:-}" ]; then
+        echo "$HOME/Library/Application Support/$1"
     else
         echo "$HOME/.config/$1"
     fi
