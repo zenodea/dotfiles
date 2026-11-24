@@ -109,7 +109,7 @@ install_flatpaks() {
 enable_services() {
     echo "==> Enabling services..."
     local unit
-    for unit in bluetooth NetworkManager power-profiles-daemon upower mullvad-daemon; do
+    for unit in bluetooth NetworkManager power-profiles-daemon tuned-ppd upower mullvad-daemon; do
         systemctl list-unit-files "$unit.service" &> /dev/null \
             && sudo systemctl enable --now "$unit"
     done

@@ -22,6 +22,14 @@ sudo dnf install -y \
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
 
+# Workstation ships Fedora's cut-down ffmpeg-free, which conflicts with RPM
+# Fusion's full ffmpeg, so swap it rather than install alongside.
+if rpm -q ffmpeg-free &> /dev/null; then
+    sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing
+else
+    sudo dnf install -y ffmpeg
+fi
+
 # Mullvad
 sudo dnf config-manager addrepo --overwrite \
     --from-repofile=https://repository.mullvad.net/rpm/stable/mullvad.repo
@@ -47,7 +55,9 @@ PACKAGES=(
     blueman
     NetworkManager
     NetworkManager-tui
-    power-profiles-daemon
+    # Any power-profiles provider: Workstation ships tuned-ppd, which conflicts
+    # with power-profiles-daemon but offers the same service to waybar.
+    ppd-service
     libnotify
 
     # Launchers
@@ -61,9 +71,8 @@ PACKAGES=(
     vifm
     yazi
 
-    # yazi extras: video thumbnails, PDF previews, file search, fuzzy jump,
+    # yazi extras (ffmpeg installed above): video thumbnails, PDF previews, file search, fuzzy jump,
     # frecency jump
-    ffmpeg
     poppler-utils
     fd-find
     fzf
